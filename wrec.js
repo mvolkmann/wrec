@@ -4,7 +4,7 @@ const IDENTIFIER = `[${FIRST_CHAR}][${OTHER_CHAR}]*`;
 const REFERENCE_RE = new RegExp("this." + IDENTIFIER, "g");
 const SKIP = "this.".length;
 
-class Wreck extends HTMLElement {
+class Wrec extends HTMLElement {
   static #propertyToExpressionsMap = new Map();
   static #template = document.createElement("template");
 
@@ -50,9 +50,9 @@ class Wreck extends HTMLElement {
       ? `<style>${this.css()}</style>`
       : "";
     template += this.html();
-    Wreck.#template.innerHTML = template;
+    Wrec.#template.innerHTML = template;
 
-    this.shadowRoot.replaceChildren(Wreck.#template.content.cloneNode(true));
+    this.shadowRoot.replaceChildren(Wrec.#template.content.cloneNode(true));
   }
 
   connectedCallback() {
@@ -196,7 +196,7 @@ class Wreck extends HTMLElement {
       // If the element has no child elements, evaluate its text content.
       if (!element.firstElementChild) this.#evaluateText(element);
     }
-    //console.log("#propertyToExpressionsMap =", Wreck.#propertyToExpressionsMap);
+    //console.log("#propertyToExpressionsMap =", Wrec.#propertyToExpressionsMap);
     //console.log("#expressionReferencesMap =", this.#expressionReferencesMap);
   }
 
@@ -206,9 +206,9 @@ class Wreck extends HTMLElement {
 
   #react(propertyName) {
     // Update all expression references.
-    const expressions = Wreck.#propertyToExpressionsMap.get(propertyName) || [];
+    const expressions = Wrec.#propertyToExpressionsMap.get(propertyName) || [];
     for (const expression of expressions) {
-      const value = Wreck.#evaluateInContext(expression, this);
+      const value = Wrec.#evaluateInContext(expression, this);
       const references = this.#expressionReferencesMap.get(expression) || [];
       for (const reference of references) {
         if (reference instanceof Element) {
@@ -224,7 +224,7 @@ class Wreck extends HTMLElement {
   }
 
   static register() {
-    const elementName = Wreck.#toKebabCase(this.name);
+    const elementName = Wrec.#toKebabCase(this.name);
     if (!customElements.get(elementName)) {
       customElements.define(elementName, this);
     }
@@ -241,10 +241,10 @@ class Wreck extends HTMLElement {
     if (!this.constructor.processed) {
       matches.forEach((capture) => {
         const propertyName = capture.substring(SKIP);
-        let expressions = Wreck.#propertyToExpressionsMap.get(propertyName);
+        let expressions = Wrec.#propertyToExpressionsMap.get(propertyName);
         if (!expressions) {
           expressions = [];
-          Wreck.#propertyToExpressionsMap.set(propertyName, expressions);
+          Wrec.#propertyToExpressionsMap.set(propertyName, expressions);
         }
         expressions.push(text);
       });
@@ -257,7 +257,7 @@ class Wreck extends HTMLElement {
     }
     references.push(attrName ? { element, attrName } : element);
 
-    const value = Wreck.#evaluateInContext(text, this);
+    const value = Wrec.#evaluateInContext(text, this);
     if (attrName) {
       this.#updateAttribute(element, attrName, value);
     } else {
@@ -345,4 +345,4 @@ class Wreck extends HTMLElement {
   }
 }
 
-export default Wreck;
+export default Wrec;

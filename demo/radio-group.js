@@ -1,7 +1,7 @@
-import Wreck from "../wreck.js";
+import Wrec from "../wrec.js";
 
-class RadioGroup extends Wreck {
-  // This is the only thing a Wreck subclass
+class RadioGroup extends Wrec {
+  // This is the only thing a Wrec subclass
   // must contain to contribute to form submission.
   static formAssociated = true;
 

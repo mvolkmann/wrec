@@ -1,6 +1,6 @@
-import Wreck from "../wreck.js";
+import Wrec from "../wrec.js";
 
-class NumberInput extends Wreck {
+class NumberInput extends Wrec {
   static formAssociated = true;
   static properties = {
     label: { type: String, reflect: true },

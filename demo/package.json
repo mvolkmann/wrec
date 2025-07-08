@@ -1,5 +1,5 @@
 {
-  "name": "wreck-demo",
+  "name": "wrec-demo",
   "scripts": {
     "dev": "vite",
     "lint": "oxlint"

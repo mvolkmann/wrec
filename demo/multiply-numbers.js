@@ -1,6 +1,6 @@
-import Wreck from "../wreck.js";
+import Wrec from "../wrec.js";
 
-class MultiplyNumbers extends Wreck {
+class MultiplyNumbers extends Wrec {
   static properties = {
     n1: { type: Number },
     n2: { type: Number },

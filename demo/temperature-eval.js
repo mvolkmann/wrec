@@ -1,6 +1,6 @@
-import Wreck from "../wreck.js";
+import Wrec from "../wrec.js";
 
-class TemperatureEval extends Wreck {
+class TemperatureEval extends Wrec {
   static properties = {
     temperature: { type: Number },
   };

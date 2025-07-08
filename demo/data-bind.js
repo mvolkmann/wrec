@@ -1,6 +1,6 @@
-import Wreck from "../wreck.js";
+import Wrec from "../wrec.js";
 
-class DataBind extends Wreck {
+class DataBind extends Wrec {
   static formAssociated = true;
   static properties = {
     color: { type: String, reflect: true },

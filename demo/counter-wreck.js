@@ -1,6 +1,6 @@
-import Wreck from "../Wreck.js";
+import Wrec from "../Wrec.js";
 
-class CounterWreck extends Wreck {
+class CounterWrec extends Wrec {
   static properties = {
     count: { type: Number, reflect: true },
   };
@@ -44,4 +44,4 @@ class CounterWreck extends Wreck {
   }
 }
 
-CounterWreck.register();
+CounterWrec.register();

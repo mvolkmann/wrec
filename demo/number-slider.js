@@ -1,6 +1,6 @@
-import Wreck from "../wreck.js";
+import Wrec from "../wrec.js";
 
-class NumberSlider extends Wreck {
+class NumberSlider extends Wrec {
   static properties = {
     label: { type: String, reflect: true },
     value: { type: Number, reflect: true },

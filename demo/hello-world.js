@@ -1,6 +1,6 @@
-import Wreck from "../wreck.js";
+import Wrec from "../wrec.js";
 
-class HelloWorld extends Wreck {
+class HelloWorld extends Wrec {
   static properties = {
     name: { type: String, value: "World", reflect: true },
   };
