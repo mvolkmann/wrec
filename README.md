@@ -1,6 +1,6 @@
 # Web Reactive Component (Wrec)
 
-<img alt="shipwrec" src="shipwrec.png" style="width: 256px">
+<img alt="shipwreck" src="shipwreck.png" style="width: 256px">
 
 Wrec is a small library that greatly simplifies building web components.
 It is inspired by [Lit](https://lit.dev).
