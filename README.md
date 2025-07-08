@@ -2,7 +2,7 @@
 
 <img alt="shipwreck" src="shipwreck.png" style="width: 256px">
 
-This is a small libraries that simplifies building web components.
+Wreck is a small library that greatly simplifies building web components.
 It is inspired by [Lit](https://lit.dev).
 
 Wreck has fewer features that Lit.
@@ -19,9 +19,9 @@ and automates implementing reactivity.
 Check out the web app in the `demo` directory.
 To run it, cd to that directory, enter `npm install`,
 enter `npm run dev`, and browse localhost:5173.
-This app renders two "counter" components.
+This app begins by rendering "counter" components.
 The first is implemented as a vanilla web component.
-The second uses the Wreck library.
+The next two uses the Wreck library.
 Compare the files `counter-vanilla.js` and `counter-wreck.js`
 to see how much using Wreck simplifies the code.
 
