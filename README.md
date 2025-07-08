@@ -5,7 +5,7 @@
 Wrec is a small library that greatly simplifies building web components.
 It is inspired by [Lit](https://lit.dev).
 
-Wrec has fewer features that Lit.
+Wrec has fewer features than Lit.
 In exchange, Wrec:
 
 - is much smaller than Lit (about 1/4 of the size)
