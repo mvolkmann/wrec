@@ -166,12 +166,13 @@ static formAssociated = true;
 
 Wrec uses the JavaScript `eval` function to evaluate JavaScript expressions
 that are placed in attribute values and the text content of elements.
-This has security implications
-if those expressions can come from untrusted sources.
+This has security implications if those expressions
+can come from untrusted sources, so it is best avoid
+creating web components that use untrusted content in those ways.
 
-Perhaps the most dangerous thing this allows
+Perhaps the most dangerous thing the use of `eval` allows
 is sending HTTP requests to other servers.
-Such requests could contain data from your web app
+Such requests could contain data scraped from your web app
 in order to share it with unscrupulous sites.
 
 The easiest way to prevent this is to add a
