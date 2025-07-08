@@ -1,4 +1,4 @@
-# Web Reactive Component (Wrec)
+# Web Reactive Component (wrec)
 
 <img alt="shipwreck" src="shipwreck.png" style="width: 256px">
 
