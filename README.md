@@ -12,18 +12,99 @@ In exchange, Wrec:
 - doesn't require any tooling
 - doesn't require a build process
 
-The main features of Wrec are that it
-automates wiring event listeners
-and automates implementing reactivity.
+The main features of Wrec are that it automates
+wiring event listeners and implementing reactivity.
 
-Check out the web app in the `demo` directory.
-To run it, cd to that directory, enter `npm install`,
-enter `npm run dev`, and browse localhost:5173.
-This app begins by rendering "counter" components.
-The first is implemented as a vanilla web component.
-The next two uses the Wrec library.
-Compare the files `counter-vanilla.js` and `counter-wrec.js`
-to see how much using Wrec simplifies the code.
+## Getting Started
+
+Let's use wrec to implement a counter component.
+Here are the steps:
+
+1. Create a new directory for the project and `cd` to it.
+
+1. Create a `package.json` file entering `npm init`.
+
+1. Install wrec by entering `npm i wrec`.
+
+1. Install vite by entering `npm i -D vite`.
+   This is only used to run a local HTTP server.
+
+1. Add the following script in `package.json`:
+
+   ```json
+   "dev": "vite"
+   ```
+
+1. Create the file `my-counter.js` containing the following.
+   The comments `/*css*/` and `/*html*/` trigger the VS Code extension
+   "es6-string-html" to add syntax highlighting to the CSS and HTML strings.
+
+   ```js
+   import Wrec from "wrec";
+
+   class MyCounter extends Wrec {
+     static properties = {
+       count: { type: Number, reflect: true },
+     };
+
+     css() {
+       return /*css*/ `
+          .counter {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+          }
+   
+          button {
+            background-color: lightgreen;
+          }
+   
+          button:disabled {
+            background-color: gray;
+          }
+        `;
+     }
+
+     html() {
+       return /*html*/ `
+        <div>
+          <button onClick="decrement" type="button"
+            disabled="this.count === 0">-</button>
+          <span>this.count</span>
+          <button onClick="this.count++" type="button">+</button>
+          <span>(this.count < 10 ? "single" : "double") + " digit"</span>
+        </div>
+        `;
+     }
+
+     decrement() {
+       if (this.count > 0) this.count--;
+     }
+   }
+
+   MyCounter.register();
+   ```
+
+1. Create the file `index.html` containing the following.
+
+   ```html
+   <html>
+     <head>
+       <script src="my-counter.js" type="module"></script>
+     </head>
+     <body>
+       <my-counter count="3"></my-counter>
+     </body>
+   </html>
+   ```
+
+1. Start a local server by entering `npm run dev`.
+
+1. Browse localhost:5173.
+
+1. Click the "-" and "+" buttons to verify that the component is working.
+
+## More Detail
 
 To wire event listeners,
 Wrec looks for attributes whose name begins with "on".
@@ -80,3 +161,18 @@ that conditionally decides what to render based on an attribute value.
 See `demo/radio-group.js` for an example of a web component
 that iterates over values in a comma-delimited attribute value
 to determine what to render.
+
+## More Examples
+
+Check out the web app in the `demo` directory.
+To run it, cd to that directory, enter `npm install`,
+enter `npm run dev`, and browse localhost:5173.
+
+This app begins by rendering "counter" components.
+The first is implemented as a vanilla web component.
+The next two uses the Wrec library.
+Compare the files `counter-vanilla.js` and `counter-wrec.js`
+to see how much using Wrec simplifies the code.
+
+The app renders several other web components that are built with wrec.
+Examine their code for more examples of wrec usage.
