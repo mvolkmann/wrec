@@ -1,0 +1,38 @@
+<html>
+  <head>
+    <style></style>
+
+    <script src="counter-vanilla.js" type="module"></script>
+    <script src="counter-wreck.js" type="module"></script>
+    <script src="data-bind.js" type="module"></script>
+    <script src="hello-world.js" type="module"></script>
+    <script src="multiply-numbers.js" type="module"></script>
+    <script src="number-input.js" type="module"></script>
+    <script src="number-slider.js" type="module"></script>
+    <script src="radio-group.js" type="module"></script>
+    <script src="temperature-eval.js" type="module"></script>
+  </head>
+  <body>
+    <h2>Vanilla</h2>
+    <counter-vanilla count="3"></counter-vanilla>
+
+    <h2>Wreck</h2>
+    <temperature-eval temperature="100"></temperature-eval>
+    <counter-wreck count="3"></counter-wreck>
+    <counter-wreck count="1"></counter-wreck>
+    <hello-world></hello-world>
+    <hello-world name="Mark"></hello-world>
+    <multiply-numbers n1="3" n2="4"></multiply-numbers>
+    <hr />
+    <form method="GET" action="/missing">
+      <data-bind
+        name="Mark"
+        color="blue"
+        score="5"
+        story="Once upon a time..."
+      ></data-bind>
+      <button>Submit</button>
+      <button type="reset">Reset</button>
+    </form>
+  </body>
+</html>
