@@ -196,8 +196,8 @@ class Wrec extends HTMLElement {
       // If the element has no child elements, evaluate its text content.
       if (!element.firstElementChild) this.#evaluateText(element);
     }
-    console.log("#propertyToExpressionsMap =", Wrec.#propertyToExpressionsMap);
-    console.log("#expressionReferencesMap =", this.#expressionReferencesMap);
+    //console.log("#propertyToExpressionsMap =", Wrec.#propertyToExpressionsMap);
+    //console.log("#expressionReferencesMap =", this.#expressionReferencesMap);
   }
 
   static get observedAttributes() {
