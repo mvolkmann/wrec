@@ -1,4 +1,4 @@
-import Wrec from "../wrec.js";
+import Wrec from "wrec";
 
 class RadioGroup extends Wrec {
   // This is the only thing a Wrec subclass

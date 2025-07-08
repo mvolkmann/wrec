@@ -1,4 +1,4 @@
-import Wrec from "../wrec.js";
+import Wrec from "wrec";
 
 class CounterWrec extends Wrec {
   static properties = {
