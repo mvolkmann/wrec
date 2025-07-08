@@ -1,5 +1,7 @@
 # Web Reactive Component Kit (Wreck)
 
+<img alt="shipwreck" src="shipwreck.png">
+
 This is a small libraries that simplifies building web components.
 It is inspired by [Lit](https://lit.dev).
 
