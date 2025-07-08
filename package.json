@@ -1,0 +1,22 @@
+{
+  "name": "wreck",
+  "author": "R. Mark Volkmann",
+  "version": "0.0.1",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mvolkmann/wreck.git"
+  },
+  "keywords": [
+    "web",
+    "component"
+  ],
+  "scripts": {
+    "lint": "oxlint",
+    "minify": "terser wreck.js -c -m -o wreck.min.js"
+  },
+  "devDependencies": {
+    "oxlint": "^1.5.0",
+    "terser": "^5.43.1"
+  }
+}

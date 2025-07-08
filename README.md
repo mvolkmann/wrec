@@ -8,7 +8,7 @@ It is inspired by [Lit](https://lit.dev).
 Wreck has fewer features that Lit.
 In exchange, Wreck:
 
-- is much smaller than Lit
+- is much smaller than Lit (about 1/4 of the size)
 - doesn't require any tooling
 - doesn't require a build process
 
