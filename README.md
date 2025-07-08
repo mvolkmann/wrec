@@ -162,6 +162,28 @@ Wrec looks for this automatically does the rest of the work.
 static formAssociated = true;
 ```
 
+## Security
+
+Wrec uses the JavaScript `eval` function to evaluate JavaScript expressions
+that are placed in attribute values and the text content of elements.
+This has security implications
+if those expressions can come from untrusted sources.
+
+Perhaps the most dangerous thing this allows
+is sending HTTP requests to other servers.
+Such requests could contain data from your web app
+in order to share it with unscrupulous sites.
+
+The easiest way to prevent this is to add a
+Content Security Policy (CSP) to your web app.
+Simply adding the following element as a child of the
+`head` element in each page blocks sending HTTP requests
+to any domain except that of your web app:
+
+```html
+<meta http-equiv="Content-Security-Policy" content="connect-src 'self'" />
+```
+
 ## More Examples
 
 Check out the web app in the `demo` directory.
