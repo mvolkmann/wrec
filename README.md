@@ -121,18 +121,25 @@ when the element is clicked.
 
 The case of the event name within the attribute name
 does not matter because Wrec lowercases the name.
-So the attribute in the previous example
+So the attributes in the previous examples
 can be replaced by `onClick="increment"`.
 
 Wrec supports reactivity.
 Attribute values and the text content of elements
-can refer to web component properties with the syntax `this.propertyName`.
+can refer to web component properties with the syntax `this.somePropertyName`.
 The DOM of the web component is surgically updated.
 Only attribute values and text content
 that refer to modified web component properties are updated.
 Attribute values and text content that contain references to properties
 must be valid JavaScript expressions that are NOT surrounded by `${...}`.
 For an example of this kind of web component, see `demo/hello-world.js`.
+
+Wrec supports conditional and iterative generation of HTML.
+See `demo/temperature-eval.js` for an example of a web component
+that conditionally decides what to render based on an attribute value.
+See `demo/radio-group.js` for an example of a web component
+that iterates over values in a comma-delimited attribute value
+to determine what to render.
 
 Wrec supports two-way data binding for HTML form elements.
 
@@ -149,18 +156,11 @@ For examples, see `demo/data-bind.js`.
 
 Web components that extend `Wrec` can contribute values to
 form submissions by adding the following line to their class definition.
-Wrec looks for that automatically does the rest of the work.
+Wrec looks for this automatically does the rest of the work.
 
 ```js
 static formAssociated = true;
 ```
-
-Wrec supports conditional and iterative generation of HTML.
-See `demo/temperature-eval.js` for an example of a web component
-that conditionally decides what to render based on an attribute value.
-See `demo/radio-group.js` for an example of a web component
-that iterates over values in a comma-delimited attribute value
-to determine what to render.
 
 ## More Examples
 
@@ -174,5 +174,5 @@ The next two uses the Wrec library.
 Compare the files `counter-vanilla.js` and `counter-wrec.js`
 to see how much using Wrec simplifies the code.
 
-The app renders several other web components that are built with wrec.
+The `demo` app renders several other web components that are built with wrec.
 Examine their code for more examples of wrec usage.

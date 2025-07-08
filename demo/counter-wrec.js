@@ -34,7 +34,7 @@ class CounterWrec extends Wrec {
         disabled="this.count === 0">-</button>
       <span>this.count</span>
       <button onClick="this.count++" type="button">+</button>
-      <span>(this.count < 10 ? "single" : "double") + " digit"</span>
+      <span>this.count < 10 ? "single" : "double"</span> digit
     </div>
     `;
   }
