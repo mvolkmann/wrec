@@ -1,4 +1,4 @@
-import Wrec from "wrec";
+import Wrec from "../wrec.js";
 
 class HelloWorld extends Wrec {
   static properties = {

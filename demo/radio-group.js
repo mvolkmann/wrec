@@ -1,8 +1,6 @@
-import Wrec from "wrec";
+import Wrec from "../wrec.js";
 
 class RadioGroup extends Wrec {
-  // This is the only thing a Wrec subclass
-  // must contain to contribute to form submission.
   static formAssociated = true;
 
   static properties = {

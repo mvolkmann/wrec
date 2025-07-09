@@ -1,4 +1,4 @@
-import Wrec from "wrec";
+import Wrec from "../wrec.js";
 
 class NumberInput extends Wrec {
   static formAssociated = true;

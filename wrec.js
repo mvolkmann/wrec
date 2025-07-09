@@ -1,8 +1,8 @@
 const FIRST_CHAR = "a-zA-Z_$";
 const OTHER_CHAR = FIRST_CHAR + "0-9";
 const IDENTIFIER = `[${FIRST_CHAR}][${OTHER_CHAR}]*`;
-const REFERENCE_RE = new RegExp("this." + IDENTIFIER);
-const REFERENCES_RE = new RegExp(REFERENCE_RE.source, "g");
+const REFERENCE_RE = new RegExp(`^this.${IDENTIFIER}$`);
+const REFERENCES_RE = new RegExp(`this.${IDENTIFIER}`, "g");
 const SKIP = "this.".length;
 
 class Wrec extends HTMLElement {
@@ -34,7 +34,8 @@ class Wrec extends HTMLElement {
 
   #bind(element, propertyName, attrName) {
     // Only add a binding if the attribute value is a single property reference.
-    if (!REFERENCE_RE.test(element.getAttribute(attrName))) return;
+    const value = element.getAttribute(attrName);
+    if (!REFERENCE_RE.test(value)) return;
 
     element.addEventListener("input", (event) => {
       this[propertyName] = event.target.value;
@@ -74,19 +75,19 @@ class Wrec extends HTMLElement {
   #defineProperties() {
     const properties = this.constructor.properties;
     const { observedAttributes } = this.constructor;
-    for (const [name, options] of Object.entries(properties)) {
-      this.#defineProperty(name, options, observedAttributes);
+    for (const [name, config] of Object.entries(properties)) {
+      this.#defineProperty(name, config, observedAttributes);
     }
   }
 
-  #defineProperty(propertyName, options, observedAttributes) {
+  #defineProperty(propertyName, config, observedAttributes) {
     // Copy the property value to a new property with a leading underscore.
     // The property is replaced below with Object.defineProperty.
     const value =
       observedAttributes.includes(propertyName) &&
       this.hasAttribute(propertyName)
         ? this.#getTypedAttribute(propertyName)
-        : options.value;
+        : config.value;
     this["_" + propertyName] = value;
 
     Object.defineProperty(this, propertyName, {
@@ -103,8 +104,8 @@ class Wrec extends HTMLElement {
         // If the property propertyName is configured to "reflect" and
         // there is a matching attribute on the custom element,
         // update that attribute.
-        const options = this.constructor.properties[propertyName];
-        if (options.reflect && this.hasAttribute(propertyName)) {
+        const config = this.constructor.properties[propertyName];
+        if (config.reflect && this.hasAttribute(propertyName)) {
           const oldValue = this.#getTypedAttribute(propertyName);
           if (value !== oldValue) {
             this.#updateAttribute(this, propertyName, value);
@@ -132,13 +133,23 @@ class Wrec extends HTMLElement {
 
     for (const attrName of element.getAttributeNames()) {
       const text = element.getAttribute(attrName);
-      if (REFERENCES_RE.test(text)) {
+
+      // If the attribute value is a single property reference ...
+      if (REFERENCE_RE.test(text)) {
         // Configure data binding.
         const propertyName = text.substring(SKIP);
-        const propertyValue = this[propertyName];
-        element.setAttribute(attrName, propertyValue);
-        element[attrName] = propertyValue;
-        this.#bind(element, propertyName, attrName);
+
+        const { localName } = element;
+        if (localName === "input" || localName === "select") {
+          this.#bind(element, propertyName, attrName);
+          //TODO: Why is requestAnimationFrame needed?
+          requestAnimationFrame(() => {
+            this.#setPropertyAndAttribute(element, propertyName);
+          });
+        } else {
+          this.#setPropertyAndAttribute(element, propertyName);
+          this.#bind(element, propertyName, attrName);
+        }
 
         // If the element is a web component,
         // save a mapping from the attribute name in this web component
@@ -176,8 +187,8 @@ class Wrec extends HTMLElement {
     if (localName === "textarea" && REFERENCE_RE.test(text)) {
       // Configure data binding.
       const propertyName = text.substring(SKIP);
-      element.textContent = this[propertyName];
       this.#bind(element, propertyName);
+      element.textContent = this[propertyName];
     } else {
       this.#registerPlaceholders(text, element);
     }
@@ -282,6 +293,12 @@ class Wrec extends HTMLElement {
     if (!this.#formData) return;
     this.#formData.set(propertyName, value);
     this.#internals.setFormValue(this.#formData);
+  }
+
+  #setPropertyAndAttribute(element, propertyName) {
+    const propertyValue = this[propertyName];
+    element[propertyName] = propertyValue;
+    element.setAttribute(propertyName, propertyValue);
   }
 
   #updateAttribute(element, attrName, value) {

@@ -1,4 +1,4 @@
-import Wrec from "wrec";
+import Wrec from "../wrec.js";
 
 class TemperatureEval extends Wrec {
   static properties = {
