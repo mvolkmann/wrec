@@ -33,10 +33,6 @@ class Wrec extends HTMLElement {
   }
 
   #bind(element, propertyName, attrName) {
-    // Only add a binding if the attribute value is a single property reference.
-    const value = element.getAttribute(attrName);
-    if (!REFERENCE_RE.test(value)) return;
-
     element.addEventListener("input", (event) => {
       this[propertyName] = event.target.value;
     });
@@ -139,6 +135,7 @@ class Wrec extends HTMLElement {
         // Configure data binding.
         const propertyName = text.substring(SKIP);
 
+        /*
         const { localName } = element;
         if (localName === "input" || localName === "select") {
           this.#bind(element, propertyName, attrName);
@@ -147,9 +144,9 @@ class Wrec extends HTMLElement {
             this.#setPropertyAndAttribute(element, propertyName);
           });
         } else {
-          this.#setPropertyAndAttribute(element, propertyName);
-          this.#bind(element, propertyName, attrName);
-        }
+        */
+        this.#setPropertyAndAttribute(element, propertyName);
+        this.#bind(element, propertyName, attrName);
 
         // If the element is a web component,
         // save a mapping from the attribute name in this web component
