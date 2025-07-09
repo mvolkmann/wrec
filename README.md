@@ -2,8 +2,9 @@
 
 <img alt="shipwreck" src="shipwreck.png" style="width: 256px">
 
-Wrec is a small library that greatly simplifies building web components.
-It is inspired by [Lit](https://lit.dev).
+Wrec is a small, zero dependency library that
+greatly simplifies building web components.
+It was inspired by [Lit](https://lit.dev).
 
 Wrec has fewer features than Lit.
 In exchange, Wrec:
