@@ -1,7 +1,8 @@
 const FIRST_CHAR = "a-zA-Z_$";
 const OTHER_CHAR = FIRST_CHAR + "0-9";
 const IDENTIFIER = `[${FIRST_CHAR}][${OTHER_CHAR}]*`;
-const REFERENCE_RE = new RegExp("this." + IDENTIFIER, "g");
+const REFERENCE_RE = new RegExp("this." + IDENTIFIER);
+const REFERENCES_RE = new RegExp(REFERENCE_RE.source, "g");
 const SKIP = "this.".length;
 
 class Wrec extends HTMLElement {
@@ -32,6 +33,9 @@ class Wrec extends HTMLElement {
   }
 
   #bind(element, propertyName, attrName) {
+    // Only add a binding if the attribute value is a single property reference.
+    if (!REFERENCE_RE.test(element.getAttribute(attrName))) return;
+
     element.addEventListener("input", (event) => {
       this[propertyName] = event.target.value;
     });
@@ -128,7 +132,7 @@ class Wrec extends HTMLElement {
 
     for (const attrName of element.getAttributeNames()) {
       const text = element.getAttribute(attrName);
-      if (REFERENCE_RE.test(text)) {
+      if (REFERENCES_RE.test(text)) {
         // Configure data binding.
         const propertyName = text.substring(SKIP);
         const propertyValue = this[propertyName];
@@ -167,6 +171,8 @@ class Wrec extends HTMLElement {
     if (localName === "style") return;
 
     const text = element.textContent.trim();
+    // Only add a binding the element is a "textarea" and
+    // its text content is a single property reference.
     if (localName === "textarea" && REFERENCE_RE.test(text)) {
       // Configure data binding.
       const propertyName = text.substring(SKIP);
@@ -233,7 +239,7 @@ class Wrec extends HTMLElement {
   // Do not place untrusted expressions in
   // attribute values or the text content of elements!
   #registerPlaceholders(text, element, attrName) {
-    const matches = text.match(REFERENCE_RE);
+    const matches = text.match(REFERENCES_RE);
     if (!matches) return;
 
     // Only map properties to expressions once for each web component because

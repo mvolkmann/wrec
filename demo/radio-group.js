@@ -8,13 +8,14 @@ class RadioGroup extends Wrec {
   static properties = {
     default: { type: String },
     name: { type: String },
-    options: { type: String },
-    value: { type: String },
+    options: { type: String, reflect: true },
+    value: { type: String, reflect: true },
   };
 
   attributeChangedCallback(attr, oldValue, newValue) {
     super.attributeChangedCallback(attr, oldValue, newValue);
     if (attr === "value") {
+      // Update the checked state of the radio buttons.
       const inputs = this.shadowRoot.querySelectorAll("input");
       for (const input of inputs) {
         input.checked = input.value === newValue;

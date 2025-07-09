@@ -5,6 +5,7 @@ class DataBind extends Wrec {
   static properties = {
     color: { type: String, reflect: true },
     name: { type: String, reflect: true },
+    options: { type: String, reflect: true },
     score: { type: Number, reflect: true },
     story: { type: String, reflect: true },
   };
@@ -31,15 +32,19 @@ class DataBind extends Wrec {
         </div>
         <div style="display: flex">
           <label for="color">Color:</label>
-          <radio-group name="color" options="red,green,blue" value="this.color"></radio-group>
+          <radio-group
+            name="color1"
+            options="this.options"
+            value="this.color"
+          ></radio-group>
         </div>
         <div>
           <label>Color:</label>
-          <select value="this.color">
-            <option value="red">Red</option>
-            <option value="green">Green</option>
-            <option value="blue">Blue</option>
-          </select>
+          <select-list
+            name="color2"
+            options="this.options"
+            value="this.color"
+          ></select-list>
         </div>
         <p>You selected the color <span>this.color</span>.</p>
         <div>
