@@ -131,12 +131,11 @@ class Wrec extends HTMLElement {
     for (const attrName of element.getAttributeNames()) {
       const text = element.getAttribute(attrName);
 
-      // If the attribute value is a single property reference ...
+      // If the attribute value is a single property reference,
+      // configure two-way data binding.
       if (REFERENCE_RE.test(text)) {
-        // Configure data binding.
         const propertyName = text.substring(SKIP);
-
-        this.#setPropertyAndAttribute(element, propertyName);
+        element[propertyName] = this[propertyName];
         if (attrName === "value") this.#bind(element, propertyName, attrName);
 
         // If the element is a web component,
@@ -284,12 +283,6 @@ class Wrec extends HTMLElement {
     if (!this.#formData) return;
     this.#formData.set(propertyName, value);
     this.#internals.setFormValue(this.#formData);
-  }
-
-  #setPropertyAndAttribute(element, propertyName) {
-    const propertyValue = this[propertyName];
-    element[propertyName] = propertyValue;
-    element.setAttribute(propertyName, propertyValue);
   }
 
   #updateAttribute(element, attrName, value) {

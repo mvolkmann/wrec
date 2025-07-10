@@ -38,7 +38,6 @@ class DataBind extends Wrec {
             value="this.color"
           ></radio-group>
         </div>
-        <!--
         <div>
           <label>Color:</label>
           <select-list
@@ -47,7 +46,6 @@ class DataBind extends Wrec {
             value="this.color"
           ></select-list>
         </div>
-        -->
         <p>You selected the color <span>this.color</span>.</p>
         <div>
           <label>Story:</label>
