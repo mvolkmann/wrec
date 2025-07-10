@@ -6,14 +6,12 @@ class MultiplyNumbers extends Wrec {
     n2: { type: Number },
   };
 
-  html() {
-    return /*html*/ `
-      <p>
-        <span>this.n1</span> * <span>this.n2</span> =
-        <span>this.n1 * this.n2</span>
-      </p>
-    `;
-  }
+  static html = /*html*/ `
+    <p>
+      <span>this.n1</span> * <span>this.n2</span> =
+      <span>this.n1 * this.n2</span>
+    </p>
+  `;
 }
 
 MultiplyNumbers.register();

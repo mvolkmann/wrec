@@ -9,6 +9,12 @@ class SelectList extends Wrec {
     value: { type: String },
   };
 
+  static html = /*html*/ `
+    <select name="${this.name}" value="this.value">
+      this.options.split(",").map((option) => this.makeOption(option)).join("")
+    </select>
+  `;
+
   connectedCallback() {
     super.connectedCallback();
 
@@ -20,14 +26,6 @@ class SelectList extends Wrec {
       if (!this.value) this.value = this.default;
       if (!options.includes(this.value)) this.value = firstOption;
     });
-  }
-
-  html() {
-    return /*html*/ `
-      <select name="${this.name}" value="this.value">
-        this.options.split(",").map((option) => this.makeOption(option)).join("")
-      </select>
-    `;
   }
 
   // This method cannot be private because it is

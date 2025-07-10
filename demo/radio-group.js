@@ -37,28 +37,23 @@ class RadioGroup extends Wrec {
     });
   }
 
-  css() {
-    return /*css*/ `
-      .radio-group {
+  static css = /*css*/ `
+    .radio-group {
+      display: flex;
+      gap: 0.25rem;
+
+      > div {
         display: flex;
-        gap: 0.25rem;
+        align-items: center;
+      } 
+    }
+  `;
 
-        > div {
-          display: flex;
-          align-items: center;
-        } 
-      }
-    `;
-  }
-
-  html() {
-    // This web component uses iteration to determine what to render.
-    return /*html*/ `
-      <div class="radio-group">
-        this.options.split(",").map((option) => this.makeRadio(option)).join("")
-      </div>
-    `;
-  }
+  static html = /*html*/ `
+    <div class="radio-group">
+      this.options.split(",").map((option) => this.makeRadio(option)).join("")
+    </div>
+  `;
 
   // This method cannot be private because it is called when
   // a change event is dispatched from a radio button.

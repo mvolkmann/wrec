@@ -5,30 +5,23 @@ class CounterWrec extends Wrec {
     count: { type: Number },
   };
 
-  css() {
-    return /*css*/ `
-      :not(:defined) {
-        visibility: hidden;
-      }
+  static css = /*css*/ `
+    .counter {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
 
-      .counter {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
+    button {
+      background-color: lightgreen;
+    }
 
-      button {
-        background-color: lightgreen;
-      }
+    button:disabled {
+      background-color: gray;
+    }
+  `;
 
-      button:disabled {
-        background-color: gray;
-      }
-    `;
-  }
-
-  html() {
-    return /*html*/ `
+  static html = /*html*/ `
     <div>
       <button onClick="decrement" type="button"
         disabled="this.count === 0">-</button>
@@ -36,8 +29,7 @@ class CounterWrec extends Wrec {
       <button onClick="this.count++" type="button">+</button>
       <span>this.count < 10 ? "single" : "double"</span> digit
     </div>
-    `;
-  }
+  `;
 
   decrement() {
     if (this.count > 0) this.count--;

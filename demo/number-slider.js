@@ -6,24 +6,20 @@ class NumberSlider extends Wrec {
     value: { type: Number },
   };
 
-  css() {
-    return /*css*/ `
-      input[type="number"] {
-        width: 6rem;
-      }
+  static css = /*css*/ `
+    input[type="number"] {
+      width: 6rem;
+    }
 
-      label { font-weight: bold; }
-    `;
-  }
+    label { font-weight: bold; }
+  `;
 
-  html() {
-    return /*html*/ `
-      <div>
-        <label>this.label</label>
-        <input type="range" min="0" value="this.value" />
-     </div>
-    `;
-  }
+  static html = /*html*/ `
+    <div>
+      <label>this.label</label>
+      <input type="range" min="0" value="this.value" />
+    </div>
+  `;
 }
 
 NumberSlider.register();

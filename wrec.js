@@ -50,10 +50,9 @@ class Wrec extends HTMLElement {
 
   // This is not private so it can be called from subclasses.
   buildDOM() {
-    let template = this.constructor.prototype.css
-      ? `<style>${this.css()}</style>`
-      : "";
-    template += this.html();
+    const clazz = this.constructor;
+    let template = clazz.css ? `<style>${clazz.css}</style>` : "";
+    template += clazz.html;
     Wrec.#template.innerHTML = template;
 
     this.shadowRoot.replaceChildren(Wrec.#template.content.cloneNode(true));

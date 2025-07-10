@@ -48,35 +48,31 @@ Here are the steps:
        count: { type: Number },
      };
 
-     css() {
-       return /*css*/ `
-          .counter {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-          }
+     static css = /*css*/ `
+       .counter {
+         display: flex;
+         align-items: center;
+         gap: 0.5rem;
+       }
    
-          button {
-            background-color: lightgreen;
-          }
+       button {
+         background-color: lightgreen;
+       }
    
-          button:disabled {
-            background-color: gray;
-          }
-        `;
-     }
+       button:disabled {
+         background-color: gray;
+       }
+     `;
 
-     html() {
-       return /*html*/ `
-        <div>
-          <button onClick="decrement" type="button"
-            disabled="this.count === 0">-</button>
-          <span>this.count</span>
-          <button onClick="this.count++" type="button">+</button>
-          <span>(this.count < 10 ? "single" : "double") + " digit"</span>
-        </div>
-        `;
-     }
+     static html = /*html*/ `
+       <div>
+         <button onClick="decrement" type="button"
+           disabled="this.count === 0">-</button>
+         <span>this.count</span>
+         <button onClick="this.count++" type="button">+</button>
+         <span>(this.count < 10 ? "single" : "double") + " digit"</span>
+       </div>
+     `;
 
      decrement() {
        if (this.count > 0) this.count--;

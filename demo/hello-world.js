@@ -5,18 +5,14 @@ class HelloWorld extends Wrec {
     name: { type: String, value: "World" },
   };
 
-  css() {
-    return /*css*/ `p { color: purple; }`;
-  }
+  static css = /*css*/ `p { color: purple; }`;
 
-  html() {
-    return /*html*/ `
-      <p>
-        Hello, <span>this.name</span>.
-        Shouting <span>this.name.toUpperCase()</span>!
-      </p>
-    `;
-  }
+  static html = /*html*/ `
+    <p>
+      Hello, <span>this.name</span>.
+      Shouting <span>this.name.toUpperCase()</span>!
+    </p>
+  `;
 }
 
 HelloWorld.register();
