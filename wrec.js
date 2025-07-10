@@ -32,6 +32,7 @@ class Wrec extends HTMLElement {
     this.#setFormValue(attrName, value);
   }
 
+  // attrName must be "value" OR undefined!
   #bind(element, propertyName, attrName) {
     element.addEventListener("input", (event) => {
       this[propertyName] = event.target.value;
@@ -224,7 +225,10 @@ class Wrec extends HTMLElement {
       }
     }
 
-    this.#updateBindings(propertyName);
+    // Wait for the DOM to update.
+    requestAnimationFrame(() => {
+      this.#updateBindings(propertyName);
+    });
   }
 
   static register() {
