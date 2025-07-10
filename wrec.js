@@ -17,7 +17,8 @@ class Wrec extends HTMLElement {
     super();
     this.attachShadow({ mode: "open" });
 
-    this.constructor["#propertyToExpressionsMap"] = new Map();
+    const map = this.constructor["#propertyToExpressionsMap"];
+    if (!map) this.constructor["#propertyToExpressionsMap"] = new Map();
 
     if (this.constructor.formAssociated) {
       this.#internals = this.attachInternals();
