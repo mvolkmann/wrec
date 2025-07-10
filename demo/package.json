@@ -2,9 +2,13 @@
   "name": "wrec-demo",
   "scripts": {
     "dev": "vite",
-    "lint": "oxlint"
+    "lint": "oxlint",
+    "test": "npx playwright test",
+    "testui": "npx playwright test --ui"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.0",
+    "@types/node": "^24.0.13",
     "oxlint": "^1.5.0",
     "vite": "^7.0.1"
   }
