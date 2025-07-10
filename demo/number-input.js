@@ -3,8 +3,8 @@ import Wrec from "../wrec.js";
 class NumberInput extends Wrec {
   static formAssociated = true;
   static properties = {
-    label: { type: String, reflect: true },
-    value: { type: Number, reflect: true },
+    label: { type: String },
+    value: { type: Number },
   };
 
   css() {

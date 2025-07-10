@@ -2,8 +2,8 @@ import Wrec from "../wrec.js";
 
 class NumberSlider extends Wrec {
   static properties = {
-    label: { type: String, reflect: true },
-    value: { type: Number, reflect: true },
+    label: { type: String },
+    value: { type: Number },
   };
 
   css() {

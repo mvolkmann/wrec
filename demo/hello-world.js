@@ -2,7 +2,7 @@ import Wrec from "../wrec.js";
 
 class HelloWorld extends Wrec {
   static properties = {
-    name: { type: String, value: "World", reflect: true },
+    name: { type: String, value: "World" },
   };
 
   css() {

@@ -100,11 +100,9 @@ class Wrec extends HTMLElement {
 
         this["_" + propertyName] = value;
 
-        // If the property propertyName is configured to "reflect" and
-        // there is a matching attribute on the custom element,
+        // If there is a matching attribute on the custom element,
         // update that attribute.
-        const config = this.constructor.properties[propertyName];
-        if (config.reflect && this.hasAttribute(propertyName)) {
+        if (this.hasAttribute(propertyName)) {
           const oldValue = this.#getTypedAttribute(propertyName);
           if (value !== oldValue) {
             this.#updateAttribute(this, propertyName, value);

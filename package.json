@@ -2,7 +2,7 @@
   "name": "wrec",
   "description": "a small library that greatly simplifies building web components",
   "author": "R. Mark Volkmann",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -23,7 +23,8 @@
   ],
   "scripts": {
     "lint": "oxlint",
-    "minify": "terser wrec.js -c -m -o dist/wrec.min.js"
+    "minify": "terser wrec.js -c -m -o dist/wrec.min.js",
+    "prepare": "npm run minify"
   },
   "devDependencies": {
     "oxlint": "^1.5.0",

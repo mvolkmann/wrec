@@ -45,7 +45,7 @@ Here are the steps:
 
    class MyCounter extends Wrec {
      static properties = {
-       count: { type: Number, reflect: true },
+       count: { type: Number },
      };
 
      css() {

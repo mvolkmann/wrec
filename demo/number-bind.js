@@ -2,7 +2,7 @@ import Wrec from "../wrec.js";
 
 class NumberBind extends Wrec {
   static properties = {
-    score: { type: Number, reflect: true },
+    score: { type: Number },
   };
 
   html() {

@@ -3,11 +3,11 @@ import Wrec from "../wrec.js";
 class DataBind extends Wrec {
   static formAssociated = true;
   static properties = {
-    color: { type: String, reflect: true },
-    name: { type: String, reflect: true },
-    options: { type: String, reflect: true },
-    score: { type: Number, reflect: true },
-    story: { type: String, reflect: true },
+    color: { type: String },
+    name: { type: String },
+    options: { type: String },
+    score: { type: Number },
+    story: { type: String },
   };
 
   css() {

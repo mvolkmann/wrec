@@ -6,8 +6,8 @@ class RadioGroup extends Wrec {
   static properties = {
     default: { type: String },
     name: { type: String },
-    options: { type: String, reflect: true },
-    value: { type: String, reflect: true },
+    options: { type: String },
+    value: { type: String },
   };
 
   attributeChangedCallback(attr, oldValue, newValue) {

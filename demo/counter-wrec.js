@@ -2,7 +2,7 @@ import Wrec from "../wrec.js";
 
 class CounterWrec extends Wrec {
   static properties = {
-    count: { type: Number, reflect: true },
+    count: { type: Number },
   };
 
   css() {
