@@ -10,14 +10,16 @@ class RadioGroup extends Wrec {
     value: { type: String },
   };
 
-  attributeChangedCallback(attr, oldValue, newValue) {
-    super.attributeChangedCallback(attr, oldValue, newValue);
-    if (attr === "value") {
+  attributeChangedCallback(attrName, oldValue, newValue) {
+    super.attributeChangedCallback(attrName, oldValue, newValue);
+    if (attrName === "value") {
       // Update the checked state of the radio buttons.
       const inputs = this.shadowRoot.querySelectorAll("input");
       for (const input of inputs) {
         input.checked = input.value === newValue;
       }
+    } else if (attrName === "options") {
+      this.#fixValue();
     }
   }
 
@@ -25,6 +27,14 @@ class RadioGroup extends Wrec {
     super.connectedCallback();
     if (!this.default) this.default = this.options.split(",")[0];
     if (!this.value) this.value = this.default;
+    this.#fixValue();
+  }
+
+  #fixValue() {
+    requestAnimationFrame(() => {
+      const options = this.options.split(",");
+      if (!options.includes(this.value)) this.value = options[0];
+    });
   }
 
   css() {

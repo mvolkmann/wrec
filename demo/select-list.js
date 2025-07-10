@@ -9,6 +9,19 @@ class SelectList extends Wrec {
     value: { type: String },
   };
 
+  connectedCallback() {
+    super.connectedCallback();
+
+    // Wait for the DOM to update.
+    requestAnimationFrame(() => {
+      const options = this.options.split(",");
+      const firstOption = options[0];
+      if (!this.default) this.default = firstOption;
+      if (!this.value) this.value = this.default;
+      if (!options.includes(this.value)) this.value = firstOption;
+    });
+  }
+
   html() {
     return /*html*/ `
       <select name="${this.name}" value="this.value">
