@@ -6,7 +6,6 @@ const REFERENCES_RE = new RegExp(`this.${IDENTIFIER}`, "g");
 const SKIP = "this.".length;
 
 class Wrec extends HTMLElement {
-  static #propertyToExpressionsMap = new Map();
   static #template = document.createElement("template");
 
   #expressionReferencesMap = new Map();
@@ -17,6 +16,8 @@ class Wrec extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
+
+    this.constructor["#propertyToExpressionsMap"] = new Map();
 
     if (this.constructor.formAssociated) {
       this.#internals = this.attachInternals();
@@ -155,11 +156,9 @@ class Wrec extends HTMLElement {
     }
   }
 
-  static #evaluateInContext(expression, context) {
-    return function () {
-      // oxlint-disable-next-line no-eval
-      return eval(expression);
-    }.call(context);
+  #evaluateInContext(expression) {
+    // oxlint-disable-next-line no-eval
+    return (() => eval(expression)).call(this);
   }
 
   #evaluateText(element) {
@@ -200,7 +199,8 @@ class Wrec extends HTMLElement {
       // If the element has no child elements, evaluate its text content.
       if (!element.firstElementChild) this.#evaluateText(element);
     }
-    //console.log("#propertyToExpressionsMap =", Wrec.#propertyToExpressionsMap);
+    //const map = this.constructor["#propertyToExpressionsMap"];
+    //console.log("#propertyToExpressionsMap =", map);
     //console.log("#expressionReferencesMap =", this.#expressionReferencesMap);
   }
 
@@ -210,9 +210,10 @@ class Wrec extends HTMLElement {
 
   #react(propertyName) {
     // Update all expression references.
-    const expressions = Wrec.#propertyToExpressionsMap.get(propertyName) || [];
+    const map = this.constructor["#propertyToExpressionsMap"];
+    const expressions = map.get(propertyName) || [];
     for (const expression of expressions) {
-      const value = Wrec.#evaluateInContext(expression, this);
+      const value = this.#evaluateInContext(expression);
       const references = this.#expressionReferencesMap.get(expression) || [];
       for (const reference of references) {
         if (reference instanceof Element) {
@@ -248,10 +249,11 @@ class Wrec extends HTMLElement {
     if (!this.constructor.processed) {
       matches.forEach((capture) => {
         const propertyName = capture.substring(SKIP);
-        let expressions = Wrec.#propertyToExpressionsMap.get(propertyName);
+        const map = this.constructor["#propertyToExpressionsMap"];
+        let expressions = map.get(propertyName);
         if (!expressions) {
           expressions = [];
-          Wrec.#propertyToExpressionsMap.set(propertyName, expressions);
+          map.set(propertyName, expressions);
         }
         expressions.push(text);
       });
@@ -264,7 +266,7 @@ class Wrec extends HTMLElement {
     }
     references.push(attrName ? { element, attrName } : element);
 
-    const value = Wrec.#evaluateInContext(text, this);
+    const value = this.#evaluateInContext(text);
     if (attrName) {
       this.#updateAttribute(element, attrName, value);
     } else {
