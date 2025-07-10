@@ -69,9 +69,9 @@ class RadioGroup extends Wrec {
           type="radio"
           id="${option}"
           name="${this.name}"
+          onchange="handleChange"
           value="${option}"
           ${option === this.value ? "checked" : ""}
-          onchange="handleChange"
         />
         <label for="${option}">${option}</label>
       </div>

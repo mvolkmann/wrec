@@ -135,18 +135,8 @@ class Wrec extends HTMLElement {
         // Configure data binding.
         const propertyName = text.substring(SKIP);
 
-        /*
-        const { localName } = element;
-        if (localName === "input" || localName === "select") {
-          this.#bind(element, propertyName, attrName);
-          //TODO: Why is requestAnimationFrame needed?
-          requestAnimationFrame(() => {
-            this.#setPropertyAndAttribute(element, propertyName);
-          });
-        } else {
-        */
         this.#setPropertyAndAttribute(element, propertyName);
-        this.#bind(element, propertyName, attrName);
+        if (attrName === "value") this.#bind(element, propertyName, attrName);
 
         // If the element is a web component,
         // save a mapping from the attribute name in this web component

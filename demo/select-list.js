@@ -10,22 +10,11 @@ class SelectList extends Wrec {
   };
 
   html() {
-    //TODO: Why does selecting an option trigger a change to the options attribute?
     return /*html*/ `
-      <select name="${this.name}" onchange="handleChange" value="this.value">
+      <select name="${this.name}" value="this.value">
         this.options.split(",").map((option) => this.makeOption(option)).join("")
       </select>
     `;
-  }
-
-  // This method cannot be private because it is called when
-  // a change event is dispatched from a radio button.
-  handleChange(event) {
-    const { value } = event.target;
-    this.value = value;
-
-    // This allows users of the this web component to listen for changes.
-    this.dispatchEvent(new Event("change"));
   }
 
   // This method cannot be private because it is
