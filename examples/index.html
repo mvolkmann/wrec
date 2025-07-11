@@ -1,9 +1,9 @@
 <html>
   <head>
     <title>wrec Demo</title>
+    <script src="binding-demo.js" type="module"></script>
     <script src="counter-vanilla.js" type="module"></script>
     <script src="counter-wrec.js" type="module"></script>
-    <script src="data-bind.js" type="module"></script>
     <script src="data-star.js" type="module"></script>
     <script src="hello-world.js" type="module"></script>
     <script src="multiply-numbers.js" type="module"></script>
@@ -20,21 +20,21 @@
     <counter-vanilla count="3"></counter-vanilla>
 
     <h2>Wrec</h2>
-    <counter-wrec count="3"></counter-wrec>
-    <counter-wrec count="1"></counter-wrec>
-    <temperature-eval temperature="100"></temperature-eval>
     <hello-world></hello-world>
     <hello-world name="Mark"></hello-world>
+    <temperature-eval temperature="100"></temperature-eval>
     <multiply-numbers n1="3" n2="4"></multiply-numbers>
+    <counter-wrec count="3"></counter-wrec>
+    <counter-wrec count="1"></counter-wrec>
     <hr />
     <form method="GET" action="/missing">
-      <data-bind
+      <binding-demo
         name="Mark"
         color="blue"
         options="red,green,blue"
         score="5"
         story="Once upon a time..."
-      ></data-bind>
+      ></binding-demo>
       <button>Submit</button>
       <button type="reset">Reset</button>
     </form>

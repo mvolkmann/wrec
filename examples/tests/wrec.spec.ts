@@ -1,5 +1,12 @@
 import { expect, Locator, test } from "@playwright/test";
 
+function setAttribute(locator: Locator, attrName: string, attrValue: string) {
+  return locator.evaluate(
+    (el, { attrName, attrValue }) => el.setAttribute(attrName, attrValue),
+    { attrName, attrValue }
+  );
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto("http://localhost:5173/");
 });
@@ -49,20 +56,26 @@ test("counter-wrec", async ({ page }) => {
   await expect(decBtn).toBeEnabled();
 });
 
-//TODO: Why doesn't this work?
-function setAttribute(locator: Locator, attrName: string, attrValue: string) {
-  return locator.evaluate((el: HTMLElement) =>
-    el.setAttribute(attrName, attrValue)
-  );
-}
+test("hello-world", async ({ page }) => {
+  let component = page.locator("hello-world").first();
+  let p = component.locator("p");
+  await expect(p).toHaveText("Hello, World. Shouting WORLD!");
+
+  component = page.locator("hello-world").last();
+  p = component.locator("p");
+  await expect(p).toHaveText("Hello, Mark. Shouting MARK!");
+
+  setAttribute(component, "name", "Tami");
+  await expect(p).toHaveText("Hello, Tami. Shouting TAMI!");
+});
 
 test("multiply-numbers", async ({ page }) => {
   const component = page.locator("multiply-numbers");
   const result = component.locator("span").last();
   await expect(result).toHaveText("12");
 
-  component.evaluate((el) => el.setAttribute("n1", "5"));
-  component.evaluate((el) => el.setAttribute("n2", "6"));
+  setAttribute(component, "n1", "5");
+  setAttribute(component, "n2", "6");
   await expect(result).toHaveText("30");
 });
 
@@ -70,7 +83,6 @@ test("temperature-eval", async ({ page }) => {
   const component = page.locator("temperature-eval");
   await expect(component).toHaveText("not freezing");
 
-  component.evaluate((el) => el.setAttribute("temperature", "20"));
-  //await setAttribute(component, "temperature", "20");
+  setAttribute(component, "temperature", "20");
   await expect(component).toHaveText("freezing");
 });

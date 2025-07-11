@@ -1,6 +1,6 @@
 import Wrec, { css, html } from "../wrec.js";
 
-class DataBind extends Wrec {
+class BindingDemo extends Wrec {
   static formAssociated = true;
   static properties = {
     color: { type: String },
@@ -63,4 +63,4 @@ class DataBind extends Wrec {
   }
 }
 
-DataBind.register();
+BindingDemo.register();
