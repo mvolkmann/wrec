@@ -105,10 +105,14 @@ test("binding-demo-input", async ({ page }) => {
   const p = bindingDemo.locator("#input-demo > p");
   await expect(p).toHaveText("Hello, Mark!");
 
-  setAttribute(bindingDemo, "name", "Tami");
-  await expect(p).toHaveText("Hello, Tami!");
+  let name = "Tami";
+  setAttribute(bindingDemo, "name", name);
+  await expect(p).toHaveText(`Hello, ${name}!`);
 
-  //TODO: Type in the input.
+  const input = bindingDemo.locator("#input-demo > input");
+  name = "Comet";
+  await input.fill(name);
+  await expect(p).toHaveText(`Hello, ${name}!`);
 });
 
 test("binding-demo-textarea", async ({ page }) => {
@@ -116,11 +120,14 @@ test("binding-demo-textarea", async ({ page }) => {
   const span = bindingDemo.locator("#textarea-demo > p > span");
   await expect(span).toHaveText("Once upon a time...");
 
-  const story = "Far away ...";
+  let story = "Far away ...";
   setAttribute(bindingDemo, "story", story);
   await expect(span).toHaveText(story);
 
-  //TODO: Type in the textarea.
+  const textarea = bindingDemo.locator("#textarea-demo > textarea");
+  story = "In a land ...";
+  await textarea.fill(story);
+  await expect(span).toHaveText(story);
 });
 
 test("counter-vanilla", async ({ page }) => {
