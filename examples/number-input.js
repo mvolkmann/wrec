@@ -31,12 +31,10 @@ class NumberInput extends Wrec {
   `;
 
   static html = html`
-    <div>
-      <label>this.label</label>
-      <button onclick="decrement" type="button">-</button>
-      <input type="number" value="this.value" />
-      <button onclick="increment" type="button">+</button>
-    </div>
+    <label>this.label</label>
+    <button onclick="decrement" type="button">-</button>
+    <input type="number" value="this.value" />
+    <button onclick="increment" type="button">+</button>
   `;
 
   decrement() {

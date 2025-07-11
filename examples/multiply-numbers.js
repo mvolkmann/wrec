@@ -7,10 +7,10 @@ class MultiplyNumbers extends Wrec {
   };
 
   static html = html`
-    <p>
+    <div>
       <span>this.n1</span> * <span>this.n2</span> =
       <span>this.n1 * this.n2</span>
-    </p>
+    </div>
   `;
 }
 

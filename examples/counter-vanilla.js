@@ -20,11 +20,9 @@ template.innerHTML = html`
       background-color: gray;
     }
   </style>
-  <div>
-    <button id="decrement-btn" type="button">-</button>
-    <span></span>
-    <button id="increment-btn" type="button">+</button>
-  </div>
+  <button id="decrement-btn" type="button">-</button>
+  <span></span>
+  <button id="increment-btn" type="button">+</button>
 `;
 
 class CounterVanilla extends HTMLElement {

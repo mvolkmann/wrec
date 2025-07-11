@@ -14,12 +14,10 @@ class DataStar extends Wrec {
   `;
 
   static html = html`
-    <div>
-      <input value="this.username" />
-      <div>My name is <span>this.username.toUpperCase()</span>.</div>
-      <div>length = <span>this.username.length</span></div>
-      <button class="this.username.length > 2 ? '' : 'hide'">Save</button>
-    </div>
+    <input value="this.username" />
+    <div>My name is <span>this.username.toUpperCase()</span>.</div>
+    <div>length = <span>this.username.length</span></div>
+    <button class="this.username.length > 2 ? '' : 'hide'">Save</button>
   `;
 }
 

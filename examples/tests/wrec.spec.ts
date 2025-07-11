@@ -61,15 +61,22 @@ test("binding-demo-colors", async ({ page }) => {
   await expectProperty(selectList, "value", color);
   await expect(span).toHaveText(color);
 
-  await setAttribute(bindingDemo, "options", "pink,yellow");
+  const options = "pink,yellow";
+  await setAttribute(bindingDemo, "options", options);
   color = "pink";
   await expectProperty(radioGroup, "value", color);
   await expectProperty(selectList, "value", color);
   await expect(span).toHaveText(color);
+
+  /*
+  const divs = await radioGroup.locator("div");
+  const count = await divs.count();
+  expect(count).toBe(options.split(",").length);
+  */
 });
 
 test("counter-vanilla", async ({ page }) => {
-  const rootSelector = "counter-vanilla >>> div";
+  const rootSelector = "counter-vanilla";
   const span = page.locator(rootSelector + "> span").first();
   await expect(span).toHaveText("3");
 
@@ -89,7 +96,7 @@ test("counter-vanilla", async ({ page }) => {
 });
 
 test("counter-wrec", async ({ page }) => {
-  const div = page.locator("counter-wrec").first().locator("div");
+  const div = page.locator("counter-wrec").first();
   const span = div.locator("span").first();
   await expect(span).toHaveText("3");
 

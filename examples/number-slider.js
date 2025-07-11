@@ -7,6 +7,10 @@ class NumberSlider extends Wrec {
   };
 
   static css = css`
+    :host {
+      display: block;
+    }
+
     input[type="number"] {
       width: 6rem;
     }
@@ -17,10 +21,8 @@ class NumberSlider extends Wrec {
   `;
 
   static html = html`
-    <div>
-      <label>this.label</label>
-      <input type="range" min="0" value="this.value" />
-    </div>
+    <label>this.label</label>
+    <input type="range" min="0" value="this.value" />
   `;
 }
 

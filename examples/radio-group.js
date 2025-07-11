@@ -38,9 +38,9 @@ class RadioGroup extends Wrec {
   }
 
   static css = css`
-    .radio-group {
+    :host > div {
       display: flex;
-      gap: 0.25rem;
+      gap: 0.5rem;
 
       > div {
         display: flex;
@@ -50,7 +50,7 @@ class RadioGroup extends Wrec {
   `;
 
   static html = html`
-    <div class="radio-group">
+    <div>
       this.options.split(",").map((option) => this.makeRadio(option)).join("")
     </div>
   `;
