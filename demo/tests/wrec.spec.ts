@@ -32,8 +32,7 @@ test("vanilla counter works", async ({ page }) => {
 
 test("wrec counter works", async ({ page }) => {
   await goTo(page);
-  const counter = page.locator("counter-wrec").first();
-  const div = counter.locator("div");
+  const div = page.locator("counter-wrec").first().locator("div");
   const span = div.locator("span").first();
   await expect(span).toHaveText("3");
 
