@@ -86,18 +86,19 @@ class Wrec extends HTMLElement {
       this.hasAttribute(propertyName)
         ? this.#getTypedAttribute(propertyName)
         : config.value;
-    this["_" + propertyName] = value;
+    const privateName = "#" + propertyName;
+    this[privateName] = value;
 
     Object.defineProperty(this, propertyName, {
       enumerable: true,
       get() {
-        return this["_" + propertyName];
+        return this[privateName];
       },
       set(value) {
-        const oldValue = this["_" + propertyName];
+        const oldValue = this[privateName];
         if (value === oldValue) return;
 
-        this["_" + propertyName] = value;
+        this[privateName] = value;
 
         // If there is a matching attribute on the custom element,
         // update that attribute.
