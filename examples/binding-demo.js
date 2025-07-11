@@ -21,7 +21,7 @@ class BindingDemo extends Wrec {
   `;
 
   static html = html`
-    <div>
+    <section>
       <div>
         <label>Name:</label>
         <input value="this.name" />
@@ -52,7 +52,7 @@ class BindingDemo extends Wrec {
       <number-input label="Favorite Number:" value="this.score"></number-input>
       <number-slider label="Slider:" value="this.score"></number-slider>
       <p>Your score is <span>this.score</span>.</p>
-    </div>
+    </section>
   `;
 
   formResetCallback() {

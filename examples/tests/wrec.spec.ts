@@ -1,5 +1,17 @@
 import { expect, Locator, test } from "@playwright/test";
 
+async function expectProperty(
+  locator: Locator,
+  propertyName: string,
+  expectedValue: string
+) {
+  const value = await locator.evaluate(
+    (el, { propertyName }) => el[propertyName],
+    { propertyName }
+  );
+  return expect(value).toBe(expectedValue);
+}
+
 function setAttribute(locator: Locator, attrName: string, attrValue: string) {
   return locator.evaluate(
     (el, { attrName, attrValue }) => el.setAttribute(attrName, attrValue),
@@ -13,6 +25,37 @@ test.beforeEach(async ({ page }) => {
 
 test("has title", async ({ page }) => {
   await expect(page).toHaveTitle(/wrec Demo/);
+});
+
+test("binding-demo-input", async ({ page }) => {
+  const bindingDemo = page.locator("binding-demo");
+  const div1 = bindingDemo.locator("div").first();
+  const p = div1.locator("p");
+  await expect(p).toHaveText("Hello, Mark!");
+
+  setAttribute(bindingDemo, "name", "Tami");
+  await expect(p).toHaveText("Hello, Tami!");
+});
+
+test("binding-demo-colors", async ({ page }) => {
+  const bindingDemo = page.locator("binding-demo");
+
+  const radioGroup = bindingDemo.locator("radio-group");
+  await expectProperty(radioGroup, "value", "blue");
+
+  const selectList = bindingDemo.locator("select-list");
+  await expectProperty(selectList, "value", "blue");
+
+  let newColor = "green";
+  await radioGroup.locator(`input[value="${newColor}"]`).click();
+  await expectProperty(radioGroup, "value", newColor);
+  await expectProperty(selectList, "value", newColor);
+
+  newColor = "red";
+  const select = selectList.locator("select");
+  await select.selectOption(newColor);
+  await expectProperty(radioGroup, "value", newColor);
+  await expectProperty(selectList, "value", newColor);
 });
 
 test("counter-vanilla", async ({ page }) => {
