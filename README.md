@@ -132,6 +132,9 @@ Attribute values and text content that contain references to properties
 must be valid JavaScript expressions that are NOT surrounded by `${...}`.
 For an example of this kind of web component, see `examples/hello-world.js`.
 
+Wrec evaluates JavaScript expressions in the context of a web component instance
+which can be referred to with the `this` keyword in the expressions.
+
 Wrec supports conditional and iterative generation of HTML.
 See `examples/temperature-eval.js` for an example of a web component
 that conditionally decides what to render based on an attribute value.
