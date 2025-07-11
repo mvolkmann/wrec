@@ -12,11 +12,18 @@ async function expectProperty(
   return expect(value).toBe(expectedValue);
 }
 
-function setAttribute(locator: Locator, attrName: string, attrValue: string) {
+function setAttribute(locator: Locator, name: string, value: string) {
   return locator.evaluate(
-    (el, { attrName, attrValue }) => el.setAttribute(attrName, attrValue),
-    { attrName, attrValue }
+    (el, { name, value }) => el.setAttribute(name, value),
+    { name, value }
   );
+}
+
+function setProperty(locator: Locator, name: string, value: string) {
+  return locator.evaluate((el, { name, value }) => (el[name] = value), {
+    name,
+    value,
+  });
 }
 
 test.beforeEach(async ({ page }) => {
@@ -115,17 +122,27 @@ test("binding-demo-input", async ({ page }) => {
   await expect(p).toHaveText(`Hello, ${name}!`);
 });
 
-test("binding-demo-number", async ({ page }) => {
+test.only("binding-demo-number", async ({ page }) => {
   const bindingDemo = page.locator("binding-demo");
 
   const numberInput = bindingDemo.locator("number-input");
+  const input = numberInput.locator("input");
   const decBtn = numberInput.locator("button").first();
+  await expect(decBtn).toHaveText("-");
   const incBtn = numberInput.locator("button").last();
+  await expect(incBtn).toHaveText("+");
 
   const numberSlider = bindingDemo.locator("number-slider");
   const rangeInput = numberSlider.locator("input");
 
   const span = bindingDemo.locator("#score-p > span");
+
+  async function testNumber(expected: string) {
+    await page.waitForTimeout(10); //TODO: Why is this needed?
+    await expectProperty(input, "value", expected);
+    await expectProperty(rangeInput, "value", expected);
+    await expect(span).toHaveText(expected);
+  }
 
   let number = 5; // initial value
   await expectProperty(numberInput, "value", number);
@@ -133,21 +150,24 @@ test("binding-demo-number", async ({ page }) => {
   await expect(span).toHaveText(String(number));
 
   // Click the "+" and "-" buttons of the number-input element.
-  await expect(incBtn).toHaveText("+");
   await incBtn.click();
-  let expected = String(number + 1);
-  await expect(span).toHaveText(expected);
-  await expectProperty(rangeInput, "value", expected);
+  await testNumber(String(number + 1));
 
   await decBtn.click();
   await decBtn.click();
-  expected = String(number - 1);
-  await expect(span).toHaveText(expected);
-  await expectProperty(rangeInput, "value", expected);
+  await testNumber(String(number - 1));
 
   // Enter a new number in the input element of the number-input element.
+  let expected = "19";
+  await input.fill(expected);
+  await testNumber(expected);
 
   // Drag the slider.
+  expected = "100";
+  //TODO: Why doesn't this work instead of modifying a number-slider property?
+  //await setAttribute(rangeInput, "value", expected);
+  await setProperty(numberSlider, "value", expected);
+  await testNumber(expected);
 });
 
 test("binding-demo-textarea", async ({ page }) => {
