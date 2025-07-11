@@ -37,37 +37,38 @@ Here are the steps:
    ```
 
 1. Create the file `my-counter.js` containing the following.
-   The comments `/*css*/` and `/*html*/` trigger the VS Code extension
-   "es6-string-html" to add syntax highlighting to the CSS and HTML strings.
+   The tagged template literals with the tags `css` and `html` trigger the VS Code extension
+   "Prettier" to add syntax highlighting and format the CSS and HTML strings.
 
    ```js
-   import Wrec from "wrec";
+   import Wrec, { css, html } from "wrec";
 
    class MyCounter extends Wrec {
      static properties = {
        count: { type: Number },
      };
 
-     static css = /*css*/ `
+     static css = css`
        .counter {
          display: flex;
          align-items: center;
          gap: 0.5rem;
        }
-   
+
        button {
          background-color: lightgreen;
        }
-   
+
        button:disabled {
          background-color: gray;
        }
      `;
 
-     static html = /*html*/ `
+     static html = html`
        <div>
-         <button onClick="decrement" type="button"
-           disabled="this.count === 0">-</button>
+         <button onClick="decrement" type="button" disabled="this.count === 0">
+           -
+         </button>
          <span>this.count</span>
          <button onClick="this.count++" type="button">+</button>
          <span>(this.count < 10 ? "single" : "double") + " digit"</span>

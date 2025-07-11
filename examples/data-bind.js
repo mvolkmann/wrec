@@ -1,4 +1,4 @@
-import Wrec from "../wrec.js";
+import Wrec, { css, html } from "../wrec.js";
 
 class DataBind extends Wrec {
   static formAssociated = true;
@@ -10,7 +10,7 @@ class DataBind extends Wrec {
     story: { type: String },
   };
 
-  static css = /*css*/ `
+  static css = css`
     :host {
       font-family: sans-serif;
     }
@@ -20,11 +20,11 @@ class DataBind extends Wrec {
     }
   `;
 
-  static html = /*html*/ `
+  static html = html`
     <div>
       <div>
         <label>Name:</label>
-        <input value="this.name">
+        <input value="this.name" />
         <p>Hello, <span>this.name</span>!</p>
       </div>
       <div style="display: flex">

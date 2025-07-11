@@ -1,4 +1,4 @@
-import Wrec from "../wrec.js";
+import Wrec, { html } from "../wrec.js";
 
 class DataBinding extends Wrec {
   //static formAssociated = true;
@@ -9,14 +9,14 @@ class DataBinding extends Wrec {
     sizes: { type: String },
   };
 
-  static html = /*html*/ `
+  static html = html`
     <div>
       <radio-group
         name="color1"
         options="this.options"
         value="this.color"
       ></radio-group>
-      <hr>
+      <hr />
       <select-list
         name="color2"
         options="this.options"

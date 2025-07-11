@@ -1,4 +1,4 @@
-import Wrec from "../wrec.js";
+import Wrec, { html } from "../wrec.js";
 
 class MultiplyNumbers extends Wrec {
   static properties = {
@@ -6,7 +6,7 @@ class MultiplyNumbers extends Wrec {
     n2: { type: Number },
   };
 
-  static html = /*html*/ `
+  static html = html`
     <p>
       <span>this.n1</span> * <span>this.n2</span> =
       <span>this.n1 * this.n2</span>

@@ -1,4 +1,4 @@
-import Wrec from "../wrec.js";
+import Wrec, { html } from "../wrec.js";
 
 class SelectList extends Wrec {
   static formAssociated = true;
@@ -9,7 +9,7 @@ class SelectList extends Wrec {
     value: { type: String },
   };
 
-  static html = /*html*/ `
+  static html = html`
     <select name="${this.name}" value="this.value">
       this.options.split(",").map((option) => this.makeOption(option)).join("")
     </select>
@@ -31,9 +31,7 @@ class SelectList extends Wrec {
   // This method cannot be private because it is
   // called from the expression in the html method.
   makeOption(option) {
-    return /*html*/ `
-      <option value="${option}">${option}</option>
-    `;
+    return html` <option value="${option}">${option}</option> `;
   }
 }
 

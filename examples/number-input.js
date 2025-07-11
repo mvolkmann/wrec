@@ -1,4 +1,4 @@
-import Wrec from "../wrec.js";
+import Wrec, { css, html } from "../wrec.js";
 
 class NumberInput extends Wrec {
   static formAssociated = true;
@@ -7,7 +7,7 @@ class NumberInput extends Wrec {
     value: { type: Number },
   };
 
-  static css = /*css*/ `
+  static css = css`
     button {
       background-color: cornflowerblue;
       border: none;
@@ -25,10 +25,12 @@ class NumberInput extends Wrec {
       appearance: none;
     }
 
-    label { font-weight: bold; }
+    label {
+      font-weight: bold;
+    }
   `;
 
-  static html = /*html*/ `
+  static html = html`
     <div>
       <label>this.label</label>
       <button onclick="decrement" type="button">-</button>

@@ -1,5 +1,6 @@
 const template = document.createElement("template");
-template.innerHTML = /*html*/ `
+const html = String.raw;
+template.innerHTML = html`
   <style>
     :not(:defined) {
       visibility: hidden;

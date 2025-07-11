@@ -1,4 +1,4 @@
-import Wrec from "../wrec.js";
+import Wrec, { css, html } from "../wrec.js";
 
 class RadioGroup extends Wrec {
   static formAssociated = true;
@@ -37,7 +37,7 @@ class RadioGroup extends Wrec {
     });
   }
 
-  static css = /*css*/ `
+  static css = css`
     .radio-group {
       display: flex;
       gap: 0.25rem;
@@ -45,11 +45,11 @@ class RadioGroup extends Wrec {
       > div {
         display: flex;
         align-items: center;
-      } 
+      }
     }
   `;
 
-  static html = /*html*/ `
+  static html = html`
     <div class="radio-group">
       this.options.split(",").map((option) => this.makeRadio(option)).join("")
     </div>
@@ -68,7 +68,7 @@ class RadioGroup extends Wrec {
   // This method cannot be private because it is
   // called from the expression in the html method.
   makeRadio(option) {
-    return /*html*/ `
+    return html`
       <div>
         <input
           type="radio"

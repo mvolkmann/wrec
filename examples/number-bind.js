@@ -1,11 +1,11 @@
-import Wrec from "../wrec.js";
+import Wrec, { html } from "../wrec.js";
 
 class NumberBind extends Wrec {
   static properties = {
     score: { type: Number },
   };
 
-  static html = /*html*/ `
+  static html = html`
     <div>
       <number-input label="Favorite Number:" value="this.score"></number-input>
       <number-slider label="Slider:" value="this.score"></number-slider>

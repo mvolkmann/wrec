@@ -354,3 +354,5 @@ class Wrec extends HTMLElement {
 }
 
 export default Wrec;
+export const css = String.raw;
+export const html = String.raw;

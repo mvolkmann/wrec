@@ -1,4 +1,4 @@
-import Wrec from "../wrec.js";
+import Wrec, { css, html } from "../wrec.js";
 
 // This demonstrates how wrec can implement
 // some features I saw in a demo of data-star.
@@ -7,18 +7,18 @@ class DataStar extends Wrec {
     username: { type: String },
   };
 
-  static css = /*css*/ `
-    .hide { display: none; }
+  static css = css`
+    .hide {
+      display: none;
+    }
   `;
 
-  static html = /*html*/ `
+  static html = html`
     <div>
-      <input value="this.username">
+      <input value="this.username" />
       <div>My name is <span>this.username.toUpperCase()</span>.</div>
       <div>length = <span>this.username.length</span></div>
-      <button class="this.username.length > 2 ? '' : 'hide'">
-        Save
-      </button>
+      <button class="this.username.length > 2 ? '' : 'hide'">Save</button>
     </div>
   `;
 }
