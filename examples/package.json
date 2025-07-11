@@ -1,5 +1,5 @@
 {
-  "name": "wrec-demo",
+  "name": "wrec-examples",
   "scripts": {
     "dev": "vite",
     "lint": "oxlint",

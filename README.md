@@ -129,12 +129,12 @@ Only attribute values and text content
 that refer to modified web component properties are updated.
 Attribute values and text content that contain references to properties
 must be valid JavaScript expressions that are NOT surrounded by `${...}`.
-For an example of this kind of web component, see `demo/hello-world.js`.
+For an example of this kind of web component, see `examples/hello-world.js`.
 
 Wrec supports conditional and iterative generation of HTML.
-See `demo/temperature-eval.js` for an example of a web component
+See `examples/temperature-eval.js` for an example of a web component
 that conditionally decides what to render based on an attribute value.
-See `demo/radio-group.js` for an example of a web component
+See `examples/radio-group.js` for an example of a web component
 that iterates over values in a comma-delimited attribute value
 to determine what to render.
 
@@ -149,7 +149,7 @@ In all these cases, if the user changes the value of the form element,
 the specified property is updated.
 When the property is updated,
 the displayed value of the form element is updated.
-For examples, see `demo/data-bind.js`.
+For examples, see `examples/data-bind.js`.
 
 Web components that extend `Wrec` can contribute values to
 form submissions by adding the following line to their class definition.
@@ -184,7 +184,7 @@ to any domain except that of your web app:
 
 ## More Examples
 
-Check out the web app in the `demo` directory.
+Check out the web app in the `examples` directory.
 To run it, cd to that directory, enter `npm install`,
 enter `npm run dev`, and browse localhost:5173.
 
@@ -194,5 +194,6 @@ The next two uses the Wrec library.
 Compare the files `counter-vanilla.js` and `counter-wrec.js`
 to see how much using Wrec simplifies the code.
 
-The `demo` app renders several other web components that are built with wrec.
+The `examples` app renders several other
+web components that are built with wrec.
 Examine their code for more examples of wrec usage.

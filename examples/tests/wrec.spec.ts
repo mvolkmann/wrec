@@ -1,16 +1,14 @@
 import { test, expect } from "@playwright/test";
 
-async function goTo(page) {
+test.beforeEach(async ({ page }) => {
   await page.goto("http://localhost:5173/");
-}
+});
 
 test("has title", async ({ page }) => {
-  await goTo(page);
   await expect(page).toHaveTitle(/wrec Demo/);
 });
 
 test("vanilla counter works", async ({ page }) => {
-  await goTo(page);
   const rootSelector = "counter-vanilla >>> div";
   const span = page.locator(rootSelector + "> span").first();
   await expect(span).toHaveText("3");
@@ -31,7 +29,6 @@ test("vanilla counter works", async ({ page }) => {
 });
 
 test("wrec counter works", async ({ page }) => {
-  await goTo(page);
   const div = page.locator("counter-wrec").first().locator("div");
   const span = div.locator("span").first();
   await expect(span).toHaveText("3");
