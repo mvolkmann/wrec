@@ -21,7 +21,7 @@ class BindingDemo extends Wrec {
   `;
 
   static html = html`
-    <div>
+    <div id="input-demo">
       <label>Name:</label>
       <input value="this.name" />
       <p>Hello, <span>this.name</span>!</p>
@@ -43,7 +43,7 @@ class BindingDemo extends Wrec {
       ></select-list>
     </div>
     <p id="selected-color">You selected the color <span>this.color</span>.</p>
-    <div>
+    <div id="textarea-demo">
       <label>Story:</label>
       <textarea>this.story</textarea>
       <p>Your story is <span>this.story</span>.</p>

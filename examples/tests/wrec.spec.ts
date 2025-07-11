@@ -27,16 +27,6 @@ test("has title", async ({ page }) => {
   await expect(page).toHaveTitle(/wrec Demo/);
 });
 
-test("binding-demo-input", async ({ page }) => {
-  const bindingDemo = page.locator("binding-demo");
-  const div1 = bindingDemo.locator("div").first();
-  const p = div1.locator("p");
-  await expect(p).toHaveText("Hello, Mark!");
-
-  setAttribute(bindingDemo, "name", "Tami");
-  await expect(p).toHaveText("Hello, Tami!");
-});
-
 test("binding-demo-colors", async ({ page }) => {
   const bindingDemo = page.locator("binding-demo");
   const radioGroup = bindingDemo.locator("radio-group");
@@ -108,6 +98,29 @@ test("binding-demo-colors", async ({ page }) => {
   options = "purple,orange,cyan,brown";
   await setAttribute(selectList, "options", options);
   await testColors(options);
+});
+
+test("binding-demo-input", async ({ page }) => {
+  const bindingDemo = page.locator("binding-demo");
+  const p = bindingDemo.locator("#input-demo > p");
+  await expect(p).toHaveText("Hello, Mark!");
+
+  setAttribute(bindingDemo, "name", "Tami");
+  await expect(p).toHaveText("Hello, Tami!");
+
+  //TODO: Type in the input.
+});
+
+test("binding-demo-textarea", async ({ page }) => {
+  const bindingDemo = page.locator("binding-demo");
+  const span = bindingDemo.locator("#textarea-demo > p > span");
+  await expect(span).toHaveText("Once upon a time...");
+
+  const story = "Far away ...";
+  setAttribute(bindingDemo, "story", story);
+  await expect(span).toHaveText(story);
+
+  //TODO: Type in the textarea.
 });
 
 test("counter-vanilla", async ({ page }) => {
