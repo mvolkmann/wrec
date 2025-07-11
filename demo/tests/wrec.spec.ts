@@ -11,15 +11,15 @@ test("has title", async ({ page }) => {
 
 test("vanilla counter works", async ({ page }) => {
   await goTo(page);
-  const divSelector = "counter-vanilla >>> div";
-  const span = page.locator(divSelector + "> span").first();
+  const rootSelector = "counter-vanilla >>> div";
+  const span = page.locator(rootSelector + "> span").first();
   await expect(span).toHaveText("3");
 
-  const incBtn = page.locator(divSelector + "> #increment-btn");
+  const incBtn = page.locator(rootSelector + "> #increment-btn");
   await incBtn.click();
   await expect(span).toHaveText("4");
 
-  const decBtn = page.locator(divSelector + "> #decrement-btn");
+  const decBtn = page.locator(rootSelector + "> #decrement-btn");
   for (let i = 1; i <= 4; i++) {
     await decBtn.click();
   }
@@ -30,20 +30,25 @@ test("vanilla counter works", async ({ page }) => {
   await expect(decBtn).toBeEnabled();
 });
 
-/*
 test("wrec counter works", async ({ page }) => {
   await goTo(page);
-  const divSelector = "counter-wrec >>> div";
-  const spanSelector = divSelector + "> span";
-  const span = page.locator(spanSelector).first();
+  const counter = page.locator("counter-wrec").first();
+  const div = counter.locator("div");
+  const span = div.locator("span").first();
   await expect(span).toHaveText("3");
-  await page.click(divSelector + "> #increment-btn");
-  await expect(page.locator(spanSelector)).toHaveText("4");
-  const decBtn = await page.locator(divSelector + "> #decrement-btn");
+
+  const incBtn = div.locator("button").last();
+  await expect(incBtn).toHaveText("+");
+  await incBtn.click();
+  await expect(span).toHaveText("4");
+
+  const decBtn = div.locator("button").first();
   for (let i = 1; i <= 4; i++) {
     await decBtn.click();
   }
-  await expect(page.locator(spanSelector)).toHaveText("0");
+  await expect(span).toHaveText("0");
   await expect(decBtn).toBeDisabled();
+
+  await incBtn.click();
+  await expect(decBtn).toBeEnabled();
 });
-*/
