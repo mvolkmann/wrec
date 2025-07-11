@@ -43,17 +43,19 @@ test("binding-demo-colors", async ({ page }) => {
   const selectList = bindingDemo.locator("select-list");
   const span = bindingDemo.locator("#selected-color").locator("span");
 
-  let color = "blue";
+  let color = "blue"; // initial value
   await expectProperty(radioGroup, "value", color);
   await expectProperty(selectList, "value", color);
   await expect(span).toHaveText(color);
 
+  // Click the "green" radio button.
   color = "green";
   await radioGroup.locator(`input[value="${color}"]`).click();
   await expectProperty(radioGroup, "value", color);
   await expectProperty(selectList, "value", color);
   await expect(span).toHaveText(color);
 
+  // Select the "red" option.
   color = "red";
   const select = selectList.locator("select");
   await select.selectOption(color);
@@ -61,18 +63,51 @@ test("binding-demo-colors", async ({ page }) => {
   await expectProperty(selectList, "value", color);
   await expect(span).toHaveText(color);
 
-  const options = "pink,yellow";
-  await setAttribute(bindingDemo, "options", options);
-  color = "pink";
-  await expectProperty(radioGroup, "value", color);
-  await expectProperty(selectList, "value", color);
-  await expect(span).toHaveText(color);
+  let options = "";
 
-  /*
-  const divs = await radioGroup.locator("div");
-  const count = await divs.count();
-  expect(count).toBe(options.split(",").length);
-  */
+  async function testColors(options) {
+    // The first option should be selected.
+    const color = options.split(",")[0];
+    await expectProperty(radioGroup, "value", color);
+    await expectProperty(selectList, "value", color);
+    await expect(span).toHaveText(color);
+
+    // Verify the radio buttons.
+    const colors = options.split(",");
+    const divs = await radioGroup.locator("div > div");
+    let count = await divs.count();
+    expect(count).toBe(colors.length);
+    for (let i = 0; i < count; i++) {
+      const div = divs.nth(i);
+      const text = await div.locator("label").textContent();
+      await expect(text).toBe(colors[i]);
+    }
+
+    // Verify the option elements inside the select element.
+    const optionElements = selectList.locator("option");
+    count = await optionElements.count();
+    expect(count).toBe(colors.length);
+    for (let i = 0; i < count; i++) {
+      const optionElement = optionElements.nth(i);
+      const text = await optionElement.textContent();
+      await expect(text).toBe(colors[i]);
+    }
+  }
+
+  // Change the list of options in the binding-demo element.
+  options = "pink,yellow";
+  await setAttribute(bindingDemo, "options", options);
+  await testColors(options);
+
+  // Change the list of options in the radio-group element.
+  options = "white,gray,black";
+  await setAttribute(radioGroup, "options", options);
+  await testColors(options);
+
+  // Change the list of options in the select-list element.
+  options = "purple,orange,cyan,brown";
+  await setAttribute(selectList, "options", options);
+  await testColors(options);
 });
 
 test("counter-vanilla", async ({ page }) => {
