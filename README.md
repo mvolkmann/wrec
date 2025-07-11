@@ -198,3 +198,14 @@ to see how much using Wrec simplifies the code.
 The `examples` app renders several other
 web components that are built with wrec.
 Examine their code for more examples of wrec usage.
+
+## Tests
+
+wrec has an extensive set of Playwright tests.
+To run them:
+
+1. Clone the wrec repository.
+1. cd to the `examples` directory.
+1. Enter `npm install`.
+1. Enter `npm run testui`.
+1. Click the right pointing triangle.
