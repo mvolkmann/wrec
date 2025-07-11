@@ -39,23 +39,27 @@ test("binding-demo-input", async ({ page }) => {
 
 test("binding-demo-colors", async ({ page }) => {
   const bindingDemo = page.locator("binding-demo");
-
   const radioGroup = bindingDemo.locator("radio-group");
-  await expectProperty(radioGroup, "value", "blue");
-
   const selectList = bindingDemo.locator("select-list");
-  await expectProperty(selectList, "value", "blue");
+  const span = bindingDemo.locator("#selected-color").locator("span");
 
-  let newColor = "green";
-  await radioGroup.locator(`input[value="${newColor}"]`).click();
-  await expectProperty(radioGroup, "value", newColor);
-  await expectProperty(selectList, "value", newColor);
+  let color = "blue";
+  await expectProperty(radioGroup, "value", color);
+  await expectProperty(selectList, "value", color);
+  await expect(span).toHaveText(color);
 
-  newColor = "red";
+  color = "green";
+  await radioGroup.locator(`input[value="${color}"]`).click();
+  await expectProperty(radioGroup, "value", color);
+  await expectProperty(selectList, "value", color);
+  await expect(span).toHaveText(color);
+
+  color = "red";
   const select = selectList.locator("select");
-  await select.selectOption(newColor);
-  await expectProperty(radioGroup, "value", newColor);
-  await expectProperty(selectList, "value", newColor);
+  await select.selectOption(color);
+  await expectProperty(radioGroup, "value", color);
+  await expectProperty(selectList, "value", color);
+  await expect(span).toHaveText(color);
 });
 
 test("counter-vanilla", async ({ page }) => {

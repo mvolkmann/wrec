@@ -43,7 +43,7 @@ class BindingDemo extends Wrec {
           value="this.color"
         ></select-list>
       </div>
-      <p>You selected the color <span>this.color</span>.</p>
+      <p id="selected-color">You selected the color <span>this.color</span>.</p>
       <div>
         <label>Story:</label>
         <textarea>this.story</textarea>
