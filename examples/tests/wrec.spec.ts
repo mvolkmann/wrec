@@ -60,6 +60,12 @@ test("binding-demo-colors", async ({ page }) => {
   await expectProperty(radioGroup, "value", color);
   await expectProperty(selectList, "value", color);
   await expect(span).toHaveText(color);
+
+  await setAttribute(bindingDemo, "options", "pink,yellow");
+  color = "pink";
+  await expectProperty(radioGroup, "value", color);
+  await expectProperty(selectList, "value", color);
+  await expect(span).toHaveText(color);
 });
 
 test("counter-vanilla", async ({ page }) => {
