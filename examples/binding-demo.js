@@ -50,7 +50,7 @@ class BindingDemo extends Wrec {
     </div>
     <number-input label="Favorite Number:" value="this.score"></number-input>
     <number-slider label="Slider:" value="this.score"></number-slider>
-    <p>Your score is <span>this.score</span>.</p>
+    <p id="score-p">Your score is <span>this.score</span>.</p>
   `;
 
   formResetCallback() {

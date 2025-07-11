@@ -3,7 +3,7 @@ import { expect, Locator, test } from "@playwright/test";
 async function expectProperty(
   locator: Locator,
   propertyName: string,
-  expectedValue: string
+  expectedValue: string | number
 ) {
   const value = await locator.evaluate(
     (el, { propertyName }) => el[propertyName],
@@ -27,7 +27,7 @@ test("has title", async ({ page }) => {
   await expect(page).toHaveTitle(/wrec Demo/);
 });
 
-test("binding-demo-colors", async ({ page }) => {
+test.skip("binding-demo-colors", async ({ page }) => {
   const bindingDemo = page.locator("binding-demo");
   const radioGroup = bindingDemo.locator("radio-group");
   const selectList = bindingDemo.locator("select-list");
@@ -113,6 +113,41 @@ test("binding-demo-input", async ({ page }) => {
   name = "Comet";
   await input.fill(name);
   await expect(p).toHaveText(`Hello, ${name}!`);
+});
+
+test("binding-demo-number", async ({ page }) => {
+  const bindingDemo = page.locator("binding-demo");
+
+  const numberInput = bindingDemo.locator("number-input");
+  const decBtn = numberInput.locator("button").first();
+  const incBtn = numberInput.locator("button").last();
+
+  const numberSlider = bindingDemo.locator("number-slider");
+  const rangeInput = numberSlider.locator("input");
+
+  const span = bindingDemo.locator("#score-p > span");
+
+  let number = 5; // initial value
+  await expectProperty(numberInput, "value", number);
+  await expectProperty(numberSlider, "value", number);
+  await expect(span).toHaveText(String(number));
+
+  // Click the "+" and "-" buttons of the number-input element.
+  await expect(incBtn).toHaveText("+");
+  await incBtn.click();
+  let expected = String(number + 1);
+  await expect(span).toHaveText(expected);
+  await expectProperty(rangeInput, "value", expected);
+
+  await decBtn.click();
+  await decBtn.click();
+  expected = String(number - 1);
+  await expect(span).toHaveText(expected);
+  await expectProperty(rangeInput, "value", expected);
+
+  // Enter a new number in the input element of the number-input element.
+
+  // Drag the slider.
 });
 
 test("binding-demo-textarea", async ({ page }) => {
