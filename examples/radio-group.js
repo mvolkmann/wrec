@@ -10,6 +10,24 @@ class RadioGroup extends Wrec {
     value: { type: String },
   };
 
+  static css = css`
+    :host > div {
+      display: flex;
+      gap: 0.5rem;
+
+      > div {
+        display: flex;
+        align-items: center;
+      }
+    }
+  `;
+
+  static html = html`
+    <div>
+      this.options.split(",").map((option) => this.makeRadio(option)).join("")
+    </div>
+  `;
+
   attributeChangedCallback(attrName, oldValue, newValue) {
     super.attributeChangedCallback(attrName, oldValue, newValue);
     if (attrName === "value") {
@@ -36,24 +54,6 @@ class RadioGroup extends Wrec {
       if (!options.includes(this.value)) this.value = options[0];
     });
   }
-
-  static css = css`
-    :host > div {
-      display: flex;
-      gap: 0.5rem;
-
-      > div {
-        display: flex;
-        align-items: center;
-      }
-    }
-  `;
-
-  static html = html`
-    <div>
-      this.options.split(",").map((option) => this.makeRadio(option)).join("")
-    </div>
-  `;
 
   // This method cannot be private because it is called when
   // a change event is dispatched from a radio button.
