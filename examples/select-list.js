@@ -21,10 +21,9 @@ class SelectList extends Wrec {
     // Wait for the DOM to update.
     requestAnimationFrame(() => {
       const options = this.options.split(",");
-      const firstOption = options[0];
-      if (!this.default) this.default = firstOption;
-      if (!this.value) this.value = this.default;
-      if (!options.includes(this.value)) this.value = firstOption;
+      if (!this.value || !options.includes(this.value)) {
+        this.value = options[0];
+      }
     });
   }
 

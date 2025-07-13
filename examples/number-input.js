@@ -32,18 +32,12 @@ class NumberInput extends Wrec {
 
   static html = html`
     <label>this.label</label>
-    <button onclick="decrement" type="button">-</button>
+    <button disabled="this.value === 0" onclick="this.value--" type="button">
+      -
+    </button>
     <input type="number" value="this.value" />
-    <button onclick="increment" type="button">+</button>
+    <button onclick="this.value++" type="button">+</button>
   `;
-
-  decrement() {
-    if (this.value > 0) this.value--;
-  }
-
-  increment() {
-    this.value++;
-  }
 }
 
 NumberInput.register();
