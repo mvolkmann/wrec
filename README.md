@@ -148,7 +148,19 @@ See `examples/radio-group.js` for an example of a web component
 that iterates over values in a comma-delimited attribute value
 to determine what to render.
 
-Wrec supports two-way data binding for HTML form elements.
+Data binding in Lit is not two-way like in wrec.
+A Lit component cannot simply pass one of its properties to
+a child Lit component and have the child can update the property.
+The child must dispatch custom events that
+the parent listens for so it can update its own state.
+For an example of this, see
+[wrec-compare](https://github.com/mvolkmann/lit-examples/blob/main/wrec-compare/binding-demo.ts).
+
+Wrec supports two-way data binding.
+See the example component binding-demo
+and the components it renders.
+
+Wrec two-way data binding can be used with HTML form elements.
 
 - `input` and `select` elements can have a `value` attribute
   whose value is "this.somePropertyName".
