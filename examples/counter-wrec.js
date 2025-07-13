@@ -10,12 +10,6 @@ class CounterWrec extends Wrec {
       display: block;
     }
 
-    .counter {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
     button {
       background-color: lightgreen;
     }

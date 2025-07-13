@@ -66,7 +66,6 @@ class RadioGroup extends Wrec {
   // This method cannot be private because it is
   // called from the expression in the html method.
   makeRadio(option) {
-    console.log("radio-group.js makeRadio: option =", option);
     return html`
       <div>
         <input

@@ -8,7 +8,7 @@ const SKIP = "this.".length;
 class Wrec extends HTMLElement {
   static #template = document.createElement("template");
 
-  #expressionReferencesMap = new Map();
+  #expressionToReferencesMap = new Map();
   #formData;
   #internals;
   #propertyToBindingsMap = new Map();
@@ -135,7 +135,15 @@ class Wrec extends HTMLElement {
       // configure two-way data binding.
       if (REFERENCE_RE.test(text)) {
         const propertyName = text.substring(SKIP);
-        element[propertyName] = this[propertyName];
+        const value = this[propertyName];
+        if (!value) {
+          const componentName = this.constructor.name;
+          throw new Error(
+            `component ${componentName} missing property "${propertyName}"`
+          );
+        }
+
+        element[propertyName] = value;
         if (attrName === "value") this.#bind(element, propertyName, attrName);
 
         // If the element is a web component,
@@ -200,7 +208,7 @@ class Wrec extends HTMLElement {
     }
     //const map = this.constructor["#propertyToExpressionsMap"];
     //console.log("#propertyToExpressionsMap =", map);
-    //console.log("#expressionReferencesMap =", this.#expressionReferencesMap);
+    //console.log("#expressionToReferencesMap =", this.#expressionToReferencesMap);
   }
 
   static get observedAttributes() {
@@ -213,7 +221,7 @@ class Wrec extends HTMLElement {
     const expressions = map.get(propertyName) || [];
     for (const expression of expressions) {
       const value = this.#evaluateInContext(expression);
-      const references = this.#expressionReferencesMap.get(expression) || [];
+      const references = this.#expressionToReferencesMap.get(expression) || [];
       for (const reference of references) {
         if (reference instanceof Element) {
           this.#updateElementContent(reference, value);
@@ -258,10 +266,10 @@ class Wrec extends HTMLElement {
       });
     }
 
-    let references = this.#expressionReferencesMap.get(text);
+    let references = this.#expressionToReferencesMap.get(text);
     if (!references) {
       references = [];
-      this.#expressionReferencesMap.set(text, references);
+      this.#expressionToReferencesMap.set(text, references);
     }
     references.push(attrName ? { element, attrName } : element);
 
