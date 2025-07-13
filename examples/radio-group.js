@@ -58,16 +58,13 @@ class RadioGroup extends Wrec {
   // This method cannot be private because it is called when
   // a change event is dispatched from a radio button.
   handleChange(event) {
-    const { value } = event.target;
-    this.value = value;
-
-    // This allows users of the this web component to listen for changes.
-    this.dispatchEvent(new Event("change"));
+    this.value = event.target.value;
   }
 
   // This method cannot be private because it is
   // called from the expression in the html method.
   makeRadio(option) {
+    console.log("radio-group.js makeRadio: option =", option);
     return html`
       <div>
         <input
