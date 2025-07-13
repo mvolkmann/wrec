@@ -28,6 +28,13 @@ class RadioGroup extends Wrec {
     </div>
   `;
 
+  connectedCallback() {
+    super.connectedCallback();
+    if (!this.default) this.default = this.options.split(",")[0];
+    if (!this.value) this.value = this.default;
+    this.#fixValue();
+  }
+
   attributeChangedCallback(attrName, oldValue, newValue) {
     super.attributeChangedCallback(attrName, oldValue, newValue);
     if (attrName === "value") {
@@ -41,13 +48,8 @@ class RadioGroup extends Wrec {
     }
   }
 
-  connectedCallback() {
-    super.connectedCallback();
-    if (!this.default) this.default = this.options.split(",")[0];
-    if (!this.value) this.value = this.default;
-    this.#fixValue();
-  }
-
+  // This handles the case when the specified value
+  // is not in the list of options.
   #fixValue() {
     requestAnimationFrame(() => {
       const options = this.options.split(",");
