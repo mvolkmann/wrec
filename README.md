@@ -104,15 +104,21 @@ Here are the steps:
 
 ## More Detail
 
+When the value of an attribute is a Boolean,
+wrec adds the attribute to the element with no value
+or removes the attribute from the element.
+This is commonly used for attributes like `disabled`.
+
 To wire event listeners,
 Wrec looks for attributes whose name begins with "on".
 It assumes the remainder of the attribute name is an event name.
 It also assumes that the value of the attribute is either
 a method name that should be called or code that should be executed
 when that event is dispatched.
-For example, the attribute `onclick="increment"` causes Wrec to
+For example, with the attribute `onclick="increment"`,
+if `increment` is a method in the component, wrec will
 add an event listener to the element containing the attribute
-for "click" events and calls `this.increment(event)`.
+for "click" events and call `this.increment(event)`.
 Alternatively, the attribute `onclick="this.count++"`
 adds an event listener that increments `this.count`
 when the element is clicked.
