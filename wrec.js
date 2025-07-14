@@ -63,6 +63,7 @@ class Wrec extends HTMLElement {
   }
 
   connectedCallback() {
+    this.#validateAttributes();
     this.#defineProperties();
     this.buildDOM();
 
@@ -297,12 +298,20 @@ class Wrec extends HTMLElement {
     this.#internals.setFormValue(this.#formData);
   }
 
-  #throwInvalidReference(element, attrName, propertyName) {
+  #throw(element, attrName, message) {
     throw new Error(
       `component ${this.componentName()}` +
-        `, element "${element.localName}"` +
+        (element ? `, element "${element.localName}"` : "") +
         (attrName ? `, attribute "${attrName}"` : "") +
-        ` refers to missing property "${propertyName}"`
+        ` ${message}`
+    );
+  }
+
+  #throwInvalidReference(element, attrName, propertyName) {
+    this.#throw(
+      element,
+      attrName,
+      `refers to missing property "${propertyName}"`
     );
   }
 
@@ -317,14 +326,19 @@ class Wrec extends HTMLElement {
     if (type === Number) {
       const number = Number(stringValue);
       if (!isNaN(number)) return number;
-      throw new Error(
-        `attribute/property "${propertyName}" must be a number, but was "${stringValue}"`
+      this.#throw(
+        null,
+        propertyName,
+        `must be a number, but was "${stringValue}"`
       );
     }
     if (type === Boolean) {
       if (stringValue && stringValue !== propertyName) {
-        throw new Error(
-          "Boolean attribute value must match attribute name or be missing"
+        this.#throw(
+          null,
+          propertyName,
+          "is a Boolean attribute, so its value " +
+            "must match attribute name or be missing"
         );
       }
     }
@@ -364,16 +378,30 @@ class Wrec extends HTMLElement {
     }
   }
 
-  #updateElementContent(element, text) {
+  #updateElementContent(element, value) {
     const { localName } = element;
+    const t = typeof value;
+    if (t !== "string" && t !== "number") {
+      this.#throw(element, null, ` computed content is not a string or number`);
+    }
+
     if (localName === "textarea") {
-      element.value = text;
-    } else if (typeof text === "string" && text.trim().startsWith("<")) {
-      element.innerHTML = text;
+      element.value = value;
+    } else if (t === "string" && value.trim().startsWith("<")) {
+      element.innerHTML = value;
       this.#wireEvents(element);
       this.#makeReactive(element);
     } else {
-      element.textContent = text;
+      element.textContent = value;
+    }
+  }
+
+  #validateAttributes() {
+    const propertyNames = new Set(Object.keys(this.constructor.properties));
+    for (const attrName of this.getAttributeNames()) {
+      if (!propertyNames.has(attrName)) {
+        this.#throw(null, attrName, "is not a supported attribute");
+      }
     }
   }
 
@@ -383,7 +411,7 @@ class Wrec extends HTMLElement {
 
     matches.forEach((capture) => {
       const propertyName = capture.substring(SKIP);
-      if (!this[propertyName]) {
+      if (this[propertyName] === undefined) {
         this.#throwInvalidReference(element, attrName, propertyName);
       }
     });
