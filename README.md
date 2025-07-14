@@ -195,6 +195,22 @@ Wrec looks for this automatically does the rest of the work.
 static formAssociated = true;
 ```
 
+## Error Checking
+
+Wrec checks for many kinds of errors and throws an `Error` when they are found.
+Look for messages in the DevTools console.
+The kinds of errors that are detected include:
+
+- attribute names in web component instances
+  with no matching property declaration
+- attribute values with a type that differs from the declared property type
+- event handling function names that
+  don't match any method name in the web component
+- expressions in attribute values or element text content
+  that reference undeclared web component properties
+- expressions in element text content
+  that do not evaluate to a string or number
+
 ## Security
 
 Wrec uses the JavaScript `eval` function to evaluate JavaScript expressions
