@@ -133,6 +133,7 @@ can be replaced by `onClick="increment"`.
 Wrec supports reactivity.
 Attribute values and the text content of elements
 can refer to web component properties with the syntax `this.somePropertyName`.
+In this context, `this` always refers to the parent web component.
 The DOM of the web component is surgically updated.
 Only attribute values and text content
 that refer to modified web component properties are updated.
@@ -142,6 +143,17 @@ For an example of this kind of web component, see `examples/hello-world.js`.
 
 Wrec evaluates JavaScript expressions in the context of a web component instance
 which can be referred to with the `this` keyword in the expressions.
+
+In insert the value of an expression
+that does not use properties of the web component,
+into an HTML template string,
+surround the expression with the syntax `${...}`.
+For example, assuming `DAYS` is a variable
+whose value is an array of month names:
+
+```html
+<p>The month is ${DAYS[new Date().getDay()]}.</p>
+```
 
 Wrec supports conditional and iterative generation of HTML.
 See `examples/temperature-eval.js` for an example of a web component

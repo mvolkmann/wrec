@@ -137,13 +137,11 @@ class Wrec extends HTMLElement {
 
       // If the attribute value is a single property reference,
       // configure two-way data binding.
-      if (REFERENCE_RE.test(text)) {
-        const propertyName = text.substring(SKIP);
+      const propertyName = this.#propertyReferenceName(element, text);
+      if (propertyName) {
         const value = this[propertyName];
         if (!value) {
-          throw new Error(
-            `component ${this.componentName()} missing property "${propertyName}"`
-          );
+          this.#throwInvalidReference(element, attrName, propertyName);
         }
 
         element[propertyName] = value;
@@ -180,9 +178,9 @@ class Wrec extends HTMLElement {
     const text = element.textContent.trim();
     // Only add a binding the element is a "textarea" and
     // its text content is a single property reference.
-    if (localName === "textarea" && REFERENCE_RE.test(text)) {
+    const propertyName = this.#propertyReferenceName(element, text);
+    if (localName === "textarea" && propertyName) {
       // Configure data binding.
-      const propertyName = text.substring(SKIP);
       this.#bind(element, propertyName);
       element.textContent = this[propertyName];
     } else {
@@ -210,6 +208,15 @@ class Wrec extends HTMLElement {
 
   static get observedAttributes() {
     return Object.keys(this.properties || {});
+  }
+
+  #propertyReferenceName(element, text) {
+    if (!REFERENCE_RE.test(text)) return;
+    const propertyName = text.substring(SKIP);
+    if (!this[propertyName]) {
+      this.#throwInvalidReference(element, null, propertyName);
+    }
+    return propertyName;
   }
 
   #react(propertyName) {
@@ -245,9 +252,8 @@ class Wrec extends HTMLElement {
   // Do not place untrusted expressions in
   // attribute values or the text content of elements!
   #registerPlaceholders(text, element, attrName) {
-    const matches = text.match(REFERENCES_RE);
+    const matches = this.#validateExpression(element, attrName, text);
     if (!matches) return;
-
     // Only map properties to expressions once for each web component because
     // the mapping will be the same for every instance of the web component.
     if (!this.constructor.processed) {
@@ -289,6 +295,15 @@ class Wrec extends HTMLElement {
     if (!this.#formData) return;
     this.#formData.set(propertyName, value);
     this.#internals.setFormValue(this.#formData);
+  }
+
+  #throwInvalidReference(element, attrName, propertyName) {
+    throw new Error(
+      `component ${this.componentName()}` +
+        `, element "${element.localName}"` +
+        (attrName ? `, attribute "${attrName}"` : "") +
+        ` refers to missing property "${propertyName}"`
+    );
   }
 
   #typedAttribute(attrName) {
@@ -362,6 +377,20 @@ class Wrec extends HTMLElement {
     }
   }
 
+  #validateExpression(element, attrName, expression) {
+    const matches = expression.match(REFERENCES_RE);
+    if (!matches) return;
+
+    matches.forEach((capture) => {
+      const propertyName = capture.substring(SKIP);
+      if (!this[propertyName]) {
+        this.#throwInvalidReference(element, attrName, propertyName);
+      }
+    });
+
+    return matches;
+  }
+
   #wireEvents(root) {
     const elements = root.querySelectorAll("*");
     for (const element of elements) {
@@ -370,11 +399,20 @@ class Wrec extends HTMLElement {
         if (name.startsWith("on")) {
           const eventName = name.slice(2).toLowerCase();
           const { value } = attr;
-          const fn =
-            typeof this[value] === "function"
-              ? (event) => this[value](event)
-              : // oxlint-disable-next-line no-eval
-                () => eval(value);
+          this.#validateExpression(element, name, value);
+
+          let fn;
+          if (typeof this[value] === "function") {
+            fn = (event) => this[value](event);
+          } else {
+            const matches = this.#validateExpression(element, name, value);
+            if (matches) {
+              // oxlint-disable-next-line no-eval
+              fn = () => eval(value);
+            } else {
+              this.#throwInvalidReference(element, name, value);
+            }
+          }
           element.addEventListener(eventName, fn);
           element.removeAttribute(name);
         }
