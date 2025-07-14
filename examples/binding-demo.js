@@ -7,6 +7,7 @@ class BindingDemo extends Wrec {
     name: { type: String },
     options: { type: String },
     score: { type: Number },
+    speed: { type: Number, value: 0 },
     story: { type: String },
   };
 
@@ -21,6 +22,7 @@ class BindingDemo extends Wrec {
   `;
 
   static html = html`
+    <stop-light go="this.speed < 10"></stop-light>
     <div id="input-demo">
       <label>Name:</label>
       <input value="this.name" />

@@ -29,7 +29,7 @@ class Wrec extends HTMLElement {
 
   attributeChangedCallback(attrName, _, newValue) {
     // Update the corresponding property.
-    const value = this.#getTypedValue(attrName, newValue);
+    const value = this.#typedValue(attrName, newValue);
     this[attrName] = value;
     this.#setFormValue(attrName, value);
   }
@@ -58,6 +58,10 @@ class Wrec extends HTMLElement {
     this.shadowRoot.replaceChildren(Wrec.#template.content.cloneNode(true));
   }
 
+  componentName() {
+    return this.constructor.name;
+  }
+
   connectedCallback() {
     this.#defineProperties();
     this.buildDOM();
@@ -84,7 +88,7 @@ class Wrec extends HTMLElement {
     const value =
       observedAttributes.includes(propertyName) &&
       this.hasAttribute(propertyName)
-        ? this.#getTypedAttribute(propertyName)
+        ? this.#typedAttribute(propertyName)
         : config.value;
     const privateName = "#" + propertyName;
     this[privateName] = value;
@@ -103,7 +107,7 @@ class Wrec extends HTMLElement {
         // If there is a matching attribute on the custom element,
         // update that attribute.
         if (this.hasAttribute(propertyName)) {
-          const oldValue = this.#getTypedAttribute(propertyName);
+          const oldValue = this.#typedAttribute(propertyName);
           if (value !== oldValue) {
             this.#updateAttribute(this, propertyName, value);
           }
@@ -137,9 +141,8 @@ class Wrec extends HTMLElement {
         const propertyName = text.substring(SKIP);
         const value = this[propertyName];
         if (!value) {
-          const componentName = this.constructor.name;
           throw new Error(
-            `component ${componentName} missing property "${propertyName}"`
+            `component ${this.componentName()} missing property "${propertyName}"`
           );
         }
 
@@ -187,17 +190,6 @@ class Wrec extends HTMLElement {
     }
   }
 
-  #getTypedAttribute(attrName) {
-    return this.#getTypedValue(attrName, this.getAttribute(attrName));
-  }
-
-  #getTypedValue(attrName, stringValue) {
-    const type = this.constructor.properties[attrName].type;
-    if (type === Number) return Number(stringValue);
-    if (type === Boolean) return Boolean(stringValue);
-    return stringValue;
-  }
-
   #makeReactive(root) {
     const elements = root.querySelectorAll("*");
     for (const element of elements) {
@@ -206,9 +198,14 @@ class Wrec extends HTMLElement {
       // If the element has no child elements, evaluate its text content.
       if (!element.firstElementChild) this.#evaluateText(element);
     }
-    //const map = this.constructor["#propertyToExpressionsMap"];
-    //console.log("#propertyToExpressionsMap =", map);
-    //console.log("#expressionToReferencesMap =", this.#expressionToReferencesMap);
+    /* These lines are useful for debugging.
+    const map = this.constructor["#propertyToExpressionsMap"];
+    console.log("#propertyToExpressionsMap =", map);
+    console.log(
+      "#expressionToReferencesMap =",
+      this.#expressionToReferencesMap
+    );
+    */
   }
 
   static get observedAttributes() {
@@ -292,6 +289,31 @@ class Wrec extends HTMLElement {
     if (!this.#formData) return;
     this.#formData.set(propertyName, value);
     this.#internals.setFormValue(this.#formData);
+  }
+
+  #typedAttribute(attrName) {
+    return this.#typedValue(attrName, this.getAttribute(attrName));
+  }
+
+  #typedValue(propertyName, stringValue) {
+    if (stringValue?.match(REFERENCES_RE)) return stringValue;
+
+    const type = this.constructor.properties[propertyName].type;
+    if (type === Number) {
+      const number = Number(stringValue);
+      if (!isNaN(number)) return number;
+      throw new Error(
+        `attribute/property "${propertyName}" must be a number, but was "${stringValue}"`
+      );
+    }
+    if (type === Boolean) {
+      if (stringValue && stringValue !== propertyName) {
+        throw new Error(
+          "Boolean attribute value must match attribute name or be missing"
+        );
+      }
+    }
+    return stringValue;
   }
 
   #updateAttribute(element, attrName, value) {
