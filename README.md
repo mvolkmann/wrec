@@ -104,12 +104,14 @@ Here are the steps:
 
 1. Click the "-" and "+" buttons to verify that the component is working.
 
-## More Detail
+## Boolean Attributes
 
 When the value of an attribute is a Boolean,
 wrec adds the attribute to the element with no value
 or removes the attribute from the element.
 This is commonly used for attributes like `disabled`.
+
+## Event Listeners
 
 To wire event listeners,
 Wrec looks for attributes whose name begins with "on".
@@ -129,6 +131,8 @@ The case of the event name within the attribute name
 does not matter because Wrec lowercases the name.
 So the attributes in the previous examples
 can be replaced by `onClick="increment"`.
+
+## Reactivity
 
 Wrec supports reactivity.
 Attribute values and the text content of elements
@@ -155,6 +159,8 @@ whose value is an array of month names:
 <p>The month is ${DAYS[new Date().getDay()]}.</p>
 ```
 
+## Conditional and Iterative HTML Generation
+
 Wrec supports conditional and iterative generation of HTML.
 See `examples/temperature-eval.js` for an example of a web component
 that conditionally decides what to render based on an attribute value.
@@ -162,13 +168,7 @@ See `examples/radio-group.js` for an example of a web component
 that iterates over values in a comma-delimited attribute value
 to determine what to render.
 
-Data binding in Lit is not two-way like in wrec.
-A Lit component cannot simply pass one of its properties to
-a child Lit component and have the child can update the property.
-The child must dispatch custom events that
-the parent listens for so it can update its own state.
-For an example of this, see
-[wrec-compare](https://github.com/mvolkmann/lit-examples/blob/main/wrec-compare/binding-demo.ts).
+## Data Binding
 
 Wrec supports two-way data binding.
 See the example component binding-demo
@@ -186,6 +186,16 @@ the specified property is updated.
 When the property is updated,
 the displayed value of the form element is updated.
 For examples, see `examples/data-bind.js`.
+
+Data binding in Lit is not two-way like in wrec.
+A Lit component cannot simply pass one of its properties to
+a child Lit component and have the child can update the property.
+The child must dispatch custom events that
+the parent listens for so it can update its own state.
+For an example of this, see
+[wrec-compare](https://github.com/mvolkmann/lit-examples/blob/main/wrec-compare/binding-demo.ts).
+
+## Form Submissions
 
 Web components that extend `Wrec` can contribute values to
 form submissions by adding the following line to their class definition.
