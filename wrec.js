@@ -58,10 +58,6 @@ class Wrec extends HTMLElement {
     this.shadowRoot.replaceChildren(Wrec.#template.content.cloneNode(true));
   }
 
-  componentName() {
-    return this.constructor.name;
-  }
-
   connectedCallback() {
     this.#validateAttributes();
     this.#defineProperties();
@@ -128,6 +124,12 @@ class Wrec extends HTMLElement {
         this.#setFormValue(propertyName, value);
       },
     });
+  }
+
+  // This inserts a dash before each uppercase letter
+  // that is preceded by a lowercase letter or digit.
+  static elementName() {
+    return this.name.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
   }
 
   #evaluateAttributes(element) {
@@ -244,7 +246,7 @@ class Wrec extends HTMLElement {
   }
 
   static register() {
-    const elementName = Wrec.#toKebabCase(this.name);
+    const elementName = this.elementName();
     if (!customElements.get(elementName)) {
       customElements.define(elementName, this);
     }
@@ -285,13 +287,6 @@ class Wrec extends HTMLElement {
     }
   }
 
-  static #toKebabCase = (str) =>
-    str
-      // Insert a dash before each uppercase letter
-      // that is preceded by a lowercase letter or digit.
-      .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
-      .toLowerCase();
-
   #setFormValue(propertyName, value) {
     if (!this.#formData) return;
     this.#formData.set(propertyName, value);
@@ -300,7 +295,7 @@ class Wrec extends HTMLElement {
 
   #throw(element, attrName, message) {
     throw new Error(
-      `component ${this.componentName()}` +
+      `component ${this.constructor.elementName()}` +
         (element ? `, element "${element.localName}"` : "") +
         (attrName ? `, attribute "${attrName}"` : "") +
         ` ${message}`
