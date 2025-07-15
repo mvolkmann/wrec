@@ -48,14 +48,14 @@ class Wrec extends HTMLElement {
 
   #buildDOM() {
     const clazz = this.constructor;
-    let { template } = clazz;
-    if (!template) {
-      template = clazz.template = document.createElement("template");
+    let { _template } = clazz;
+    if (!_template) {
+      _template = clazz.template = document.createElement("template");
       let text = clazz.css ? `<style>${clazz.css}</style>` : "";
       text += clazz.html;
-      template.innerHTML = text;
+      _template.innerHTML = text;
     }
-    this.shadowRoot.replaceChildren(template.content.cloneNode(true));
+    this.shadowRoot.replaceChildren(_template.content.cloneNode(true));
   }
 
   connectedCallback() {
@@ -72,8 +72,7 @@ class Wrec extends HTMLElement {
   }
 
   #defineProperties() {
-    const properties = this.constructor.properties;
-    const { observedAttributes } = this.constructor;
+    const { observedAttributes, properties } = this.constructor;
     for (const [name, config] of Object.entries(properties)) {
       this.#defineProperty(name, config, observedAttributes);
     }
@@ -445,5 +444,8 @@ class Wrec extends HTMLElement {
 }
 
 export default Wrec;
+
+// These enable the VS Code extensions Prettier and es6-string-html to
+// provide formatting and syntax highlighting of tagged template literals.
 export const css = String.raw;
 export const html = String.raw;
