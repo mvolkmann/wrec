@@ -422,26 +422,27 @@ class Wrec extends HTMLElement {
       const attributesToRemove = [];
 
       for (const attr of element.attributes) {
-        const { name } = attr;
-        if (name.startsWith("on")) {
-          const eventName = name.slice(2).toLowerCase();
-          const { value } = attr;
-          this.#validateExpression(element, name, value);
+        const attrName = attr.name;
+        if (attrName.startsWith("on")) {
+          const eventName = attrName.slice(2).toLowerCase();
+          const attrValue = attr.value;
+          this.#validateExpression(element, attrName, attrValue);
 
           let fn;
-          if (typeof this[value] === "function") {
-            fn = (event) => this[value](event);
+          if (typeof this[attrValue] === "function") {
+            fn = (event) => this[attrValue](event);
           } else {
+            this.#validateExpression(element, attrName, attrValue);
             // oxlint-disable-next-line no-eval no-unused-vars
-            fn = (event) => eval(value);
+            fn = (event) => eval(attrValue);
           }
           element.addEventListener(eventName, fn);
-          attributesToRemove.push(name);
+          attributesToRemove.push(attrName);
         }
       }
 
-      for (const name of attributesToRemove) {
-        element.removeAttribute(name);
+      for (const attrName of attributesToRemove) {
+        element.removeAttribute(attrName);
       }
     }
   }
