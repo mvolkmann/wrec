@@ -34,7 +34,7 @@ test("has title", async ({ page }) => {
   await expect(page).toHaveTitle(/wrec Demo/);
 });
 
-test.skip("binding-demo-colors", async ({ page }) => {
+test("binding-demo-colors", async ({ page }) => {
   const bindingDemo = page.locator("binding-demo");
   const radioGroup = bindingDemo.locator("radio-group");
   const selectList = bindingDemo.locator("select-list");
@@ -122,7 +122,7 @@ test("binding-demo-input", async ({ page }) => {
   await expect(p).toHaveText(`Hello, ${name}!`);
 });
 
-test.only("binding-demo-number", async ({ page }) => {
+test("binding-demo-number", async ({ page }) => {
   const bindingDemo = page.locator("binding-demo");
 
   const numberInput = bindingDemo.locator("number-input");

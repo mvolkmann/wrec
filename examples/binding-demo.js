@@ -1,14 +1,5 @@
 import Wrec, { css, html } from "../wrec.js";
 
-const DAYS = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
 class BindingDemo extends Wrec {
   static formAssociated = true;
   static properties = {
@@ -35,7 +26,7 @@ class BindingDemo extends Wrec {
     <div id="input-demo">
       <label>Name:</label>
       <input value="this.name" />
-      <p>Hello, <span>this.name</span>! ${DAYS[new Date().getDay()]}</p>
+      <p>Hello, <span>this.name</span>!</p>
     </div>
     <div style="display: flex">
       <label for="color">Color:</label>
