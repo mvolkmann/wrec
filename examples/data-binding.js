@@ -14,18 +14,20 @@ class DataBinding extends Wrec {
       <label>Color Options (comma-separated):</label>
       <input value="this.options" />
     </div>
+    <br />
     <radio-group
       name="color1"
       options="this.options"
       value="this.color"
     ></radio-group>
-    <hr />
+    <br />
     <select-list
       name="color2"
       options="this.options"
       value="this.color"
     ></select-list>
     <p>You selected the color <span>this.color</span>.</p>
+    <hr />
     <radio-group
       name="size"
       options="this.sizes"
