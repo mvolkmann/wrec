@@ -68,6 +68,8 @@ class ToggleSwitch extends Wrec {
       role="switch"
       tabindex="0"
     >
+      <!-- The onKeyDown attribute above can be replaced by this:
+           onKeyDown="this.handleKey(event)" -->
       <span class="track"></span>
       <span class="thumb"></span>
     </div>

@@ -432,13 +432,8 @@ class Wrec extends HTMLElement {
           if (typeof this[value] === "function") {
             fn = (event) => this[value](event);
           } else {
-            const matches = this.#validateExpression(element, name, value);
-            if (matches) {
-              // oxlint-disable-next-line no-eval
-              fn = () => eval(value);
-            } else {
-              this.#throwInvalidReference(element, name, value);
-            }
+            // oxlint-disable-next-line no-eval no-unused-vars
+            fn = (event) => eval(value);
           }
           element.addEventListener(eventName, fn);
           attributesToRemove.push(name);
