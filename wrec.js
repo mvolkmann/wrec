@@ -6,8 +6,6 @@ const REFERENCES_RE = new RegExp(`this.${IDENTIFIER}`, "g");
 const SKIP = "this.".length;
 
 class Wrec extends HTMLElement {
-  static #template = document.createElement("template");
-
   #expressionToReferencesMap = new Map();
   #formData;
   #internals;
@@ -48,20 +46,22 @@ class Wrec extends HTMLElement {
     bindings.push(attrName ? { element, attrName } : element);
   }
 
-  // This is not private so it can be called from subclasses.
-  buildDOM() {
+  #buildDOM() {
     const clazz = this.constructor;
-    let template = clazz.css ? `<style>${clazz.css}</style>` : "";
-    template += clazz.html;
-    Wrec.#template.innerHTML = template;
-
-    this.shadowRoot.replaceChildren(Wrec.#template.content.cloneNode(true));
+    let { template } = clazz;
+    if (!template) {
+      template = clazz.template = document.createElement("template");
+      let text = clazz.css ? `<style>${clazz.css}</style>` : "";
+      text += clazz.html;
+      template.innerHTML = text;
+    }
+    this.shadowRoot.replaceChildren(template.content.cloneNode(true));
   }
 
   connectedCallback() {
     this.#validateAttributes();
     this.#defineProperties();
-    this.buildDOM();
+    this.#buildDOM();
 
     // Wait for the DOM to update.
     requestAnimationFrame(() => {
