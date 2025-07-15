@@ -142,7 +142,7 @@ class Wrec extends HTMLElement {
       const propertyName = this.#propertyReferenceName(element, text);
       if (propertyName) {
         const value = this[propertyName];
-        if (!value) {
+        if (value === undefined) {
           this.#throwInvalidReference(element, attrName, propertyName);
         }
 
@@ -215,7 +215,7 @@ class Wrec extends HTMLElement {
   #propertyReferenceName(element, text) {
     if (!REFERENCE_RE.test(text)) return;
     const propertyName = text.substring(SKIP);
-    if (!this[propertyName]) {
+    if (this[propertyName] === undefined) {
       this.#throwInvalidReference(element, null, propertyName);
     }
     return propertyName;
@@ -327,6 +327,8 @@ class Wrec extends HTMLElement {
       );
     }
     if (type === Boolean) {
+      if (stringValue === "true") return true;
+      if (stringValue === "false") return false;
       if (stringValue && stringValue !== propertyName) {
         this.#throw(
           null,
@@ -335,6 +337,7 @@ class Wrec extends HTMLElement {
             "must match attribute name or be missing"
         );
       }
+      return stringValue === propertyName;
     }
     return stringValue;
   }
@@ -393,7 +396,7 @@ class Wrec extends HTMLElement {
   #validateAttributes() {
     const propertyNames = new Set(Object.keys(this.constructor.properties));
     for (const attrName of this.getAttributeNames()) {
-      if (!propertyNames.has(attrName)) {
+      if (!attrName.startsWith("on") && !propertyNames.has(attrName)) {
         this.#throw(null, attrName, "is not a supported attribute");
       }
     }
@@ -414,8 +417,10 @@ class Wrec extends HTMLElement {
   }
 
   #wireEvents(root) {
-    const elements = root.querySelectorAll("*");
-    for (const element of elements) {
+    for (const element of root.querySelectorAll("*")) {
+      // We don't want to remove attributes while we are iterating over them.
+      const attributesToRemove = [];
+
       for (const attr of element.attributes) {
         const { name } = attr;
         if (name.startsWith("on")) {
@@ -436,8 +441,12 @@ class Wrec extends HTMLElement {
             }
           }
           element.addEventListener(eventName, fn);
-          element.removeAttribute(name);
+          attributesToRemove.push(name);
         }
+      }
+
+      for (const name of attributesToRemove) {
+        element.removeAttribute(name);
       }
     }
   }

@@ -6,6 +6,7 @@ class BindingDemo extends Wrec {
     color: { type: String },
     name: { type: String },
     options: { type: String },
+    power: { type: Boolean, value: true },
     score: { type: Number },
     speed: { type: Number, value: 0 },
     story: { type: String },
@@ -22,6 +23,13 @@ class BindingDemo extends Wrec {
   `;
 
   static html = html`
+    <div>
+      <label>Power:</label>
+      <toggle-switch
+        checked="this.power"
+        onChange="console.log('have power?', this.power)"
+      ></toggle-switch>
+    </div>
     <stop-light go="this.speed < 10"></stop-light>
     <div id="input-demo">
       <label>Name:</label>
