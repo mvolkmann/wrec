@@ -10,6 +10,10 @@ class DataBinding extends Wrec {
   };
 
   static html = html`
+    <div>
+      <label>Color Options (comma-separated):</label>
+      <input value="this.options" />
+    </div>
     <radio-group
       name="color1"
       options="this.options"

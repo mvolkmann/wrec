@@ -30,6 +30,7 @@ class SelectList extends Wrec {
   // This method cannot be private because it is
   // called from the expression in the html method.
   makeOption(option) {
+    option = option.trim();
     return html` <option value="${option}">${option}</option> `;
   }
 }
