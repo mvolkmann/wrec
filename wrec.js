@@ -5,6 +5,21 @@ const REFERENCE_RE = new RegExp(`^this.${IDENTIFIER}$`);
 const REFERENCES_RE = new RegExp(`this.${IDENTIFIER}`, "g");
 const SKIP = "this.".length;
 
+function updateAttribute(element, attrName, value) {
+  const currentValue = element.getAttribute(attrName);
+  if (typeof value === "boolean") {
+    if (value) {
+      if (currentValue !== attrName) {
+        element.setAttribute(attrName, attrName);
+      }
+    } else {
+      element.removeAttribute(attrName);
+    }
+  } else if (currentValue !== value) {
+    element.setAttribute(attrName, value);
+  }
+}
+
 class Wrec extends HTMLElement {
   #expressionToReferencesMap = new Map();
   #formData;
@@ -104,9 +119,7 @@ class Wrec extends HTMLElement {
         // update that attribute.
         if (this.hasAttribute(propertyName)) {
           const oldValue = this.#typedAttribute(propertyName);
-          if (value !== oldValue) {
-            this.#updateAttribute(this, propertyName, value);
-          }
+          if (value !== oldValue) updateAttribute(this, propertyName, value);
         }
 
         this.#react(propertyName);
@@ -243,7 +256,7 @@ class Wrec extends HTMLElement {
           this.#updateElementContent(reference, value);
         } else {
           const { element, attrName } = reference;
-          this.#updateAttribute(element, attrName, value);
+          updateAttribute(element, attrName, value);
         }
       }
     }
@@ -290,7 +303,7 @@ class Wrec extends HTMLElement {
 
     const value = this.#evaluateInContext(text);
     if (attrName) {
-      this.#updateAttribute(element, attrName, value);
+      updateAttribute(element, attrName, value);
     } else {
       this.#updateElementContent(element, value);
     }
@@ -353,21 +366,6 @@ class Wrec extends HTMLElement {
     this.#throw(null, propertyName, "does not specify its type");
   }
 
-  #updateAttribute(element, attrName, value) {
-    const currentValue = element.getAttribute(attrName);
-    if (typeof value === "boolean") {
-      if (value) {
-        if (currentValue !== attrName) {
-          element.setAttribute(attrName, attrName);
-        }
-      } else {
-        element.removeAttribute(attrName);
-      }
-    } else if (currentValue !== value) {
-      element.setAttribute(attrName, value);
-    }
-  }
-
   #updateBindings(propertyName) {
     const value = this[propertyName];
     const bindings = this.#propertyToBindingsMap.get(propertyName) || [];
@@ -380,7 +378,7 @@ class Wrec extends HTMLElement {
         }
       } else {
         const { element, attrName } = binding;
-        this.#updateAttribute(element, attrName, value);
+        updateAttribute(element, attrName, value);
         element[attrName] = value;
       }
     }
