@@ -104,6 +104,12 @@ Here are the steps:
 
 1. Click the "-" and "+" buttons to verify that the component is working.
 
+## Required Attributes
+
+The configuration object for required attributes in a Wrec component
+should contain `required: true`.
+For an example of this, see the `name` property in `examples/radio-group.js`.
+
 ## Boolean Attributes
 
 When the value of an attribute is a Boolean,

@@ -94,6 +94,10 @@ class Wrec extends HTMLElement {
   }
 
   #defineProperty(propertyName, config, observedAttributes) {
+    if (config.required && !this.hasAttribute(propertyName)) {
+      this.#throw(this, propertyName, "is a required attribute");
+    }
+
     // Copy the property value to a new property with a leading underscore.
     // The property is replaced below with Object.defineProperty.
     const value =

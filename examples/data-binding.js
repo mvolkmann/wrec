@@ -1,39 +1,35 @@
-import Wrec, { html } from "../wrec.js";
+import Wrec, { css, html } from "../wrec.js";
 
 class DataBinding extends Wrec {
-  //static formAssociated = true;
   static properties = {
     color: { type: String },
     options: { type: String },
-    size: { type: String },
-    sizes: { type: String },
   };
+
+  static css = css`
+    :host {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  `;
 
   static html = html`
     <div>
       <label>Color Options (comma-separated):</label>
       <input value="this.options" />
     </div>
-    <br />
     <radio-group
       name="color1"
       options="this.options"
       value="this.color"
     ></radio-group>
-    <br />
     <select-list
       name="color2"
       options="this.options"
       value="this.color"
     ></select-list>
     <p>You selected the color <span>this.color</span>.</p>
-    <hr />
-    <radio-group
-      name="size"
-      options="this.sizes"
-      value="this.size"
-    ></radio-group>
-    <p>You selected the size <span>this.size</span>.</p>
   `;
 }
 

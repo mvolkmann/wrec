@@ -4,8 +4,8 @@ class SelectList extends Wrec {
   static formAssociated = true;
 
   static properties = {
-    name: { type: String },
-    options: { type: String },
+    name: { type: String, required: true },
+    options: { type: String, required: true },
     value: { type: String },
   };
 

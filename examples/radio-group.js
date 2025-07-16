@@ -5,8 +5,8 @@ class RadioGroup extends Wrec {
 
   static properties = {
     default: { type: String },
-    name: { type: String },
-    options: { type: String },
+    name: { type: String, required: true },
+    options: { type: String, required: true },
     value: { type: String },
   };
 
