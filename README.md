@@ -20,6 +20,8 @@ It has the following advantages over Lit:
 - Wrec enables specifying the content of a `textarea` element
   with a JavaScript expressions in its text content.
 
+Wrec components have many of the features provided by Alpine.js.
+
 ## Getting Started
 
 Let's use wrec to implement a counter component.

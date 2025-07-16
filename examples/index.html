@@ -13,12 +13,12 @@
     <script src="select-list.js" type="module"></script>
     <script src="stop-light.js" type="module"></script>
     <script src="temperature-eval.js" type="module"></script>
-    <script src="toggle-switch.js" type="module"></script>
+    <script src="toggle-switch2.js" type="module"></script>
     <script>
       window.onload = () => {
         const bd = document.querySelector("binding-demo");
         const ts = bd.shadowRoot.querySelector("toggle-switch");
-        ts.addEventListener("change", (e) => {
+        ts?.addEventListener("change", (e) => {
           console.log(
             "index.html: toggle-switch is",
             e.target[e.detail.propertyName]
