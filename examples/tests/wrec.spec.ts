@@ -3,7 +3,7 @@ import { expect, Locator, test } from "@playwright/test";
 async function expectProperty(
   locator: Locator,
   propertyName: string,
-  expectedValue: string | number
+  expectedValue: boolean | number | string
 ) {
   const value = await locator.evaluate(
     (el, { propertyName }) => el[propertyName],
@@ -255,4 +255,15 @@ test("temperature-eval", async ({ page }) => {
 
   setAttribute(component, "temperature", "20");
   await expect(component).toHaveText("freezing");
+});
+
+test("toggle-switch", async ({ page }) => {
+  const component = page.locator("toggle-switch");
+  await expectProperty(component, "checked", true);
+  await component.click();
+  await expectProperty(component, "checked", false);
+  await page.keyboard.press("Enter");
+  await expectProperty(component, "checked", true);
+  await page.keyboard.press("Space");
+  await expectProperty(component, "checked", false);
 });
