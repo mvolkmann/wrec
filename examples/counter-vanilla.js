@@ -2,16 +2,6 @@ const template = document.createElement("template");
 const html = String.raw;
 template.innerHTML = html`
   <style>
-    :not(:defined) {
-      visibility: hidden;
-    }
-
-    .counter {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
     button {
       background-color: lightgreen;
     }
@@ -65,8 +55,6 @@ class CounterVanilla extends HTMLElement {
   }
 
   decrement() {
-    if (this.count == 0) return;
-
     this.count--;
     // this.count gets converted to a string,
     // so we have to use == instead of === on the next line.
