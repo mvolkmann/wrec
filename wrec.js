@@ -316,7 +316,8 @@ class Wrec extends HTMLElement {
   #typedValue(propertyName, stringValue) {
     if (stringValue?.match(REFERENCES_RE)) return stringValue;
 
-    const type = this.constructor.properties[propertyName].type;
+    const { type } = this.constructor.properties[propertyName];
+    if (type === String) return stringValue;
     if (type === Number) {
       const number = Number(stringValue);
       if (!isNaN(number)) return number;
@@ -339,7 +340,7 @@ class Wrec extends HTMLElement {
       }
       return stringValue === propertyName;
     }
-    return stringValue;
+    this.#throw(null, propertyName, "does not specify its type");
   }
 
   #updateAttribute(element, attrName, value) {
