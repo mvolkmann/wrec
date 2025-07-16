@@ -132,6 +132,15 @@ does not matter because Wrec lowercases the name.
 So the attributes in the previous examples
 can be replaced by `onClick="increment"`.
 
+## Property Change Events
+
+Wrec components will dispatch change events whenever
+a property configured with `dispatch: true` changes.
+For an example of this,
+see the `checked` property in `examples/toggle-switch.js`.
+The component defined in `examples/binding-demo.js`
+listens for that event, as does the `script` in `examples/index.html`.
+
 ## Reactivity
 
 Wrec supports reactivity.

@@ -121,6 +121,16 @@ class Wrec extends HTMLElement {
         }
 
         this.#setFormValue(propertyName, value);
+
+        if (config.dispatch) {
+          this.dispatchEvent(
+            new CustomEvent("change", {
+              bubbles: true, // up DOM tree
+              composed: true, // can pass through shadow DOM
+              detail: { propertyName },
+            })
+          );
+        }
       },
     });
   }

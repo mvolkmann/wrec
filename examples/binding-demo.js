@@ -27,7 +27,7 @@ class BindingDemo extends Wrec {
       <label>Power:</label>
       <toggle-switch
         checked="this.power"
-        onChange="console.log('have power?', this.power)"
+        onChange="console.log('binding-demo.js: power =', this.power)"
       ></toggle-switch>
     </div>
     <stop-light go="this.speed < 10"></stop-light>
