@@ -26,6 +26,12 @@ function setProperty(locator: Locator, name: string, value: string) {
   });
 }
 
+function waitForNextFrame(page) {
+  return page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(resolve))
+  );
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto("http://localhost:5173/");
 });
@@ -63,6 +69,8 @@ test("binding-demo-colors", async ({ page }) => {
   let options = "";
 
   async function testColors(options) {
+    await waitForNextFrame(page);
+
     // The first option should be selected.
     const color = options.split(",")[0];
     await expectProperty(radioGroup, "value", color);
@@ -138,7 +146,7 @@ test("binding-demo-number", async ({ page }) => {
   const span = bindingDemo.locator("#score-p > span");
 
   async function testNumber(expected: string) {
-    await page.waitForTimeout(10); //TODO: Why is this needed?
+    await waitForNextFrame(page);
     await expectProperty(input, "value", expected);
     await expectProperty(rangeInput, "value", expected);
     await expect(span).toHaveText(expected);
