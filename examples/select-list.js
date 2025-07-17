@@ -31,7 +31,7 @@ class SelectList extends Wrec {
   // called from the expression in the html method.
   makeOption(option) {
     option = option.trim();
-    return html` <option value="${option}">${option}</option> `;
+    return html`<option value="${option}">${option}</option>`;
   }
 }
 

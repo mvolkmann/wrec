@@ -7,25 +7,20 @@ class ToggleSwitch extends Wrec {
     checked: { type: Boolean, dispatch: true },
   };
 
-  // Toggles on mouse‑click or space/enter keys.
-  toggle() {
-    this.checked = !this.checked;
-  }
-
-  handleKey(e) {
-    if (e.code === "Space" || e.code === "Enter") {
-      e.preventDefault();
-      this.toggle();
-    }
-  }
-
   static css = css`
+    :host {
+      --padding: 2px;
+      --thumb-size: 22px;
+      --height: calc(var(--thumb-size) + var(--padding) * 2);
+      --checked-x: calc(var(--thumb-size) - var(--padding) * 2);
+    }
+
     div {
       cursor: pointer;
       display: inline-block;
       position: relative;
-      width: 44px;
-      height: 26px;
+      width: calc(var(--thumb-size) * 2);
+      height: var(--height);
       outline: none;
     }
 
@@ -33,16 +28,16 @@ class ToggleSwitch extends Wrec {
       position: absolute;
       inset: 0;
       background: #ccc;
-      border-radius: 13px;
+      border-radius: calc(var(--height) / 2);
       transition: background 160ms;
     }
 
     .thumb {
       position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 22px;
-      height: 22px;
+      top: var(--padding);
+      left: var(--padding);
+      width: var(--thumb-size);
+      height: var(--thumb-size);
       background: #fff;
       border-radius: 50%;
       box-shadow: 0 0 2px rgb(0 0 0 / 0.4);
@@ -55,7 +50,7 @@ class ToggleSwitch extends Wrec {
 
     /* thumb slides with a CSS transition */
     .checked .thumb {
-      transform: translateX(18px);
+      transform: translateX(var(--checked-x));
     }
   `;
 
@@ -69,12 +64,21 @@ class ToggleSwitch extends Wrec {
       role="switch"
       tabindex="0"
     >
-      <!-- The onKeyDown attribute above can be replaced by this:
-           onKeyDown="this.handleKey(event)" -->
       <span class="track"></span>
       <span class="thumb"></span>
     </div>
   `;
+
+  handleKey(e) {
+    if (e.code === "Space" || e.code === "Enter") {
+      e.preventDefault();
+      this.toggle();
+    }
+  }
+
+  toggle() {
+    this.checked = !this.checked;
+  }
 }
 
 ToggleSwitch.register();
