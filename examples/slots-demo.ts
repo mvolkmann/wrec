@@ -2,15 +2,16 @@ import Wrec, { css, html } from "../wrec.js";
 
 class SlotsDemo extends Wrec {
   static properties = {
-    color: { type: String },
-    width: { type: String },
+    color: { type: String, value: "cornflowerblue" },
+    width: { type: String, value: "20rem" },
   };
+  // Typescript wants these to be explicitly declared.
+  color: string;
+  width: string;
 
   static css = css`
     :host {
       --border-radius: 1rem;
-      --color: cornflowerblue;
-      --width: 20rem;
       border: 1px solid var(--color);
       border-radius: var(--border-radius);
       display: inline-block;
@@ -58,8 +59,8 @@ class SlotsDemo extends Wrec {
   connectedCallback() {
     super.connectedCallback();
     const { color, width } = this;
-    if (color) this.style.setProperty("--color", color);
-    if (width) this.style.setProperty("--width", width);
+    this.style.setProperty("--color", color);
+    this.style.setProperty("--width", width);
   }
 }
 
