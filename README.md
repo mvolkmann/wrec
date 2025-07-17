@@ -287,3 +287,14 @@ To run them:
 1. Enter `npm install`.
 1. Enter `npm run testui`.
 1. Click the right pointing triangle.
+
+If there is no "Action" tab which displays a browser view of the running tests,
+reset the Playwright UI settings by entering one of these commands:
+
+```bash
+# macOS
+rm -rf ~/Library/Caches/ms-playwright/.settings
+
+# Windows
+del %LOCALAPPDATA%\ms-playwright\.settings /s /q
+```
