@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Speedometer Dial Demo</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background-color: #f0f0f0;
+      }
+
+      .demo-section {
+        margin-bottom: 30px;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .controls {
+        margin-top: 20px;
+      }
+
+      label {
+        display: inline-block;
+        margin-right: 10px;
+        font-weight: bold;
+      }
+
+      input {
+        margin-right: 20px;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+
+      .speedometer-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+      }
+
+      h2 {
+        margin-top: 0;
+        color: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Speedometer Dial Web Component Demo</h1>
+
+    <div class="demo-section">
+      <h2>
+        Basic Speedometer (default: min=0, max=100, value defaults to min)
+      </h2>
+      <speedometer-dial value="50"></speedometer-dial>
+    </div>
+
+    <div class="demo-section">
+      <h2>Custom Range Speedometers</h2>
+      <div class="speedometer-grid">
+        <div>
+          <h3>RPM Gauge (0-8000, value=3500)</h3>
+          <speedometer-dial min="0" max="8000" value="3500"></speedometer-dial>
+        </div>
+        <div>
+          <h3>Temperature (-20 to 50°C, value=22)</h3>
+          <speedometer-dial min="-20" max="50" value="22"></speedometer-dial>
+        </div>
+        <div>
+          <h3>Altitude (1000-5000m, value defaults to min)</h3>
+          <speedometer-dial min="1000" max="5000"></speedometer-dial>
+        </div>
+        <div>
+          <h3>Fuel Level (0-100%, value=75)</h3>
+          <speedometer-dial min="0" max="100" value="75"></speedometer-dial>
+        </div>
+        <div>
+          <h3>Small Range (0-10, value=7)</h3>
+          <speedometer-dial min="0" max="10" value="7"></speedometer-dial>
+        </div>
+        <div>
+          <h3>Large Range (0-10000, value=2500)</h3>
+          <speedometer-dial min="0" max="10000" value="2500"></speedometer-dial>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <h2>Interactive Speedometer</h2>
+      <speedometer-dial
+        id="interactive"
+        min="0"
+        max="180"
+        value="60"
+      ></speedometer-dial>
+      <div class="controls">
+        <label for="valueSlider">Value:</label>
+        <input type="range" id="valueSlider" min="0" max="180" value="60" />
+        <span id="valueDisplay">60</span>
+
+        <label for="minInput">Min:</label>
+        <input type="number" id="minInput" value="0" />
+
+        <label for="maxInput">Max:</label>
+        <input type="number" id="maxInput" value="180" />
+      </div>
+    </div>
+
+    <script type="module" src="speedometer-dial.js"></script>
+    <script>
+      // Interactive demo controls
+      const interactiveSpeedometer = document.getElementById("interactive");
+      const valueSlider = document.getElementById("valueSlider");
+      const valueDisplay = document.getElementById("valueDisplay");
+      const minInput = document.getElementById("minInput");
+      const maxInput = document.getElementById("maxInput");
+
+      valueSlider.addEventListener("input", (e) => {
+        const value = parseInt(e.target.value);
+        interactiveSpeedometer.setAttribute("value", value);
+        valueDisplay.textContent = value;
+      });
+
+      minInput.addEventListener("input", (e) => {
+        const min = parseInt(e.target.value);
+        interactiveSpeedometer.setAttribute("min", min);
+        valueSlider.min = min;
+        if (parseInt(valueSlider.value) < min) {
+          valueSlider.value = min;
+          valueSlider.dispatchEvent(new Event("input"));
+        }
+      });
+
+      maxInput.addEventListener("input", (e) => {
+        const max = parseInt(e.target.value);
+        interactiveSpeedometer.setAttribute("max", max);
+        valueSlider.max = max;
+        if (parseInt(valueSlider.value) > max) {
+          valueSlider.value = max;
+          valueSlider.dispatchEvent(new Event("input"));
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -5,6 +5,9 @@ const REFERENCE_RE = new RegExp(`^this.${IDENTIFIER}$`);
 const REFERENCES_RE = new RegExp(`this.${IDENTIFIER}`, "g");
 const SKIP = "this.".length;
 
+const defaultForType = (type) =>
+  type === Number ? 0 : type === Boolean ? false : "";
+
 function updateAttribute(element, attrName, value) {
   const currentValue = element.getAttribute(attrName);
   if (typeof value === "boolean") {
@@ -104,7 +107,7 @@ class Wrec extends HTMLElement {
       observedAttributes.includes(propertyName) &&
       this.hasAttribute(propertyName)
         ? this.#typedAttribute(propertyName)
-        : config.value;
+        : config.value || defaultForType(config.type);
     const privateName = "#" + propertyName;
     this[privateName] = value;
 
