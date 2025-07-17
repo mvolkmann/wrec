@@ -409,7 +409,9 @@ class Wrec extends HTMLElement {
   #validateAttributes() {
     const propertyNames = new Set(Object.keys(this.constructor.properties));
     for (const attrName of this.getAttributeNames()) {
-      if (!attrName.startsWith("on") && !propertyNames.has(attrName)) {
+      if (attrName === "id") continue;
+      if (attrName.startsWith("on")) continue;
+      if (!propertyNames.has(attrName)) {
         this.#throw(null, attrName, "is not a supported attribute");
       }
     }
