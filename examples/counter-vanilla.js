@@ -25,7 +25,7 @@ class CounterVanilla extends HTMLElement {
     this.attachShadow({ mode: "open" });
   }
   attributeChangedCallback() {
-    if (this.isConnected) this.#update();
+    this.#update();
   }
 
   connectedCallback() {
