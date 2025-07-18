@@ -66,8 +66,9 @@ class SpeedometerDial extends Wrec {
     const dialFace = this.shadowRoot.querySelector('.dial-face');
     if (!dialFace) return;
     
-    // Remove existing tick marks
+    // Remove existing tick marks and labels
     dialFace.querySelectorAll('.tick').forEach(tick => tick.remove());
+    dialFace.querySelectorAll('.tick-label').forEach(label => label.remove());
     
     const interval = this.calculateTickInterval();
     const range = this.max - this.min;
@@ -97,6 +98,13 @@ class SpeedometerDial extends Wrec {
       tick.style.transform = `translate(-50%, -50%) rotate(${angle}deg) translateX(-85px)`;
       
       dialFace.appendChild(tick);
+      
+      // Add label for all tick marks
+      const label = document.createElement('div');
+      label.className = 'tick-label';
+      label.textContent = Math.round(roundedValue);
+      label.style.transform = `translate(-50%, -50%) rotate(${angle}deg) translateX(-105px) rotate(${-angle}deg)`;
+      dialFace.appendChild(label);
     }
     
     // Always add tick marks at min and max positions if they don't exist
@@ -105,10 +113,22 @@ class SpeedometerDial extends Wrec {
     minTick.style.transform = `translate(-50%, -50%) rotate(300deg) translateX(-85px)`;
     dialFace.appendChild(minTick);
     
+    const minLabel = document.createElement('div');
+    minLabel.className = 'tick-label';
+    minLabel.textContent = Math.round(this.min);
+    minLabel.style.transform = `translate(-50%, -50%) rotate(300deg) translateX(-105px) rotate(-300deg)`;
+    dialFace.appendChild(minLabel);
+    
     const maxTick = document.createElement('div');
     maxTick.className = 'tick major';
     maxTick.style.transform = `translate(-50%, -50%) rotate(600deg) translateX(-85px)`;
     dialFace.appendChild(maxTick);
+    
+    const maxLabel = document.createElement('div');
+    maxLabel.className = 'tick-label';
+    maxLabel.textContent = Math.round(this.max);
+    maxLabel.style.transform = `translate(-50%, -50%) rotate(600deg) translateX(-105px) rotate(-600deg)`;
+    dialFace.appendChild(maxLabel);
   }
 
   setupDragListeners() {
@@ -339,6 +359,21 @@ class SpeedometerDial extends Wrec {
       width: 20px;
       height: 2px;
       background: color-mix(in srgb, var(--tick-color) 100%, white 20%);
+    }
+
+    .tick-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform-origin: center;
+      color: var(--tick-color);
+      font-family: "Courier New", monospace;
+      font-size: 10px;
+      font-weight: bold;
+      z-index: 2;
+      text-align: center;
+      white-space: nowrap;
+      pointer-events: none;
     }
 
     .value-display {
