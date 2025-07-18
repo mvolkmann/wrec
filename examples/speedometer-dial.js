@@ -5,6 +5,9 @@ class SpeedometerDial extends Wrec {
     min: { type: Number, value: 0 },
     max: { type: Number, value: 100 },
     value: { type: Number },
+    "background-color": { type: String, value: "#333" },
+    "tick-color": { type: String, value: "#ccc" },
+    "needle-color": { type: String, value: "#ff0000" },
   };
 
   connectedCallback() {
@@ -16,10 +19,17 @@ class SpeedometerDial extends Wrec {
     
     // Update needle position and generate tick marks after DOM is built
     requestAnimationFrame(() => {
+      this.updateColors();
       this.generateTickMarks();
       this.updateNeedlePosition();
       this.setupDragListeners();
     });
+  }
+
+  updateColors() {
+    this.style.setProperty('--background-color', this["background-color"]);
+    this.style.setProperty('--tick-color', this["tick-color"]);
+    this.style.setProperty('--needle-color', this["needle-color"]);
   }
 
   updateNeedlePosition() {
@@ -228,6 +238,13 @@ class SpeedometerDial extends Wrec {
         this.updateNeedlePosition();
       });
     }
+    
+    // Update colors when color attributes change
+    if (attrName === 'background-color' || attrName === 'tick-color' || attrName === 'needle-color') {
+      requestAnimationFrame(() => {
+        this.updateColors();
+      });
+    }
   }
 
   static css = css`
@@ -235,15 +252,18 @@ class SpeedometerDial extends Wrec {
       display: inline-block;
       width: 200px;
       height: 200px;
+      --background-color: #333;
+      --tick-color: #ccc;
+      --needle-color: #ff0000;
     }
 
     .speedometer {
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      background: linear-gradient(135deg, #333 0%, #555 100%);
+      background: linear-gradient(135deg, var(--background-color) 0%, color-mix(in srgb, var(--background-color) 80%, white) 100%);
       position: relative;
-      border: 4px solid #222;
+      border: 4px solid color-mix(in srgb, var(--background-color) 60%, black);
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     }
 
@@ -251,25 +271,25 @@ class SpeedometerDial extends Wrec {
       width: 90%;
       height: 90%;
       border-radius: 50%;
-      background: linear-gradient(135deg, #444 0%, #666 100%);
+      background: linear-gradient(135deg, color-mix(in srgb, var(--background-color) 90%, white) 0%, color-mix(in srgb, var(--background-color) 70%, white) 100%);
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      border: 2px solid #555;
+      border: 2px solid color-mix(in srgb, var(--background-color) 50%, white);
     }
 
     .needle {
       width: 2px;
       height: 45%;
-      background: linear-gradient(to bottom, #ff0000 0%, #cc0000 100%);
+      background: linear-gradient(to bottom, var(--needle-color) 0%, color-mix(in srgb, var(--needle-color) 80%, black) 100%);
       position: absolute;
       top: 50%;
       left: 50%;
       transform-origin: bottom center;
       transform: translate(-50%, -100%) rotate(210deg);
       border-radius: 1px;
-      box-shadow: 0 0 3px rgba(255, 0, 0, 0.5);
+      box-shadow: 0 0 3px color-mix(in srgb, var(--needle-color) 50%, transparent);
       z-index: 3;
       transition: transform 0.1s ease;
     }
@@ -277,18 +297,18 @@ class SpeedometerDial extends Wrec {
     .needle-tip {
       width: 8px;
       height: 8px;
-      background: #ff0000;
+      background: var(--needle-color);
       border-radius: 50%;
       position: absolute;
       top: -4px;
       left: 50%;
       transform: translateX(-50%);
       cursor: pointer;
-      box-shadow: 0 0 3px rgba(255, 0, 0, 0.5);
+      box-shadow: 0 0 3px color-mix(in srgb, var(--needle-color) 50%, transparent);
     }
 
     .needle-tip:hover {
-      box-shadow: 0 0 5px rgba(255, 0, 0, 0.8);
+      box-shadow: 0 0 5px color-mix(in srgb, var(--needle-color) 80%, transparent);
     }
 
     .center-dot {
@@ -311,14 +331,14 @@ class SpeedometerDial extends Wrec {
       transform-origin: center;
       height: 1px;
       width: 15px;
-      background: #ccc;
+      background: var(--tick-color);
       z-index: 2;
     }
 
     .tick.major {
       width: 20px;
       height: 2px;
-      background: #fff;
+      background: color-mix(in srgb, var(--tick-color) 100%, white 20%);
     }
 
     .value-display {
