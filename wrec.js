@@ -285,7 +285,16 @@ class Wrec extends HTMLElement {
   // attribute values or the text content of elements!
   #registerPlaceholders(text, element, attrName) {
     const matches = this.#validateExpression(element, attrName, text);
-    if (!matches) return;
+    if (!matches) {
+      text = text.replaceAll("this..", "this.");
+      if (attrName) {
+        element.setAttribute(attrName, text);
+      } else {
+        element.textContent = text;
+      }
+      return;
+    }
+
     // Only map properties to expressions once for each web component because
     // the mapping will be the same for every instance of the web component.
     if (!this.constructor.processed) {

@@ -30,6 +30,7 @@ class DataBinding extends Wrec {
       value="this.color"
     ></select-list>
     <p>You selected the color <span>this.color</span>.</p>
+    <p>The this. reference is escaped here: <span>this..color</span>.</p>
   `;
 }
 

@@ -106,6 +106,38 @@ Here are the steps:
 
 1. Click the "-" and "+" buttons to verify that the component is working.
 
+## Reactivity
+
+Wrec supports reactivity.
+Attribute values and the text content of elements
+can refer to web component properties with the syntax `this.somePropertyName`.
+In this context, `this` always refers to the parent web component.
+The DOM of the web component is surgically updated.
+Only attribute values and text content
+that refer to modified web component properties are updated.
+Attribute values and text content that contain references to properties
+must be valid JavaScript expressions that are NOT surrounded by `${...}`.
+For an example of this kind of web component, see `examples/hello-world.js`.
+
+Wrec evaluates JavaScript expressions in the context of a web component instance
+which can be referred to with the `this` keyword in the expressions.
+
+To render "this." followed by a valid JavaScript identifier without
+replacing it with the value of the expression, escaping with a double period.
+For example, `this.count` will be reactively replaced with its value,
+but `this..count` will render the text with a single period.
+
+In insert the value of an expression
+that does not use properties of the web component,
+into an HTML template string,
+surround the expression with the syntax `${...}`.
+For example, assuming `DAYS` is a variable
+whose value is an array of month names:
+
+```html
+<p>The month is ${DAYS[new Date().getDay()]}.</p>
+```
+
 ## Required Attributes
 
 The configuration object for required attributes in a Wrec component
@@ -148,33 +180,6 @@ For an example of this,
 see the `checked` property in `examples/toggle-switch.js`.
 The component defined in `examples/binding-demo.js`
 listens for that event, as does the `script` in `examples/index.html`.
-
-## Reactivity
-
-Wrec supports reactivity.
-Attribute values and the text content of elements
-can refer to web component properties with the syntax `this.somePropertyName`.
-In this context, `this` always refers to the parent web component.
-The DOM of the web component is surgically updated.
-Only attribute values and text content
-that refer to modified web component properties are updated.
-Attribute values and text content that contain references to properties
-must be valid JavaScript expressions that are NOT surrounded by `${...}`.
-For an example of this kind of web component, see `examples/hello-world.js`.
-
-Wrec evaluates JavaScript expressions in the context of a web component instance
-which can be referred to with the `this` keyword in the expressions.
-
-In insert the value of an expression
-that does not use properties of the web component,
-into an HTML template string,
-surround the expression with the syntax `${...}`.
-For example, assuming `DAYS` is a variable
-whose value is an array of month names:
-
-```html
-<p>The month is ${DAYS[new Date().getDay()]}.</p>
-```
 
 ## Conditional and Iterative HTML Generation
 
