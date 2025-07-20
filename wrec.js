@@ -102,23 +102,32 @@ class Wrec extends HTMLElement {
       this.#wireEvents(this.shadowRoot);
       this.#makeReactive(this.shadowRoot);
       this.constructor.processed = true;
+      this.#computeProperties();
     });
+  }
+
+  #computeProperties() {
+    const { properties } = this.constructor;
+    for (const [propertyName, { computed }] of Object.entries(properties)) {
+      if (computed) this[propertyName] = this.#evaluateInContext(computed);
+    }
   }
 
   #defineProperties() {
     const { observedAttributes, properties } = this.constructor;
-    for (const [name, config] of Object.entries(properties)) {
-      this.#defineProperty(name, config, observedAttributes);
+    for (const [propertyName, config] of Object.entries(properties)) {
+      this.#defineProperty(propertyName, config, observedAttributes);
     }
   }
 
   #defineProperty(propertyName, config, observedAttributes) {
+    const { computed, required } = config;
     const kebab = camelToKebab(propertyName);
-    if (config.required && !this.hasAttribute(kebab)) {
+    if (required && !this.hasAttribute(kebab)) {
       this.#throw(this, propertyName, "is a required attribute");
     }
 
-    // Copy the property value to a new property with a leading underscore.
+    // Copy the property value to a private property.
     // The property is replaced below with Object.defineProperty.
     const value =
       observedAttributes.includes(propertyName) && this.hasAttribute(kebab)
@@ -126,6 +135,8 @@ class Wrec extends HTMLElement {
         : config.value || defaultForType(config.type);
     const privateName = "#" + propertyName;
     this[privateName] = value;
+
+    if (computed) this.#registerComputedProperty(propertyName, computed);
 
     Object.defineProperty(this, propertyName, {
       enumerable: true,
@@ -138,6 +149,15 @@ class Wrec extends HTMLElement {
 
         this[privateName] = value;
 
+        // Update all computed properties that reference this property.
+        let map = this.constructor.propertyToComputedMap;
+        if (map) {
+          const computes = map.get(propertyName) || [];
+          for (const [computedName, expression] of computes) {
+            this[computedName] = this.#evaluateInContext(expression);
+          }
+        }
+
         // If there is a matching attribute on the custom element,
         // update that attribute.
         if (this.hasAttribute(kebab)) {
@@ -149,7 +169,7 @@ class Wrec extends HTMLElement {
 
         // If this property is bound to a parent web component property,
         // update that as well.
-        const map = this.propertyToParentPropertyMap;
+        map = this.propertyToParentPropertyMap;
         const parentProperty = map ? map.get(propertyName) : null;
         if (parentProperty) {
           const parent = this.getRootNode().host;
@@ -261,6 +281,7 @@ class Wrec extends HTMLElement {
       "#expressionToReferencesMap =",
       this.#expressionToReferencesMap
     );
+    console.log("#propertyToComputedMap =", this.#propertyToComputedMap);
     */
   }
 
@@ -303,6 +324,25 @@ class Wrec extends HTMLElement {
     const elementName = this.elementName();
     if (!customElements.get(elementName)) {
       customElements.define(elementName, this);
+    }
+  }
+
+  #registerComputedProperty(propertyName, expression) {
+    const matches = expression.match(REFERENCES_RE) || [];
+    for (const match of matches) {
+      const referencedProperty = match.substring(SKIP);
+      if (this[referencedProperty] === undefined) {
+        this.#throwInvalidReference(null, propertyName, referencedProperty);
+      }
+
+      let map = this.constructor.propertyToComputedMap;
+      if (!map) map = this.constructor.propertyToComputedMap = new Map();
+      let computes = map.get(referencedProperty);
+      if (!computes) {
+        computes = [];
+        map.set(referencedProperty, computes);
+      }
+      computes.push([propertyName, expression]);
     }
   }
 

@@ -1,12 +1,16 @@
 import Wrec, { css, html } from "../wrec.js";
 
-const capitalize = (str) =>
-  str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
-
 class DataBinding extends Wrec {
   static properties = {
     color: { type: String },
     colors: { type: String, required: true },
+    // With this approach we can't determine the dependencies.
+    //labels: { type: String, computed: "this.getLabels()" },
+    labels: {
+      type: String,
+      computed:
+        "this.colors.split(',').map(color => this.capitalize(color)).join(',')",
+    },
     size: { type: Number, value: 18 },
   };
 
@@ -35,11 +39,13 @@ class DataBinding extends Wrec {
     </div>
     <radio-group
       name="color1"
+      labels="this.labels"
       values="this.colors"
       value="this.color"
     ></radio-group>
     <select-list
       name="color2"
+      labels="this.labels"
       values="this.colors"
       value="this.color"
     ></select-list>
@@ -52,6 +58,10 @@ class DataBinding extends Wrec {
     <p>You selected the color <span>this.color</span>.</p>
     <p>The this. reference is escaped here: <span>this..color</span>.</p>
   `;
+
+  capitalize(str) {
+    return str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
+  }
 }
 
 DataBinding.register();
