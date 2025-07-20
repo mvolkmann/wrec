@@ -33,19 +33,19 @@ class ColorPicker extends Wrec {
     <div id="sliders">
       <number-slider
         label="Red"
-        labelwidth="this.labelWidth"
+        label-width="this.labelWidth"
         max="255"
         value="this.red"
       ></number-slider>
       <number-slider
         label="Green"
-        labelwidth="this.labelWidth"
+        label-width="this.labelWidth"
         max="255"
         value="this.green"
       ></number-slider>
       <number-slider
         label="Blue"
-        labelwidth="this.labelWidth"
+        label-width="this.labelWidth"
         max="255"
         value="this.blue"
       ></number-slider>

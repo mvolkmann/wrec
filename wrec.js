@@ -5,6 +5,13 @@ const REFERENCE_RE = new RegExp(`^this.${IDENTIFIER}$`);
 const REFERENCES_RE = new RegExp(`this.${IDENTIFIER}`, "g");
 const SKIP = "this.".length;
 
+// Inserts a dash before each uppercase letter.
+const camelToKebab = (name) =>
+  name.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+
+const kebabToCamel = (name) =>
+  name.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
+
 const defaultForType = (type) =>
   type === Number ? 0 : type === Boolean ? false : "";
 
@@ -53,9 +60,10 @@ class Wrec extends HTMLElement {
 
   attributeChangedCallback(attrName, _, newValue) {
     // Update the corresponding property.
-    const value = this.#typedValue(attrName, newValue);
-    this[attrName] = value;
-    this.#setFormValue(attrName, value);
+    const camel = kebabToCamel(attrName);
+    const value = this.#typedValue(camel, newValue);
+    this[camel] = value;
+    this.#setFormValue(camel, value);
   }
 
   // attrName must be "value" OR undefined!
@@ -105,15 +113,15 @@ class Wrec extends HTMLElement {
   }
 
   #defineProperty(propertyName, config, observedAttributes) {
-    if (config.required && !this.hasAttribute(propertyName)) {
+    const kebab = camelToKebab(propertyName);
+    if (config.required && !this.hasAttribute(kebab)) {
       this.#throw(this, propertyName, "is a required attribute");
     }
 
     // Copy the property value to a new property with a leading underscore.
     // The property is replaced below with Object.defineProperty.
     const value =
-      observedAttributes.includes(propertyName) &&
-      this.hasAttribute(propertyName)
+      observedAttributes.includes(propertyName) && this.hasAttribute(kebab)
         ? this.#typedAttribute(propertyName)
         : config.value || defaultForType(config.type);
     const privateName = "#" + propertyName;
@@ -132,7 +140,7 @@ class Wrec extends HTMLElement {
 
         // If there is a matching attribute on the custom element,
         // update that attribute.
-        if (this.hasAttribute(propertyName)) {
+        if (this.hasAttribute(kebab)) {
           const oldValue = this.#typedAttribute(propertyName);
           if (value !== oldValue) updateAttribute(this, propertyName, value);
         }
@@ -257,7 +265,7 @@ class Wrec extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return Object.keys(this.properties || {});
+    return Object.keys(this.properties || {}).map(camelToKebab);
   }
 
   #propertyReferenceName(element, text) {
@@ -440,7 +448,7 @@ class Wrec extends HTMLElement {
     for (const attrName of this.getAttributeNames()) {
       if (attrName === "id") continue;
       if (attrName.startsWith("on")) continue;
-      if (!propertyNames.has(attrName)) {
+      if (!propertyNames.has(kebabToCamel(attrName))) {
         this.#throw(null, attrName, "is not a supported attribute");
       }
     }
