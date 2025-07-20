@@ -31,30 +31,25 @@ class ColorPicker extends Wrec {
   static html = html`
     <div id="swatch"></div>
     <div id="sliders">
-      <number-slider
-        label="Red"
-        label-width="this.labelWidth"
-        max="255"
-        value="this.red"
-      ></number-slider>
-      <number-slider
-        label="Green"
-        label-width="this.labelWidth"
-        max="255"
-        value="this.green"
-      ></number-slider>
-      <number-slider
-        label="Blue"
-        label-width="this.labelWidth"
-        max="255"
-        value="this.blue"
-      ></number-slider>
+      ${this.makeSlider("Red")} ${this.makeSlider("Green")}
+      ${this.makeSlider("Blue")}
     </div>
   `;
 
   attributeChangedCallback(attrName, oldValue, newValue) {
     super.attributeChangedCallback(attrName, oldValue, newValue);
     this.color = `rgb(${this.red}, ${this.green}, ${this.blue})`;
+  }
+
+  static makeSlider(label) {
+    return html`
+      <number-slider
+        label=${label}
+        label-width="this.labelWidth"
+        max="255"
+        value="this.${label.toLowerCase()}"
+      ></number-slider>
+    `;
   }
 }
 
