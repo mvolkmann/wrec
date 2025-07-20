@@ -5,13 +5,15 @@ class SelectList extends Wrec {
 
   static properties = {
     name: { type: String, required: true },
-    options: { type: String, required: true },
+    labels: { type: String },
+    values: { type: String, required: true },
     value: { type: String },
   };
 
   static html = html`
     <select name="${this.name}" value="this.value">
-      this.options.split(",").map((option) => this.makeOption(option)).join("")
+      this.values.split(",").map((value, index) => this.makeOption(value,
+      index)).join("")
     </select>
   `;
 
@@ -20,18 +22,17 @@ class SelectList extends Wrec {
 
     // Wait for the DOM to update.
     requestAnimationFrame(() => {
-      const options = this.options.split(",");
-      if (!this.value || !options.includes(this.value)) {
-        this.value = options[0];
-      }
+      const values = this.values.split(",");
+      if (!values.includes(this.value)) this.value = values[0];
     });
   }
 
   // This method cannot be private because it is
   // called from the expression in the html method.
-  makeOption(option) {
-    option = option.trim();
-    return html`<option value="${option}">${option}</option>`;
+  makeOption(value, index) {
+    value = value.trim();
+    const label = this.labels ? this.labels.split(",")[index].trim() : value;
+    return html`<option value="${value}">${label}</option>`;
   }
 }
 

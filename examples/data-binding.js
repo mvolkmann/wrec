@@ -1,5 +1,8 @@
 import Wrec, { css, html } from "../wrec.js";
 
+const capitalize = (str) =>
+  str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
+
 class DataBinding extends Wrec {
   static properties = {
     color: { type: String },
@@ -23,6 +26,8 @@ class DataBinding extends Wrec {
     }
   `;
 
+  //TODO: Implement computed properties.
+  // labels="this.colors.split(',').map(capitalize).join(',')"
   static html = html`
     <div>
       <label>Color Options (comma-separated):</label>
@@ -30,12 +35,12 @@ class DataBinding extends Wrec {
     </div>
     <radio-group
       name="color1"
-      options="this.colors"
+      values="this.colors"
       value="this.color"
     ></radio-group>
     <select-list
       name="color2"
-      options="this.colors"
+      values="this.colors"
       value="this.color"
     ></select-list>
     <number-slider

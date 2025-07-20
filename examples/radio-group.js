@@ -5,8 +5,9 @@ class RadioGroup extends Wrec {
 
   static properties = {
     default: { type: String },
+    labels: { type: String },
     name: { type: String, required: true },
-    options: { type: String, required: true },
+    values: { type: String, required: true },
     value: { type: String },
   };
 
@@ -24,13 +25,14 @@ class RadioGroup extends Wrec {
 
   static html = html`
     <div>
-      this.options.split(",").map((option) => this.makeRadio(option)).join("")
+      this.values.split(",").map((value, index) => this.makeRadio(value,
+      index)).join("")
     </div>
   `;
 
   connectedCallback() {
     super.connectedCallback();
-    if (!this.default) this.default = this.options.split(",")[0];
+    if (!this.default) this.default = this.values.split(",")[0];
     if (!this.value) this.value = this.default;
     this.#fixValue();
   }
@@ -43,7 +45,7 @@ class RadioGroup extends Wrec {
       for (const input of inputs) {
         input.checked = input.value === newValue;
       }
-    } else if (attrName === "options") {
+    } else if (attrName === "values") {
       this.#fixValue();
     }
   }
@@ -52,8 +54,8 @@ class RadioGroup extends Wrec {
   // is not in the list of options.
   #fixValue() {
     requestAnimationFrame(() => {
-      const options = this.options.split(",");
-      if (!options.includes(this.value)) this.value = options[0];
+      const values = this.values.split(",");
+      if (!values.includes(this.value)) this.value = values[0];
     });
   }
 
@@ -65,19 +67,20 @@ class RadioGroup extends Wrec {
 
   // This method cannot be private because it is
   // called from the expression in the html method.
-  makeRadio(option) {
-    option = option.trim();
+  makeRadio(value, index) {
+    value = value.trim();
+    const label = this.labels ? this.labels.split(",")[index].trim() : value;
     return html`
       <div>
         <input
           type="radio"
-          id="${option}"
+          id="${value}"
           name="${this.name}"
           onchange="handleChange"
-          value="${option}"
-          ${option === this.value ? "checked" : ""}
+          value="${value}"
+          ${value === this.value ? "checked" : ""}
         />
-        <label for="${option}">${option}</label>
+        <label for="${value}">${label}</label>
       </div>
     `;
   }
