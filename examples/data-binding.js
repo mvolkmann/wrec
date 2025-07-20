@@ -4,6 +4,7 @@ class DataBinding extends Wrec {
   static properties = {
     color: { type: String },
     colors: { type: String, required: true },
+    size: { type: Number, value: 18 },
   };
 
   static css = css`
@@ -11,6 +12,14 @@ class DataBinding extends Wrec {
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+      font-family: sans-serif;
+    }
+    p {
+      --color: this.color;
+      --size: this.size;
+      color: var(--color);
+      font-size: calc(var(--size) * 1px);
+      margin: 6px 0;
     }
   `;
 
@@ -29,6 +38,12 @@ class DataBinding extends Wrec {
       options="this.colors"
       value="this.color"
     ></select-list>
+    <number-slider
+      label="Size"
+      max="48"
+      min="12"
+      value="this.size"
+    ></number-slider>
     <p>You selected the color <span>this.color</span>.</p>
     <p>The this. reference is escaped here: <span>this..color</span>.</p>
   `;

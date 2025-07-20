@@ -23,6 +23,14 @@ function updateAttribute(element, attrName, value) {
   }
 }
 
+function updateValue(element, attrName, value) {
+  if (element instanceof CSSRule) {
+    element.style.setProperty(attrName, value); // CSS variable
+  } else {
+    updateAttribute(element, attrName, value);
+  }
+}
+
 class Wrec extends HTMLElement {
   #expressionToReferencesMap = new Map();
   #formData;
@@ -204,19 +212,29 @@ class Wrec extends HTMLElement {
   #evaluateText(element) {
     const { localName } = element;
 
-    // Don't allow style elements to be affected by property values.
-    if (localName === "style") return;
-
-    const text = element.textContent.trim();
-    // Only add a binding the element is a "textarea" and
-    // its text content is a single property reference.
-    const propertyName = this.#propertyReferenceName(element, text);
-    if (localName === "textarea" && propertyName) {
-      // Configure data binding.
-      this.#bind(element, propertyName);
-      element.textContent = this[propertyName];
+    if (localName === "style") {
+      for (const rule of element.sheet.cssRules) {
+        if (rule.type === CSSRule.STYLE_RULE) {
+          for (const prop of rule.style) {
+            if (prop.startsWith("--")) {
+              const value = rule.style.getPropertyValue(prop);
+              this.#registerPlaceholders(value, rule, prop);
+            }
+          }
+        }
+      }
     } else {
-      this.#registerPlaceholders(text, element);
+      const text = element.textContent.trim();
+      // Only add a binding the element is a "textarea" and
+      // its text content is a single property reference.
+      const propertyName = this.#propertyReferenceName(element, text);
+      if (localName === "textarea" && propertyName) {
+        // Configure data binding.
+        this.#bind(element, propertyName);
+        element.textContent = this[propertyName];
+      } else {
+        this.#registerPlaceholders(text, element);
+      }
     }
   }
 
@@ -262,8 +280,7 @@ class Wrec extends HTMLElement {
         if (reference instanceof Element) {
           this.#updateElementContent(reference, value);
         } else {
-          const { element, attrName } = reference;
-          updateAttribute(element, attrName, value);
+          updateValue(reference.element, reference.attrName, value);
         }
       }
     }
@@ -286,11 +303,11 @@ class Wrec extends HTMLElement {
   #registerPlaceholders(text, element, attrName) {
     const matches = this.#validateExpression(element, attrName, text);
     if (!matches) {
-      text = text.replaceAll("this..", "this.");
+      const value = text.replaceAll("this..", "this.");
       if (attrName) {
-        element.setAttribute(attrName, text);
+        updateValue(element, attrName, value);
       } else {
-        element.textContent = text;
+        element.textContent = value;
       }
       return;
     }
@@ -319,7 +336,7 @@ class Wrec extends HTMLElement {
 
     const value = this.#evaluateInContext(text);
     if (attrName) {
-      updateAttribute(element, attrName, value);
+      updateValue(element, attrName, value);
     } else {
       this.#updateElementContent(element, value);
     }

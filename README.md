@@ -138,6 +138,33 @@ whose value is an array of month names:
 <p>The month is ${DAYS[new Date().getDay()]}.</p>
 ```
 
+## Reactive CSS
+
+CSS property values cannot refer to web component properties
+with the syntax `this.somePropertyName`.
+This is because the CSS parser in browsers removes invalid property values.
+A workaround is to place such references in a CSS variable
+and refer to that variable from a CSS property.
+For an example of this, see `examples/data-binding.js`
+which contains the following CSS:
+
+```css
+p {
+  --color: this.color;
+  --size: this.size;
+  color: var(--color);
+  font-size: calc(var(--size) * 1px);
+  margin: 6px 0;
+}
+```
+
+CSS variable values can be any valid JavaScript expression.
+The example above can be changed to double the size as follows:
+
+```css
+--size: this.size * 2;
+```
+
 ## Required Attributes
 
 The configuration object for required attributes in a Wrec component

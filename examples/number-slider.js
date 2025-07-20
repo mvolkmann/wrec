@@ -2,13 +2,17 @@ import Wrec, { css, html } from "../wrec.js";
 
 class NumberSlider extends Wrec {
   static properties = {
+    max: { type: Number, value: 100 },
+    min: { type: Number, value: 0 },
     label: { type: String },
     value: { type: Number },
   };
 
   static css = css`
     :host {
-      display: block;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     input[type="number"] {
@@ -22,7 +26,8 @@ class NumberSlider extends Wrec {
 
   static html = html`
     <label>this.label</label>
-    <input type="range" min="0" value="this.value" />
+    <input type="range" min="this.min" max="this.max" value="this.value" />
+    <span>this.value</span>
   `;
 }
 
