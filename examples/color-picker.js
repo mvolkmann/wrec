@@ -2,6 +2,7 @@ import Wrec, { css, html } from "../wrec.js";
 
 class ColorPicker extends Wrec {
   static properties = {
+    labelWidth: { type: String, value: "3rem" },
     red: { type: Number },
     green: { type: Number },
     blue: { type: Number },
@@ -30,9 +31,24 @@ class ColorPicker extends Wrec {
   static html = html`
     <div id="swatch"></div>
     <div id="sliders">
-      <number-slider label="Red" max="255" value="this.red"></number-slider>
-      <number-slider label="Green" max="255" value="this.green"></number-slider>
-      <number-slider label="Blue" max="255" value="this.blue"></number-slider>
+      <number-slider
+        label="Red"
+        labelwidth="this.labelWidth"
+        max="255"
+        value="this.red"
+      ></number-slider>
+      <number-slider
+        label="Green"
+        labelwidth="this.labelWidth"
+        max="255"
+        value="this.green"
+      ></number-slider>
+      <number-slider
+        label="Blue"
+        labelwidth="this.labelWidth"
+        max="255"
+        value="this.blue"
+      ></number-slider>
     </div>
   `;
 

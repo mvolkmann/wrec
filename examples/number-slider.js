@@ -5,6 +5,7 @@ class NumberSlider extends Wrec {
     max: { type: Number, value: 100 },
     min: { type: Number, value: 0 },
     label: { type: String },
+    labelwidth: { type: String },
     value: { type: Number },
   };
 
@@ -20,7 +21,10 @@ class NumberSlider extends Wrec {
     }
 
     label {
+      --label-width: this.labelwidth;
       font-weight: bold;
+      text-align: right;
+      width: var(--label-width);
     }
   `;
 
