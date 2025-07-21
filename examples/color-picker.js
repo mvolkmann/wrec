@@ -22,6 +22,7 @@ class ColorPicker extends Wrec {
     }
 
     #swatch {
+      --color: this.color;
       background-color: var(--color);
       height: 5rem;
       width: 5rem;
