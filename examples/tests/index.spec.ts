@@ -36,15 +36,16 @@ test("binding-demo-colors", async ({ page }) => {
   color = "red";
   const select = selectList.locator("select");
   await select.selectOption(color);
+  await waitForNextFrame(page);
   await expectProperty(radioGroup, "value", color);
   await expectProperty(selectList, "value", color);
   await expect(span).toHaveText(color);
 
-  let values = "";
-
   async function testColors(values) {
+    //TODO: Why do I need to call this three times for the tests to pass?
     await waitForNextFrame(page);
-    await page.waitForTimeout(100);
+    await waitForNextFrame(page);
+    await waitForNextFrame(page);
 
     // The first option should be selected.
     const color = values.split(",")[0];
@@ -74,9 +75,11 @@ test("binding-demo-colors", async ({ page }) => {
     }
   }
 
+  let values = "";
+
   // Change the list of values in the binding-demo element.
   values = "pink,yellow";
-  await setAttribute(bindingDemo, "values", values);
+  await setAttribute(bindingDemo, "colors", values);
   await testColors(values);
 
   // Change the list of values in the radio-group element.
@@ -121,7 +124,11 @@ test("binding-demo-number", async ({ page }) => {
   const span = bindingDemo.locator("#score-p > span");
 
   async function testNumber(expected: string) {
+    //TODO: Why do I need to call this three times for the tests to pass?
     await waitForNextFrame(page);
+    await waitForNextFrame(page);
+    await waitForNextFrame(page);
+
     await expectProperty(input, "value", expected);
     await expectProperty(rangeInput, "value", expected);
     await expect(span).toHaveText(expected);
