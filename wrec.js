@@ -39,6 +39,9 @@ function updateValue(element, attrName, value) {
 }
 
 class Wrec extends HTMLElement {
+  static #propToAttrMap = new Map();
+  static #attrToPropMap = new Map();
+
   #expressionToReferencesMap = new Map();
   #formData;
   #internals;
@@ -59,11 +62,11 @@ class Wrec extends HTMLElement {
   }
 
   attributeChangedCallback(attrName, _, newValue) {
-    // Update the corresponding property.
-    const camel = kebabToCamel(attrName);
-    const value = this.#typedValue(camel, newValue);
-    this[camel] = value;
-    this.#setFormValue(camel, value);
+    // Update corresponding property.
+    const propertyName = Wrec.getPropertyName(attrName);
+    const value = this.#typedValue(propertyName, newValue);
+    this[propertyName] = value;
+    this.#setFormValue(propertyName, value);
   }
 
   // attrName must be "value" OR undefined!
@@ -122,15 +125,15 @@ class Wrec extends HTMLElement {
 
   #defineProperty(propertyName, config, observedAttributes) {
     const { computed, required } = config;
-    const kebab = camelToKebab(propertyName);
-    if (required && !this.hasAttribute(kebab)) {
+    const attrName = Wrec.getAttributeName(propertyName);
+    if (required && !this.hasAttribute(attrName)) {
       this.#throw(this, propertyName, "is a required attribute");
     }
 
     // Copy the property value to a private property.
     // The property is replaced below with Object.defineProperty.
     const value =
-      observedAttributes.includes(propertyName) && this.hasAttribute(kebab)
+      observedAttributes.includes(propertyName) && this.hasAttribute(attrName)
         ? this.#typedAttribute(propertyName)
         : config.value || defaultForType(config.type);
     const privateName = "#" + propertyName;
@@ -160,7 +163,7 @@ class Wrec extends HTMLElement {
 
         // If there is a matching attribute on the custom element,
         // update that attribute.
-        if (this.hasAttribute(kebab)) {
+        if (this.hasAttribute(attrName)) {
           const oldValue = this.#typedAttribute(propertyName);
           if (value !== oldValue) updateAttribute(this, propertyName, value);
         }
@@ -266,6 +269,24 @@ class Wrec extends HTMLElement {
     }
   }
 
+  static getAttributeName(propName) {
+    let attrName = Wrec.#propToAttrMap.get(propName);
+    if (!attrName) {
+      attrName = camelToKebab(propName);
+      Wrec.#propToAttrMap.set(propName, attrName);
+    }
+    return attrName;
+  }
+
+  static getPropertyName(attrName) {
+    let propName = Wrec.#attrToPropMap.get(attrName);
+    if (!propName) {
+      propName = kebabToCamel(attrName);
+      Wrec.#attrToPropMap.set(attrName, propName);
+    }
+    return propName;
+  }
+
   #makeReactive(root) {
     const elements = root.querySelectorAll("*");
     for (const element of elements) {
@@ -286,7 +307,7 @@ class Wrec extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return Object.keys(this.properties || {}).map(camelToKebab);
+    return Object.keys(this.properties || {}).map(Wrec.getAttributeName);
   }
 
   #propertyReferenceName(element, text) {
@@ -488,7 +509,7 @@ class Wrec extends HTMLElement {
     for (const attrName of this.getAttributeNames()) {
       if (attrName === "id") continue;
       if (attrName.startsWith("on")) continue;
-      if (!propertyNames.has(kebabToCamel(attrName))) {
+      if (!propertyNames.has(Wrec.getPropertyName(attrName))) {
         this.#throw(null, attrName, "is not a supported attribute");
       }
     }
