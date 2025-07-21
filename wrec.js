@@ -5,13 +5,6 @@ const REFERENCE_RE = new RegExp(`^this.${IDENTIFIER}$`);
 const REFERENCES_RE = new RegExp(`this.${IDENTIFIER}`, "g");
 const SKIP = "this.".length;
 
-// Inserts a dash before each uppercase letter.
-const camelToKebab = (name) =>
-  name.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
-
-const kebabToCamel = (name) =>
-  name.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
-
 const defaultForType = (type) =>
   type === Number ? 0 : type === Boolean ? false : "";
 
@@ -269,22 +262,26 @@ class Wrec extends HTMLElement {
     }
   }
 
-  static getAttributeName(propName) {
-    let attrName = Wrec.#propToAttrMap.get(propName);
+  static getAttributeName(propertyName) {
+    let attrName = Wrec.#propToAttrMap.get(propertyName);
     if (!attrName) {
-      attrName = camelToKebab(propName);
-      Wrec.#propToAttrMap.set(propName, attrName);
+      attrName = propertyName
+        .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+        .toLowerCase();
+      Wrec.#propToAttrMap.set(propertyName, attrName);
     }
     return attrName;
   }
 
   static getPropertyName(attrName) {
-    let propName = Wrec.#attrToPropMap.get(attrName);
-    if (!propName) {
-      propName = kebabToCamel(attrName);
-      Wrec.#attrToPropMap.set(attrName, propName);
+    let propertyName = Wrec.#attrToPropMap.get(attrName);
+    if (!propertyName) {
+      propertyName = attrName.replace(/-([a-z])/g, (_, char) =>
+        char.toUpperCase()
+      );
+      Wrec.#attrToPropMap.set(attrName, propertyName);
     }
-    return propName;
+    return propertyName;
   }
 
   #makeReactive(root) {
