@@ -12,6 +12,10 @@ export async function expectProperty(
   return expect(value).toBe(expectedValue);
 }
 
+export function getProperty(locator: Locator, name: string) {
+  return locator.evaluate((el, { name }) => el[name], { name });
+}
+
 export function setAttribute(locator: Locator, name: string, value: string) {
   return locator.evaluate(
     (el, { name, value }) => el.setAttribute(name, value),

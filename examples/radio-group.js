@@ -25,8 +25,8 @@ class RadioGroup extends Wrec {
 
   static html = html`
     <div>
-      this.values.split(",").map((value, index) => this.makeRadio(value, index
-      )).join("")
+      this.values.split(",").map((value, index) => this.makeRadio(value, index,
+      this.labels )).join("")
     </div>
   `;
 
@@ -68,8 +68,9 @@ class RadioGroup extends Wrec {
   // This method cannot be private because it is
   // called from the expression in the html method.
   makeRadio(value, index) {
+    let label = this.labels.split(",")[index];
+    if (!label) return "";
     value = value.trim();
-    const label = this.labels ? this.labels.split(",")[index].trim() : value;
     return html`
       <div>
         <input

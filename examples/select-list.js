@@ -12,8 +12,8 @@ class SelectList extends Wrec {
 
   static html = html`
     <select name="${this.name}" value="this.value">
-      this.values.split(",").map((value, index) => this.makeOption(value,
-      index)).join("")
+      this.values.split(",").map((value, index) => this.makeOption(value, index,
+      this.labels)).join("")
     </select>
   `;
 
@@ -30,8 +30,9 @@ class SelectList extends Wrec {
   // This method cannot be private because it is
   // called from the expression in the html method.
   makeOption(value, index) {
+    let label = this.labels.split(",")[index];
+    if (!label) return "";
     value = value.trim();
-    const label = this.labels ? this.labels.split(",")[index].trim() : value;
     return html`<option value="${value}">${label}</option>`;
   }
 }

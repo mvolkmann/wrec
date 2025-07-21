@@ -1,5 +1,8 @@
 import Wrec, { css, html } from "../wrec.js";
 
+const capitalize = (str) =>
+  str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
+
 class DataBinding extends Wrec {
   static properties = {
     color: { type: String },
@@ -37,14 +40,14 @@ class DataBinding extends Wrec {
     <radio-group
       name="color1"
       labels="this.labels"
-      values="this.colors"
       value="this.color"
+      values="this.colors"
     ></radio-group>
     <select-list
       name="color2"
       labels="this.labels"
-      values="this.colors"
       value="this.color"
+      values="this.colors"
     ></select-list>
     <number-slider
       label="Size"
@@ -52,18 +55,13 @@ class DataBinding extends Wrec {
       min="12"
       value="this.size"
     ></number-slider>
-    <p>You selected the color <span>this.color</span>.</p>
-    <p>The this. reference is escaped here: <span>this..color</span>.</p>
+    <p>You selected the color <span id="selected-color">this.color</span>.</p>
   `;
-
-  capitalize(str) {
-    return str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
-  }
 
   getLabels() {
     return this.colors
       .split(",")
-      .map((color) => this.capitalize(color))
+      .map((color) => capitalize(color))
       .join(",");
   }
 }

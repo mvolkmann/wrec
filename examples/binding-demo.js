@@ -3,8 +3,6 @@ import Wrec, { css, html } from "../wrec.js";
 class BindingDemo extends Wrec {
   static formAssociated = true;
   static properties = {
-    color: { type: String },
-    colors: { type: String },
     name: { type: String },
     power: { type: Boolean, value: true },
     score: { type: Number },
@@ -36,23 +34,6 @@ class BindingDemo extends Wrec {
       <input value="this.name" />
       <p>Hello, <span>this.name</span>!</p>
     </div>
-    <div style="display: flex">
-      <label for="color">Color:</label>
-      <radio-group
-        name="color1"
-        value="this.color"
-        values="this.colors"
-      ></radio-group>
-    </div>
-    <div>
-      <label>Color:</label>
-      <select-list
-        name="color2"
-        value="this.color"
-        values="this.colors"
-      ></select-list>
-    </div>
-    <p id="selected-color">You selected the color <span>this.color</span>.</p>
     <div id="textarea-demo">
       <label>Story:</label>
       <textarea>this.story</textarea>
@@ -64,7 +45,6 @@ class BindingDemo extends Wrec {
   `;
 
   formResetCallback() {
-    this.color = "red";
     this.name = "";
     this.score = 0;
     this.story = "";
