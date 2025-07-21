@@ -42,9 +42,6 @@ test("binding-demo-colors", async ({ page }) => {
   await expect(span).toHaveText(color);
 
   async function testColors(values) {
-    //TODO: Why do I need to call this three times for the tests to pass?
-    await waitForNextFrame(page);
-    await waitForNextFrame(page);
     await waitForNextFrame(page);
 
     // The first option should be selected.
@@ -124,11 +121,7 @@ test("binding-demo-number", async ({ page }) => {
   const span = bindingDemo.locator("#score-p > span");
 
   async function testNumber(expected: string) {
-    //TODO: Why do I need to call this three times for the tests to pass?
     await waitForNextFrame(page);
-    await waitForNextFrame(page);
-    await waitForNextFrame(page);
-
     await expectProperty(input, "value", expected);
     await expectProperty(rangeInput, "value", expected);
     await expect(span).toHaveText(expected);
