@@ -30,6 +30,14 @@ export function setProperty(locator: Locator, name: string, value: string) {
   });
 }
 
+export function setInputRangeValue(locator, value) {
+  return locator.evaluate((el, value) => {
+    el.value = value;
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  }, value);
+}
+
 export function waitForNextFrame(page) {
   return page.evaluate(
     () => new Promise((resolve) => requestAnimationFrame(resolve))
