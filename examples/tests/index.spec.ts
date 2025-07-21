@@ -1,36 +1,10 @@
-import { expect, Locator, test } from "@playwright/test";
-
-async function expectProperty(
-  locator: Locator,
-  propertyName: string,
-  expectedValue: boolean | number | string
-) {
-  const value = await locator.evaluate(
-    (el, { propertyName }) => el[propertyName],
-    { propertyName }
-  );
-  return expect(value).toBe(expectedValue);
-}
-
-function setAttribute(locator: Locator, name: string, value: string) {
-  return locator.evaluate(
-    (el, { name, value }) => el.setAttribute(name, value),
-    { name, value }
-  );
-}
-
-function setProperty(locator: Locator, name: string, value: string) {
-  return locator.evaluate((el, { name, value }) => (el[name] = value), {
-    name,
-    value,
-  });
-}
-
-function waitForNextFrame(page) {
-  return page.evaluate(
-    () => new Promise((resolve) => requestAnimationFrame(resolve))
-  );
-}
+import { expect, test } from "@playwright/test";
+import {
+  expectProperty,
+  setAttribute,
+  setProperty,
+  waitForNextFrame,
+} from "./util";
 
 test.beforeEach(async ({ page }) => {
   await page.goto("http://localhost:5173/");
@@ -66,19 +40,20 @@ test("binding-demo-colors", async ({ page }) => {
   await expectProperty(selectList, "value", color);
   await expect(span).toHaveText(color);
 
-  let options = "";
+  let values = "";
 
-  async function testColors(options) {
+  async function testColors(values) {
     await waitForNextFrame(page);
+    await page.waitForTimeout(100);
 
     // The first option should be selected.
-    const color = options.split(",")[0];
+    const color = values.split(",")[0];
     await expectProperty(radioGroup, "value", color);
     await expectProperty(selectList, "value", color);
     await expect(span).toHaveText(color);
 
     // Verify the radio buttons.
-    const colors = options.split(",");
+    const colors = values.split(",");
     const divs = await radioGroup.locator("div > div");
     let count = await divs.count();
     expect(count).toBe(colors.length);
@@ -99,20 +74,20 @@ test("binding-demo-colors", async ({ page }) => {
     }
   }
 
-  // Change the list of options in the binding-demo element.
-  options = "pink,yellow";
-  await setAttribute(bindingDemo, "options", options);
-  await testColors(options);
+  // Change the list of values in the binding-demo element.
+  values = "pink,yellow";
+  await setAttribute(bindingDemo, "values", values);
+  await testColors(values);
 
-  // Change the list of options in the radio-group element.
-  options = "white,gray,black";
-  await setAttribute(radioGroup, "options", options);
-  await testColors(options);
+  // Change the list of values in the radio-group element.
+  values = "white,gray,black";
+  await setAttribute(radioGroup, "values", values);
+  await testColors(values);
 
-  // Change the list of options in the select-list element.
-  options = "purple,orange,cyan,brown";
-  await setAttribute(selectList, "options", options);
-  await testColors(options);
+  // Change the list of values in the select-list element.
+  values = "purple,orange,cyan,brown";
+  await setAttribute(selectList, "values", values);
+  await testColors(values);
 });
 
 test("binding-demo-input", async ({ page }) => {

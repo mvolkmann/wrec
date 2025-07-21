@@ -4,8 +4,8 @@ class BindingDemo extends Wrec {
   static formAssociated = true;
   static properties = {
     color: { type: String },
+    colors: { type: String },
     name: { type: String },
-    options: { type: String },
     power: { type: Boolean, value: true },
     score: { type: Number },
     speed: { type: Number, value: 0 },
@@ -40,16 +40,16 @@ class BindingDemo extends Wrec {
       <label for="color">Color:</label>
       <radio-group
         name="color1"
-        options="this.options"
         value="this.color"
+        values="this.colors"
       ></radio-group>
     </div>
     <div>
       <label>Color:</label>
       <select-list
         name="color2"
-        options="this.options"
         value="this.color"
+        values="this.colors"
       ></select-list>
     </div>
     <p id="selected-color">You selected the color <span>this.color</span>.</p>

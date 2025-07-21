@@ -152,6 +152,13 @@ class Wrec extends HTMLElement {
 
         this[privateName] = value;
 
+        // If there is a matching attribute on the custom element,
+        // update that attribute.
+        if (this.hasAttribute(attrName)) {
+          const oldValue = this.#typedAttribute(propertyName);
+          if (value !== oldValue) updateAttribute(this, propertyName, value);
+        }
+
         // Update all computed properties that reference this property.
         let map = this.constructor.propertyToComputedMap;
         if (map) {
@@ -161,15 +168,6 @@ class Wrec extends HTMLElement {
           }
         }
 
-        // If there is a matching attribute on the custom element,
-        // update that attribute.
-        if (this.hasAttribute(attrName)) {
-          const oldValue = this.#typedAttribute(propertyName);
-          if (value !== oldValue) updateAttribute(this, propertyName, value);
-        }
-
-        this.#react(propertyName);
-
         // If this property is bound to a parent web component property,
         // update that as well.
         map = this.propertyToParentPropertyMap;
@@ -178,6 +176,10 @@ class Wrec extends HTMLElement {
           const parent = this.getRootNode().host;
           parent.setAttribute(parentProperty, value);
         }
+
+        requestAnimationFrame(() => {
+          this.#react(propertyName);
+        });
 
         this.#setFormValue(propertyName, value);
 

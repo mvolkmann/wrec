@@ -51,7 +51,7 @@ class RadioGroup extends Wrec {
   }
 
   // This handles the case when the specified value
-  // is not in the list of options.
+  // is not in the list of values.
   #fixValue() {
     requestAnimationFrame(() => {
       const values = this.values.split(",");
