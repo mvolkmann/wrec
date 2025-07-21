@@ -117,9 +117,8 @@ class Wrec extends HTMLElement {
   }
 
   #defineProperty(propertyName, config, observedAttributes) {
-    const { computed, required } = config;
     const attrName = Wrec.getAttributeName(propertyName);
-    if (required && !this.hasAttribute(attrName)) {
+    if (config.required && !this.hasAttribute(attrName)) {
       this.#throw(this, propertyName, "is a required attribute");
     }
 
@@ -132,7 +131,7 @@ class Wrec extends HTMLElement {
     const privateName = "#" + propertyName;
     this[privateName] = value;
 
-    if (computed) this.#registerComputedProperty(propertyName, computed);
+    if (config.computed) this.#registerComputedProperty(propertyName, config);
 
     Object.defineProperty(this, propertyName, {
       enumerable: true,
@@ -146,7 +145,7 @@ class Wrec extends HTMLElement {
         this[privateName] = value;
 
         // Update all computed properties that reference this property.
-        let map = this.constructor.propertyToComputedMap;
+        let map = this.constructor["#propertyToComputedMap"];
         if (map) {
           const computes = map.get(propertyName) || [];
           for (const [computedName, expression] of computes) {
@@ -293,13 +292,12 @@ class Wrec extends HTMLElement {
       if (!element.firstElementChild) this.#evaluateText(element);
     }
     /* These lines are useful for debugging.
-    const map = this.constructor["#propertyToExpressionsMap"];
-    console.log("#propertyToExpressionsMap =", map);
+    console.log("#propertyToExpressionsMap =", this.constructor["#propertyToExpressionsMap"]);
     console.log(
       "#expressionToReferencesMap =",
       this.#expressionToReferencesMap
     );
-    console.log("#propertyToComputedMap =", this.#propertyToComputedMap);
+    console.log("#propertyToComputedMap =", this.constructor["#propertyToComputedMap"]);
     */
   }
 
@@ -345,22 +343,36 @@ class Wrec extends HTMLElement {
     }
   }
 
-  #registerComputedProperty(propertyName, expression) {
-    const matches = expression.match(REFERENCES_RE) || [];
-    for (const match of matches) {
-      const referencedProperty = match.substring(SKIP);
-      if (this[referencedProperty] === undefined) {
-        this.#throwInvalidReference(null, propertyName, referencedProperty);
-      }
+  #registerComputedProperty(propertyName, config) {
+    const { computed, uses } = config;
 
-      let map = this.constructor.propertyToComputedMap;
-      if (!map) map = this.constructor.propertyToComputedMap = new Map();
+    let map = this.constructor["#propertyToComputedMap"];
+    if (!map) map = this.constructor["#propertyToComputedMap"] = new Map();
+
+    function register(referencedProperty, expression) {
       let computes = map.get(referencedProperty);
       if (!computes) {
         computes = [];
         map.set(referencedProperty, computes);
       }
       computes.push([propertyName, expression]);
+    }
+
+    const matches = computed.match(REFERENCES_RE) || [];
+    for (const match of matches) {
+      const referencedProperty = match.substring(SKIP);
+      if (this[referencedProperty] === undefined) {
+        this.#throwInvalidReference(null, propertyName, referencedProperty);
+      }
+      if (typeof this[referencedProperty] !== "function") {
+        register(referencedProperty, computed);
+      }
+    }
+
+    if (uses) {
+      for (const use of uses.split(",")) {
+        register(use, computed);
+      }
     }
   }
 

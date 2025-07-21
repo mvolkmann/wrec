@@ -4,12 +4,11 @@ class DataBinding extends Wrec {
   static properties = {
     color: { type: String },
     colors: { type: String, required: true },
-    // With this approach we can't determine the dependencies.
-    //labels: { type: String, computed: "this.getLabels()" },
     labels: {
       type: String,
-      computed:
-        "this.colors.split(',').map(color => this.capitalize(color)).join(',')",
+      //computed: "this.colors.split(',').map(color => this.capitalize(color)).join(',')",
+      computed: "this.getLabels()",
+      uses: "colors",
     },
     size: { type: Number, value: 18 },
   };
@@ -30,8 +29,6 @@ class DataBinding extends Wrec {
     }
   `;
 
-  //TODO: Implement computed properties.
-  // labels="this.colors.split(',').map(capitalize).join(',')"
   static html = html`
     <div>
       <label>Color Options (comma-separated):</label>
@@ -61,6 +58,13 @@ class DataBinding extends Wrec {
 
   capitalize(str) {
     return str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
+  }
+
+  getLabels() {
+    return this.colors
+      .split(",")
+      .map((color) => this.capitalize(color))
+      .join(",");
   }
 }
 
