@@ -1,9 +1,9 @@
-import Wrec, { css, html } from "../wrec.js";
+import Wrec, {css, html} from '../wrec.js';
 
 class StopLight extends Wrec {
   static properties = {
-    go: { type: Boolean },
-    speed: { type: Number, value: 0 },
+    go: {type: Boolean},
+    speed: {type: Number, value: 0}
   };
 
   static css = css`

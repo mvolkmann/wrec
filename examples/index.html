@@ -17,11 +17,11 @@
     <script src="toggle-switch.js" type="module"></script>
     <script>
       window.onload = () => {
-        const bd = document.querySelector("binding-demo");
-        const ts = bd.shadowRoot.querySelector("toggle-switch");
-        ts?.addEventListener("change", (e) => {
+        const bd = document.querySelector('binding-demo');
+        const ts = bd.shadowRoot.querySelector('toggle-switch');
+        ts?.addEventListener('change', e => {
           console.log(
-            "index.html: toggle-switch is",
+            'index.html: toggle-switch is',
             e.target[e.detail.propertyName]
           );
         });

@@ -1,4 +1,4 @@
-const template = document.createElement("template");
+const template = document.createElement('template');
 const html = String.raw;
 template.innerHTML = html`
   <style>
@@ -17,12 +17,12 @@ template.innerHTML = html`
 
 class CounterVanilla extends HTMLElement {
   static get observedAttributes() {
-    return ["count"];
+    return ['count'];
   }
 
   constructor() {
     super();
-    this.attachShadow({ mode: "open" });
+    this.attachShadow({mode: 'open'});
   }
   attributeChangedCallback() {
     this.#update();
@@ -32,26 +32,26 @@ class CounterVanilla extends HTMLElement {
     const root = this.shadowRoot;
     root.appendChild(template.content.cloneNode(true));
 
-    this.decrementBtn = root.querySelector("#decrement-btn");
-    this.decrementBtn.addEventListener("click", () => {
+    this.decrementBtn = root.querySelector('#decrement-btn');
+    this.decrementBtn.addEventListener('click', () => {
       this.decrement();
     });
-    root.querySelector("#increment-btn").addEventListener("click", () => {
+    root.querySelector('#increment-btn').addEventListener('click', () => {
       this.increment();
     });
 
-    this.span = root.querySelector("span");
+    this.span = root.querySelector('span');
     this.#update();
   }
 
   // Treat the count attribute as the source of truth
   // rather than adding a property.
   get count() {
-    return this.getAttribute("count") || 0;
+    return this.getAttribute('count') || 0;
   }
 
   set count(newCount) {
-    this.setAttribute("count", newCount);
+    this.setAttribute('count', newCount);
   }
 
   decrement() {
@@ -59,14 +59,14 @@ class CounterVanilla extends HTMLElement {
     // this.count gets converted to a string,
     // so we have to use == instead of === on the next line.
     if (this.count == 0) {
-      this.decrementBtn.setAttribute("disabled", "disabled");
+      this.decrementBtn.setAttribute('disabled', 'disabled');
     }
     this.#update();
   }
 
   increment() {
     this.count++;
-    this.decrementBtn.removeAttribute("disabled");
+    this.decrementBtn.removeAttribute('disabled');
     this.#update();
   }
 
@@ -75,4 +75,4 @@ class CounterVanilla extends HTMLElement {
   }
 }
 
-customElements.define("counter-vanilla", CounterVanilla);
+customElements.define('counter-vanilla', CounterVanilla);

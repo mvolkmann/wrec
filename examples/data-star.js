@@ -1,10 +1,10 @@
-import Wrec, { css, html } from "../wrec.js";
+import Wrec, {css, html} from '../wrec.js';
 
 // This demonstrates how wrec can implement
 // some features I saw in a demo of data-star.
 class DataStar extends Wrec {
   static properties = {
-    username: { type: String },
+    username: {type: String}
   };
 
   static css = css`

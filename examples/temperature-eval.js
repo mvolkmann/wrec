@@ -1,8 +1,8 @@
-import Wrec, { html } from "../wrec.js";
+import Wrec, {html} from '../wrec.js';
 
 class TemperatureEval extends Wrec {
   static properties = {
-    temperature: { type: Number },
+    temperature: {type: Number}
   };
 
   static html = html`

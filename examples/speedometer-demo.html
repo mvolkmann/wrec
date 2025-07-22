@@ -118,35 +118,35 @@
     <script type="module" src="speedometer-dial.js"></script>
     <script>
       // Interactive demo controls
-      const interactiveSpeedometer = document.getElementById("interactive");
-      const valueSlider = document.getElementById("valueSlider");
-      const valueDisplay = document.getElementById("valueDisplay");
-      const minInput = document.getElementById("minInput");
-      const maxInput = document.getElementById("maxInput");
+      const interactiveSpeedometer = document.getElementById('interactive');
+      const valueSlider = document.getElementById('valueSlider');
+      const valueDisplay = document.getElementById('valueDisplay');
+      const minInput = document.getElementById('minInput');
+      const maxInput = document.getElementById('maxInput');
 
-      valueSlider.addEventListener("input", (e) => {
+      valueSlider.addEventListener('input', e => {
         const value = parseInt(e.target.value);
-        interactiveSpeedometer.setAttribute("value", value);
+        interactiveSpeedometer.setAttribute('value', value);
         valueDisplay.textContent = value;
       });
 
-      minInput.addEventListener("input", (e) => {
+      minInput.addEventListener('input', e => {
         const min = parseInt(e.target.value);
-        interactiveSpeedometer.setAttribute("min", min);
+        interactiveSpeedometer.setAttribute('min', min);
         valueSlider.min = min;
         if (parseInt(valueSlider.value) < min) {
           valueSlider.value = min;
-          valueSlider.dispatchEvent(new Event("input"));
+          valueSlider.dispatchEvent(new Event('input'));
         }
       });
 
-      maxInput.addEventListener("input", (e) => {
+      maxInput.addEventListener('input', e => {
         const max = parseInt(e.target.value);
-        interactiveSpeedometer.setAttribute("max", max);
+        interactiveSpeedometer.setAttribute('max', max);
         valueSlider.max = max;
         if (parseInt(valueSlider.value) > max) {
           valueSlider.value = max;
-          valueSlider.dispatchEvent(new Event("input"));
+          valueSlider.dispatchEvent(new Event('input'));
         }
       });
     </script>

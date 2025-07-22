@@ -1,8 +1,8 @@
-import Wrec, { css, html } from "../wrec.js";
+import Wrec, {css, html} from '../wrec.js';
 
 class CounterWrec extends Wrec {
   static properties = {
-    count: { type: Number },
+    count: {type: Number}
   };
 
   static css = css`

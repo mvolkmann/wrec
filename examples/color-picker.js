@@ -1,15 +1,15 @@
-import Wrec, { css, html } from "../wrec.js";
+import Wrec, {css, html} from '../wrec.js';
 
 class ColorPicker extends Wrec {
   static properties = {
-    labelWidth: { type: String, value: "3rem" },
-    red: { type: Number },
-    green: { type: Number },
-    blue: { type: Number },
+    labelWidth: {type: String, value: '3rem'},
+    red: {type: Number},
+    green: {type: Number},
+    blue: {type: Number},
     color: {
       type: String,
-      computed: "`rgb(${this.red}, ${this.green}, ${this.blue})`",
-    },
+      computed: '`rgb(${this.red}, ${this.green}, ${this.blue})`'
+    }
   };
 
   static css = css`
@@ -35,8 +35,8 @@ class ColorPicker extends Wrec {
   static html = html`
     <div id="swatch"></div>
     <div id="sliders">
-      ${this.makeSlider("Red")} ${this.makeSlider("Green")}
-      ${this.makeSlider("Blue")}
+      ${this.makeSlider('Red')} ${this.makeSlider('Green')}
+      ${this.makeSlider('Blue')}
     </div>
   `;
 

@@ -1,8 +1,8 @@
-import Wrec, { html } from "../wrec.js";
+import Wrec, {html} from '../wrec.js';
 
 class NumberBind extends Wrec {
   static properties = {
-    score: { type: Number },
+    score: {type: Number}
   };
 
   static html = html`

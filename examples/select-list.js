@@ -1,13 +1,13 @@
-import Wrec, { html } from "../wrec.js";
+import Wrec, {html} from '../wrec.js';
 
 class SelectList extends Wrec {
   static formAssociated = true;
 
   static properties = {
-    name: { type: String, required: true },
-    labels: { type: String },
-    values: { type: String, required: true },
-    value: { type: String },
+    name: {type: String, required: true},
+    labels: {type: String},
+    values: {type: String, required: true},
+    value: {type: String}
   };
 
   static html = html`
@@ -22,7 +22,7 @@ class SelectList extends Wrec {
 
     // Wait for the DOM to update.
     requestAnimationFrame(() => {
-      const values = this.values.split(",");
+      const values = this.values.split(',');
       if (!values.includes(this.value)) this.value = values[0];
     });
   }
@@ -30,8 +30,8 @@ class SelectList extends Wrec {
   // This method cannot be private because it is
   // called from the expression in the html method.
   makeOption(value, index) {
-    let label = this.labels.split(",")[index];
-    if (!label) return "";
+    let label = this.labels.split(',')[index];
+    if (!label) return '';
     value = value.trim();
     return html`<option value="${value}">${label}</option>`;
   }

@@ -1,9 +1,9 @@
-import Wrec, { css, html } from "../wrec.js";
+import Wrec, {css, html} from '../wrec.js';
 
 class ColorDemo extends Wrec {
   static properties = {
-    color: { type: String },
-    size: { type: Number, value: 18 },
+    color: {type: String},
+    size: {type: Number, value: 18}
   };
 
   static css = css`

@@ -1,9 +1,9 @@
-import Wrec, { css, html } from "../wrec.js";
+import Wrec, {css, html} from '../wrec.js';
 
 class RectangleArea extends Wrec {
   static properties = {
-    width: { type: Number, value: 10 },
-    height: { type: Number, value: 5 },
+    width: {type: Number, value: 10},
+    height: {type: Number, value: 5},
     /*
     area: {
       type: Number,
@@ -16,9 +16,9 @@ class RectangleArea extends Wrec {
     */
     area: {
       type: Number,
-      computed: "this.rectangleArea()",
-      uses: "width,height",
-    },
+      computed: 'this.rectangleArea()',
+      uses: 'width,height'
+    }
   };
 
   static css = css`

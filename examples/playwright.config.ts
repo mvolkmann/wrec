@@ -1,22 +1,22 @@
-import { defineConfig, devices } from "@playwright/test";
+import {defineConfig, devices} from '@playwright/test';
 
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  testDir: "./tests",
+  testDir: './tests',
   /* Run tests in files in parallel */
   fullyParallel: true,
-  reporter: "html",
+  reporter: 'html',
   projects: [
     {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      name: 'chromium',
+      use: {...devices['Desktop Chrome']}
     },
     {
-      name: "firefox",
-      use: { ...devices["Desktop Firefox"] },
-    },
+      name: 'firefox',
+      use: {...devices['Desktop Firefox']}
+    }
     /* See TODO comments in the updateValue method in wrec.js.
     {
       name: "webkit",
@@ -51,8 +51,8 @@ export default defineConfig({
 
   // Run local server before starting tests.
   webServer: {
-    command: "npm run dev",
-    url: "http://localhost:5173",
-    reuseExistingServer: true,
-  },
+    command: 'npm run dev',
+    url: 'http://localhost:5173',
+    reuseExistingServer: true
+  }
 });

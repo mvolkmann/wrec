@@ -1,14 +1,14 @@
-import Wrec, { css, html } from "../wrec.js";
+import Wrec, {css, html} from '../wrec.js';
 
 class RadioGroup extends Wrec {
   static formAssociated = true;
 
   static properties = {
-    default: { type: String },
-    labels: { type: String },
-    name: { type: String, required: true },
-    values: { type: String, required: true },
-    value: { type: String },
+    default: {type: String},
+    labels: {type: String},
+    name: {type: String, required: true},
+    values: {type: String, required: true},
+    value: {type: String}
   };
 
   static css = css`
@@ -32,20 +32,20 @@ class RadioGroup extends Wrec {
 
   connectedCallback() {
     super.connectedCallback();
-    if (!this.default) this.default = this.values.split(",")[0];
+    if (!this.default) this.default = this.values.split(',')[0];
     if (!this.value) this.value = this.default;
     this.#fixValue();
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
     super.attributeChangedCallback(attrName, oldValue, newValue);
-    if (attrName === "value") {
+    if (attrName === 'value') {
       // Update the checked state of the radio buttons.
-      const inputs = this.shadowRoot.querySelectorAll("input");
+      const inputs = this.shadowRoot.querySelectorAll('input');
       for (const input of inputs) {
         input.checked = input.value === newValue;
       }
-    } else if (attrName === "values") {
+    } else if (attrName === 'values') {
       this.#fixValue();
     }
   }
@@ -54,7 +54,7 @@ class RadioGroup extends Wrec {
   // is not in the list of values.
   #fixValue() {
     requestAnimationFrame(() => {
-      const values = this.values.split(",");
+      const values = this.values.split(',');
       if (!values.includes(this.value)) this.value = values[0];
     });
   }
@@ -68,8 +68,8 @@ class RadioGroup extends Wrec {
   // This method cannot be private because it is
   // called from the expression in the html method.
   makeRadio(value, index) {
-    let label = this.labels.split(",")[index];
-    if (!label) return "";
+    let label = this.labels.split(',')[index];
+    if (!label) return '';
     value = value.trim();
     return html`
       <div>
@@ -79,7 +79,7 @@ class RadioGroup extends Wrec {
           name="${this.name}"
           onchange="handleChange"
           value="${value}"
-          ${value === this.value ? "checked" : ""}
+          ${value === this.value ? 'checked' : ''}
         />
         <label for="${value}">${label}</label>
       </div>

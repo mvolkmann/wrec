@@ -1,9 +1,9 @@
-import Wrec, { css, html } from "../wrec.js";
+import Wrec, {css, html} from '../wrec.js';
 
 class SlotsDemo extends Wrec {
   static properties = {
-    color: { type: String, value: "cornflowerblue" },
-    width: { type: String, value: "20rem" },
+    color: {type: String, value: 'cornflowerblue'},
+    width: {type: String, value: '20rem'}
   };
   // Typescript wants these to be explicitly declared.
   color: string;
@@ -58,9 +58,9 @@ class SlotsDemo extends Wrec {
 
   connectedCallback() {
     super.connectedCallback();
-    const { color, width } = this;
-    this.style.setProperty("--color", color);
-    this.style.setProperty("--width", width);
+    const {color, width} = this;
+    this.style.setProperty('--color', color);
+    this.style.setProperty('--width', width);
   }
 }
 

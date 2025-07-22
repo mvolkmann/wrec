@@ -1,13 +1,13 @@
-import Wrec, { css, html } from "../wrec.js";
+import Wrec, {css, html} from '../wrec.js';
 
 class BindingDemo extends Wrec {
   static formAssociated = true;
   static properties = {
-    name: { type: String },
-    power: { type: Boolean, value: true },
-    score: { type: Number },
-    speed: { type: Number, value: 0 },
-    story: { type: String },
+    name: {type: String},
+    power: {type: Boolean, value: true},
+    score: {type: Number},
+    speed: {type: Number, value: 0},
+    story: {type: String}
   };
 
   static css = css`
@@ -45,9 +45,9 @@ class BindingDemo extends Wrec {
   `;
 
   formResetCallback() {
-    this.name = "";
+    this.name = '';
     this.score = 0;
-    this.story = "";
+    this.story = '';
   }
 }
 

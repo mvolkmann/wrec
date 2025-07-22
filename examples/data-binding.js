@@ -1,19 +1,19 @@
-import Wrec, { css, html } from "../wrec.js";
+import Wrec, {css, html} from '../wrec.js';
 
-const capitalize = (str) =>
+const capitalize = str =>
   str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
 
 class DataBinding extends Wrec {
   static properties = {
-    color: { type: String },
-    colors: { type: String, required: true },
+    color: {type: String},
+    colors: {type: String, required: true},
     labels: {
       type: String,
       //computed: "this.colors.split(',').map(color => this.capitalize(color)).join(',')",
-      computed: "this.getLabels()",
-      uses: "colors",
+      computed: 'this.getLabels()',
+      uses: 'colors'
     },
-    size: { type: Number, value: 18 },
+    size: {type: Number, value: 18}
   };
 
   static css = css`
@@ -60,9 +60,9 @@ class DataBinding extends Wrec {
 
   getLabels() {
     return this.colors
-      .split(",")
-      .map((color) => capitalize(color))
-      .join(",");
+      .split(',')
+      .map(color => capitalize(color))
+      .join(',');
   }
 }
 

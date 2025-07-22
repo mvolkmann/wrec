@@ -1,12 +1,12 @@
-import Wrec, { css, html } from "../wrec.js";
+import Wrec, {css, html} from '../wrec.js';
 
 class NumberSlider extends Wrec {
   static properties = {
-    label: { type: String },
-    labelWidth: { type: String },
-    max: { type: Number, value: 100 },
-    min: { type: Number, value: 0 },
-    value: { type: Number },
+    label: {type: String},
+    labelWidth: {type: String},
+    max: {type: Number, value: 100},
+    min: {type: Number, value: 0},
+    value: {type: Number}
   };
 
   static css = css`
@@ -16,7 +16,7 @@ class NumberSlider extends Wrec {
       gap: 0.5rem;
     }
 
-    input[type="number"] {
+    input[type='number'] {
       width: 6rem;
     }
 
