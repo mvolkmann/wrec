@@ -41,7 +41,9 @@ class Wrec extends HTMLElement {
   #formData;
   #internals;
   #propertyToBindingsMap = new Map();
-  #propertyToParentPropertyMap = new Map();
+  // This must be an instance property and cannot be private because
+  // child components need to access the property in their parent component.
+  propertyToParentPropertyMap = new Map();
 
   constructor() {
     super();
@@ -49,7 +51,7 @@ class Wrec extends HTMLElement {
 
     if (!this.constructor.properties) this.constructor.properties = {};
 
-    const map = this.constructor["#propertyToExpressionsMap"];
+    let map = this.constructor["#propertyToExpressionsMap"];
     if (!map) this.constructor["#propertyToExpressionsMap"] = new Map();
 
     if (this.constructor.formAssociated) {
@@ -170,10 +172,11 @@ class Wrec extends HTMLElement {
         // If this property is bound to a parent web component property,
         // update that as well.
         const parentProperty =
-          this.#propertyToParentPropertyMap.get(propertyName);
+          this.propertyToParentPropertyMap.get(propertyName);
         if (parentProperty) {
           const parent = this.getRootNode().host;
           parent.setAttribute(parentProperty, value);
+          //parent[parentProperty] = value;
         }
 
         this.#setFormValue(propertyName, value);
@@ -219,7 +222,10 @@ class Wrec extends HTMLElement {
         // save a mapping from the attribute name in this web component
         // to the property name in the parent web component.
         if (isWC) {
-          element.#propertyToParentPropertyMap.set(attrName, propertyName);
+          element.propertyToParentPropertyMap.set(
+            Wrec.getPropertyName(attrName),
+            propertyName
+          );
         }
       }
 
@@ -298,7 +304,11 @@ class Wrec extends HTMLElement {
       this.#expressionToReferencesMap
     );
     console.log("#propertyToComputedMap =", this.constructor["#propertyToComputedMap"]);
-    console.log("#propertyToParentPropertyMap =", this.#propertyToParentPropertyMap);
+    console.log("this.constructor.name =", this.constructor.name);
+    console.log(
+      "propertyToParentPropertyMap =",
+      this.propertyToParentPropertyMap"]
+    );
     */
   }
 
