@@ -178,6 +178,67 @@ wrec adds the attribute to the element with no value
 or removes the attribute from the element.
 This is commonly used for attributes like `disabled`.
 
+## Computed Properties
+
+The value of a property can be computed using the values of other properties.
+To do this, add the `computed` attribute to the description of the property.
+For example:
+
+```js
+static properties = {
+  width: { type: Number },
+  height: { type: Number },
+  area: {
+    type: Number,
+    computed: "this.width * this.height"
+  }
+};
+```
+
+The `computed` expression can call a function.
+For example:
+
+```js
+static properties = {
+  width: { type: Number },
+  height: { type: Number },
+  area: {
+    type: Number,
+    computed: "this.rectangleArea(this.width, this.height)"
+  }
+};
+
+rectangleArea(width, height) {
+  return width * height;
+}
+```
+
+If the function depends on properties whose values are not passed to it,
+add the `uses` property to specify a
+comma-separated string of properties that the function uses.
+Every time the value of one of those properties changes,
+the function will be called again
+to set a new value for the computed property.
+For example:
+
+```js
+static properties = {
+  width: { type: Number },
+  height: { type: Number },
+  area: {
+    type: Number,
+    computed: "this.rectangleArea()",
+    uses: "width,height"
+  }
+};
+
+rectangleArea() {
+  return this.width * this.height;
+}
+```
+
+For a full code example, see `examples/rectangle-area.js`.
+
 ## Event Listeners
 
 To wire event listeners,
