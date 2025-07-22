@@ -1,6 +1,9 @@
 # Web Reactive Component (wrec)
 
+<script src="hello-world.js" type="module"></script>
 <img alt="shipwreck" src="shipwreck.png" style="width: 256px">
+
+<hello-world></hello-world>
 
 Wrec is a small, zero dependency library that
 greatly simplifies building web components.

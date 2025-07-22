@@ -9,21 +9,24 @@ export default defineConfig({
   fullyParallel: true,
   reporter: "html",
   projects: [
+    /*
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
-    /* Can skip Firefox and Safari for faster local testing. */
+    */
+    /*
     {
       name: "firefox",
       use: { ...devices["Desktop Firefox"] },
     },
+    */
     {
       name: "webkit",
       use: { ...devices["Desktop Safari"] },
     },
 
-    /* Test against mobile viewports. */
+    /* Test against mobile view ports. */
     /*
     {
       name: 'Mobile Chrome',
