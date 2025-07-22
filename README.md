@@ -90,15 +90,3 @@ Here are the steps:
 1. Browse localhost:5173.
 
 1. Click the "-" and "+" buttons to verify that the component is working.
-
-## Data Binding
-
-## Form Submissions
-
-Web components that extend `Wrec` can contribute values to
-form submissions by adding the following line to their class definition.
-Wrec looks for this automatically does the rest of the work.
-
-```js
-static formAssociated = true;
-```
