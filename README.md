@@ -4,9 +4,8 @@
 
 Wrec is a small, zero dependency library that
 greatly simplifies building web components.
-It is described in detail, with several working examples, in
-<a href="https://mvolkmann.github.io/blog/wrec/" target="_blank"
-rel="noopener noreferrer">my blog</a>.
+It is described in detail, with several working examples,
+in [my blog](https://mvolkmann.github.io/blog/wrec/).
 
 ## Getting Started
 
