@@ -6,7 +6,10 @@ class ColorPicker extends Wrec {
     red: { type: Number },
     green: { type: Number },
     blue: { type: Number },
-    color: { type: String },
+    color: {
+      type: String,
+      computed: "`rgb(${this.red}, ${this.green}, ${this.blue})`",
+    },
   };
 
   static css = css`
@@ -36,11 +39,6 @@ class ColorPicker extends Wrec {
       ${this.makeSlider("Blue")}
     </div>
   `;
-
-  attributeChangedCallback(attrName, oldValue, newValue) {
-    super.attributeChangedCallback(attrName, oldValue, newValue);
-    this.color = `rgb(${this.red}, ${this.green}, ${this.blue})`;
-  }
 
   static makeSlider(label) {
     return html`
