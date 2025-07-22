@@ -2,10 +2,10 @@ import Wrec, { css, html } from "../wrec.js";
 
 class NumberSlider extends Wrec {
   static properties = {
-    max: { type: Number, value: 100 },
-    min: { type: Number, value: 0 },
     label: { type: String },
     labelWidth: { type: String },
+    max: { type: Number, value: 100 },
+    min: { type: Number, value: 0 },
     value: { type: Number },
   };
 
