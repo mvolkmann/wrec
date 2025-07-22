@@ -44,6 +44,8 @@ class Wrec extends HTMLElement {
     super();
     this.attachShadow({ mode: "open" });
 
+    if (!this.constructor.properties) this.constructor.properties = {};
+
     const map = this.constructor["#propertyToExpressionsMap"];
     if (!map) this.constructor["#propertyToExpressionsMap"] = new Map();
 
@@ -556,7 +558,7 @@ class Wrec extends HTMLElement {
           } else {
             this.#validateExpression(element, attrName, attrValue);
             // oxlint-disable-next-line no-eval no-unused-vars
-            fn = (event) => eval(attrValue);
+            fn = () => eval(attrValue);
           }
           element.addEventListener(eventName, fn);
           attributesToRemove.push(attrName);
