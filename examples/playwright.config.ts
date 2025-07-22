@@ -9,22 +9,20 @@ export default defineConfig({
   fullyParallel: true,
   reporter: "html",
   projects: [
-    /*
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
-    */
-    /*
     {
       name: "firefox",
       use: { ...devices["Desktop Firefox"] },
     },
-    */
+    /* See TODO comments in the updateValue method in wrec.js.
     {
       name: "webkit",
       use: { ...devices["Desktop Safari"] },
     },
+    */
 
     /* Test against mobile view ports. */
     /*
