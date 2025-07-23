@@ -31,7 +31,7 @@ class BindingDemo extends Wrec {
     <stop-light go="this.speed < 10"></stop-light>
     <div id="input-demo">
       <label>Name:</label>
-      <input value="this.name" />
+      <input value:input="this.name" />
       <p>Hello, <span>this.name</span>!</p>
     </div>
     <div id="textarea-demo">

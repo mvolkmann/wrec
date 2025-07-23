@@ -35,7 +35,7 @@ class NumberInput extends Wrec {
     <button disabled="this.value === 0" onclick="this.value--" type="button">
       -
     </button>
-    <input type="number" value="this.value" />
+    <input min="0" type="number" value="this.value" />
     <button onclick="this.value++" type="button">+</button>
   `;
 }

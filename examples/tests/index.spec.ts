@@ -67,6 +67,7 @@ test('binding-demo-number', async ({page}) => {
   // Enter a new number in the input element of the number-input element.
   let expected = '19';
   await input.fill(expected);
+  await input.press('Enter');
   await testNumber(expected);
 
   // Drag the slider.
@@ -89,6 +90,7 @@ test('binding-demo-textarea', async ({page}) => {
   const textarea = bindingDemo.locator('#textarea-demo > textarea');
   story = 'In a land ...';
   await textarea.fill(story);
+  await textarea.press('Tab');
   await expect(span).toHaveText(story);
 });
 
