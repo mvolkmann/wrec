@@ -1,0 +1,54 @@
+<html>
+  <head>
+    <style>
+      label {
+        font-weight: bold;
+      }
+      .dec-btn,
+      .inc-btn {
+        background-color: lightgreen;
+      }
+      button:disabled {
+        opacity: 0.8;
+      }
+    </style>
+    <script>
+      window.onload = () => {
+        function wireCounter(id) {
+          const counter = document.getElementById(id);
+          const decBtn = counter.querySelector('.dec-btn');
+          const incBtn = counter.querySelector('.inc-btn');
+          const span = counter.querySelector('span');
+          decBtn.addEventListener('click', () => {
+            data[id]--;
+            span.textContent = data[id];
+            if (data[id] === 0) decBtn.setAttribute('disabled', 'disabled');
+          });
+          incBtn.addEventListener('click', () => {
+            data[id]++;
+            span.textContent = data[id];
+            decBtn.removeAttribute('disabled');
+          });
+        }
+
+        const data = {level: 0, score: 0};
+        wireCounter('level');
+        wireCounter('score');
+      };
+    </script>
+  </head>
+  <body>
+    <div id="level">
+      <label>Level</label>
+      <button class="dec-btn" disabled>-</button>
+      <span>0</span>
+      <button class="inc-btn">+</button>
+    </div>
+    <div id="score">
+      <label>Score</label>
+      <button class="dec-btn" disabled>-</button>
+      <span>0</span>
+      <button class="inc-btn">+</button>
+    </div>
+  </body>
+</html>

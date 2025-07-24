@@ -2,6 +2,7 @@ import Wrec, {css, html} from '../wrec.js';
 
 class CounterWrec extends Wrec {
   static properties = {
+    label: {type: String},
     count: {type: Number}
   };
 
@@ -9,17 +10,16 @@ class CounterWrec extends Wrec {
     :host {
       display: block;
     }
-
     button {
       background-color: lightgreen;
     }
-
     button:disabled {
-      background-color: gray;
+      opacity: 0.8;
     }
   `;
 
   static html = html`
+    <label>this.label</label>
     <button onClick="this.count--" type="button" disabled="this.count === 0">
       -
     </button>

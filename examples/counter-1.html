@@ -1,0 +1,40 @@
+<html>
+  <head>
+    <style>
+      label {
+        font-weight: bold;
+      }
+      #dec-btn,
+      #inc-btn {
+        background-color: lightgreen;
+      }
+      button:disabled {
+        opacity: 0.8;
+      }
+    </style>
+    <script>
+      window.onload = () => {
+        const decBtn = document.getElementById('dec-btn');
+        const incBtn = document.getElementById('inc-btn');
+        const span = document.querySelector('span');
+        let count = 0;
+        decBtn.addEventListener('click', () => {
+          count--;
+          span.textContent = count;
+          if (count === 0) decBtn.setAttribute('disabled', 'disabled');
+        });
+        incBtn.addEventListener('click', () => {
+          count++;
+          span.textContent = count;
+          decBtn.removeAttribute('disabled');
+        });
+      };
+    </script>
+  </head>
+  <body>
+    <label>Score</label>
+    <button id="dec-btn" disabled>-</button>
+    <span>0</span>
+    <button id="inc-btn">+</button>
+  </body>
+</html>

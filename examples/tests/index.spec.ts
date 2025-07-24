@@ -96,42 +96,49 @@ test('binding-demo-textarea', async ({page}) => {
 
 test('counter-vanilla', async ({page}) => {
   const rootSelector = 'counter-vanilla';
+
+  const label = page.locator(rootSelector + '> label');
+  await expect(label).toHaveText('Score');
+
   const span = page.locator(rootSelector + '> span').first();
-  await expect(span).toHaveText('3');
+  await expect(span).toHaveText('0');
 
-  const incBtn = page.locator(rootSelector + '> #increment-btn');
+  const incBtn = page.locator(rootSelector + '> #inc-btn');
   await incBtn.click();
-  await expect(span).toHaveText('4');
+  await incBtn.click();
+  await expect(span).toHaveText('2');
 
-  const decBtn = page.locator(rootSelector + '> #decrement-btn');
-  for (let i = 1; i <= 4; i++) {
+  const decBtn = page.locator(rootSelector + '> #dec-btn');
+  for (let i = 1; i <= 2; i++) {
     await decBtn.click();
   }
   await expect(span).toHaveText('0');
   await expect(decBtn).toBeDisabled();
 
   await incBtn.click();
+  await expect(span).toHaveText('1');
   await expect(decBtn).toBeEnabled();
 });
 
 test('counter-wrec', async ({page}) => {
   const div = page.locator('counter-wrec').first();
   const span = div.locator('span').first();
-  await expect(span).toHaveText('3');
+  await expect(span).toHaveText('1');
 
   const incBtn = div.locator('button').last();
   await expect(incBtn).toHaveText('+');
   await incBtn.click();
-  await expect(span).toHaveText('4');
+  await expect(span).toHaveText('2');
 
   const decBtn = div.locator('button').first();
-  for (let i = 1; i <= 4; i++) {
+  for (let i = 1; i <= 2; i++) {
     await decBtn.click();
   }
   await expect(span).toHaveText('0');
   await expect(decBtn).toBeDisabled();
 
   await incBtn.click();
+  await expect(span).toHaveText('1');
   await expect(decBtn).toBeEnabled();
 });
 

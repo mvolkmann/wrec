@@ -2,17 +2,20 @@ const template = document.createElement('template');
 const html = String.raw;
 template.innerHTML = html`
   <style>
+    label {
+      font-weight: bold;
+    }
     button {
       background-color: lightgreen;
     }
-
     button:disabled {
-      background-color: gray;
+      opacity: 0.8;
     }
   </style>
-  <button id="decrement-btn" type="button">-</button>
+  <label></label>
+  <button id="dec-btn" type="button">-</button>
   <span></span>
-  <button id="increment-btn" type="button">+</button>
+  <button id="inc-btn" type="button">+</button>
 `;
 
 class CounterVanilla extends HTMLElement {
@@ -24,19 +27,23 @@ class CounterVanilla extends HTMLElement {
     super();
     this.attachShadow({mode: 'open'});
   }
+
   attributeChangedCallback() {
-    this.#update();
+    if (this.span) this.#update();
   }
 
   connectedCallback() {
     const root = this.shadowRoot;
     root.appendChild(template.content.cloneNode(true));
 
-    this.decrementBtn = root.querySelector('#decrement-btn');
-    this.decrementBtn.addEventListener('click', () => {
+    const label = root.querySelector('label');
+    label.textContent = this.getAttribute('label');
+
+    this.decBtn = root.querySelector('#dec-btn');
+    this.decBtn.addEventListener('click', () => {
       this.decrement();
     });
-    root.querySelector('#increment-btn').addEventListener('click', () => {
+    root.querySelector('#inc-btn').addEventListener('click', () => {
       this.increment();
     });
 
@@ -56,22 +63,23 @@ class CounterVanilla extends HTMLElement {
 
   decrement() {
     this.count--;
-    // this.count gets converted to a string,
-    // so we have to use == instead of === on the next line.
-    if (this.count == 0) {
-      this.decrementBtn.setAttribute('disabled', 'disabled');
-    }
     this.#update();
   }
 
   increment() {
     this.count++;
-    this.decrementBtn.removeAttribute('disabled');
     this.#update();
   }
 
   #update() {
-    if (this.span) this.span.textContent = this.count;
+    const count = this.getAttribute('count');
+    if (this.span) this.span.textContent = count;
+    // Using == instead of === because count is a string.
+    if (count == 0) {
+      this.decBtn.setAttribute('disabled', 'disabled');
+    } else {
+      this.decBtn.removeAttribute('disabled');
+    }
   }
 }
 
