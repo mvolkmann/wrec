@@ -7,8 +7,8 @@ class CounterWrec extends Wrec {
   };
 
   static css = css`
-    :host {
-      display: block;
+    label {
+      font-weight: bold;
     }
     button {
       background-color: lightgreen;
