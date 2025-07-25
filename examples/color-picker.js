@@ -35,7 +35,9 @@ class ColorPicker extends Wrec {
   static html = html`
     <div id="swatch"></div>
     <div id="sliders">
-      ${this.makeSlider('Red')} ${this.makeSlider('Green')}
+      <!-- prettier-ignore -->
+      ${this.makeSlider('Red')}
+      ${this.makeSlider('Green')}
       ${this.makeSlider('Blue')}
     </div>
   `;
