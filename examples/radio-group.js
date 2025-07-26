@@ -25,8 +25,11 @@ class RadioGroup extends Wrec {
 
   static html = html`
     <div>
-      this.values.split(",").map((value, index) => this.makeRadio(value, index,
-      this.labels )).join("")
+      <!-- prettier-ignore -->
+      this.values
+        .split(",")
+        .map((value, index) => this.makeRadio(value, index, this.labels ))
+        .join("")
     </div>
   `;
 

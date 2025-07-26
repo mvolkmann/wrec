@@ -12,8 +12,11 @@ class SelectList extends Wrec {
 
   static html = html`
     <select name="${this.name}" value="this.value">
-      this.values.split(",").map((value, index) => this.makeOption(value, index,
-      this.labels)).join("")
+      <!-- prettier-ignore -->
+      this.values
+        .split(",")
+        .map((value, index) => this.makeOption(value, index, this.labels))
+        .join("")
     </select>
   `;
 
