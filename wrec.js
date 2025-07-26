@@ -37,13 +37,13 @@ class Wrec extends HTMLElement {
   static #propToAttrMap = new Map();
   static #attrToPropMap = new Map();
 
-  #expressionToReferencesMap = new Map();
+  #exprToRefsMap = new Map();
   #formData;
   #internals;
-  #propertyToBindingsMap = new Map();
+  #propToBindingsMap = new Map();
   // This must be an instance property and cannot be private because
   // child components need to access the property in their parent component.
-  propertyToParentPropertyMap = new Map();
+  propToParentPropMap = new Map();
 
   constructor() {
     super();
@@ -51,8 +51,8 @@ class Wrec extends HTMLElement {
 
     if (!this.constructor.properties) this.constructor.properties = {};
 
-    let map = this.constructor['#propertyToExpressionsMap'];
-    if (!map) this.constructor['#propertyToExpressionsMap'] = new Map();
+    let map = this.constructor['#propToExprsMap'];
+    if (!map) this.constructor['#propToExprsMap'] = new Map();
 
     if (this.constructor.formAssociated) {
       this.#internals = this.attachInternals();
@@ -63,22 +63,22 @@ class Wrec extends HTMLElement {
 
   attributeChangedCallback(attrName, _, newValue) {
     // Update corresponding property.
-    const propertyName = Wrec.getPropertyName(attrName);
-    const value = this.#typedValue(propertyName, newValue);
-    this[propertyName] = value;
-    this.#setFormValue(propertyName, value);
+    const propName = Wrec.getPropName(attrName);
+    const value = this.#typedValue(propName, newValue);
+    this[propName] = value;
+    this.#setFormValue(propName, value);
   }
 
   // attrName must be "value" OR undefined!
-  #bind(element, propertyName, attrName, eventName) {
+  #bind(element, propName, attrName, eventName) {
     element.addEventListener(eventName, event => {
-      this[propertyName] = event.target.value;
+      this[propName] = event.target.value;
     });
 
-    let bindings = this.#propertyToBindingsMap.get(propertyName);
+    let bindings = this.#propToBindingsMap.get(propName);
     if (!bindings) {
       bindings = [];
-      this.#propertyToBindingsMap.set(propertyName, bindings);
+      this.#propToBindingsMap.set(propName, bindings);
     }
     bindings.push(attrName ? {element, attrName} : element);
   }
@@ -97,7 +97,7 @@ class Wrec extends HTMLElement {
 
   connectedCallback() {
     this.#validateAttributes();
-    this.#defineProperties();
+    this.#defineProps();
     this.#buildDOM();
 
     // Wait for the DOM to update.
@@ -105,42 +105,42 @@ class Wrec extends HTMLElement {
       this.#wireEvents(this.shadowRoot);
       this.#makeReactive(this.shadowRoot);
       this.constructor.processed = true;
-      this.#computeProperties();
+      this.#computeProps();
     });
   }
 
-  #computeProperties() {
+  #computeProps() {
     const {properties} = this.constructor;
-    for (const [propertyName, {computed}] of Object.entries(properties)) {
-      if (computed) this[propertyName] = this.#evaluateInContext(computed);
+    for (const [propName, {computed}] of Object.entries(properties)) {
+      if (computed) this[propName] = this.#evaluateInContext(computed);
     }
   }
 
-  #defineProperties() {
+  #defineProps() {
     const {observedAttributes, properties} = this.constructor;
-    for (const [propertyName, config] of Object.entries(properties)) {
-      this.#defineProperty(propertyName, config, observedAttributes);
+    for (const [propName, config] of Object.entries(properties)) {
+      this.#defineProp(propName, config, observedAttributes);
     }
   }
 
-  #defineProperty(propertyName, config, observedAttributes) {
-    const attrName = Wrec.getAttributeName(propertyName);
+  #defineProp(propName, config, observedAttributes) {
+    const attrName = Wrec.getAttrName(propName);
     if (config.required && !this.hasAttribute(attrName)) {
-      this.#throw(this, propertyName, 'is a required attribute');
+      this.#throw(this, propName, 'is a required attribute');
     }
 
     // Copy the property value to a private property.
     // The property is replaced below with Object.defineProperty.
     const value =
       observedAttributes.includes(attrName) && this.hasAttribute(attrName)
-        ? this.#typedAttribute(propertyName, attrName)
+        ? this.#typedAttribute(propName, attrName)
         : config.value || defaultForType(config.type);
-    const privateName = '#' + propertyName;
+    const privateName = '#' + propName;
     this[privateName] = value;
 
-    if (config.computed) this.#registerComputedProperty(propertyName, config);
+    if (config.computed) this.#registerComputedProp(propName, config);
 
-    Object.defineProperty(this, propertyName, {
+    Object.defineProperty(this, propName, {
       enumerable: true,
       get() {
         return this[privateName];
@@ -152,41 +152,40 @@ class Wrec extends HTMLElement {
         this[privateName] = value;
 
         // Update all computed properties that reference this property.
-        let map = this.constructor['#propertyToComputedMap'];
+        let map = this.constructor['#propToComputedMap'];
         if (map) {
-          const computes = map.get(propertyName) || [];
-          for (const [computedName, expression] of computes) {
-            this[computedName] = this.#evaluateInContext(expression);
+          const computes = map.get(propName) || [];
+          for (const [computedName, expr] of computes) {
+            this[computedName] = this.#evaluateInContext(expr);
           }
         }
 
         // If there is a matching attribute on the custom element,
         // update that attribute.
         if (this.hasAttribute(attrName)) {
-          const oldValue = this.#typedAttribute(propertyName, attrName);
-          if (value !== oldValue) updateAttribute(this, propertyName, value);
+          const oldValue = this.#typedAttribute(propName, attrName);
+          if (value !== oldValue) updateAttribute(this, propName, value);
         }
 
-        this.#react(propertyName);
+        this.#react(propName);
 
         // If this property is bound to a parent web component property,
         // update that as well.
-        const parentProperty =
-          this.propertyToParentPropertyMap.get(propertyName);
-        if (parentProperty) {
+        const parentProp = this.propToParentPropMap.get(propName);
+        if (parentProp) {
           const parent = this.getRootNode().host;
-          parent.setAttribute(parentProperty, value);
-          //parent[parentProperty] = value;
+          parent.setAttribute(parentProp, value);
+          //parent[parentProp] = value;
         }
 
-        this.#setFormValue(propertyName, value);
+        this.#setFormValue(propName, value);
 
         if (config.dispatch) {
           this.dispatchEvent(
             new CustomEvent('change', {
               bubbles: true, // up DOM tree
               composed: true, // can pass through shadow DOM
-              detail: {propertyName}
+              detail: {propName}
             })
           );
         }
@@ -208,32 +207,32 @@ class Wrec extends HTMLElement {
 
       // If the attribute value is a single property reference,
       // configure two-way data binding.
-      const propertyName = this.#propertyReferenceName(element, text);
-      if (propertyName) {
-        const value = this[propertyName];
+      const propName = this.#propRefName(element, text);
+      if (propName) {
+        const value = this[propName];
         if (value === undefined) {
-          this.#throwInvalidReference(element, attrName, propertyName);
+          this.#throwInvalidRef(element, attrName, propName);
         }
 
-        element[propertyName] = value;
+        element[propName] = value;
 
         let [realAttrName, eventName] = attrName.split(':');
         if (realAttrName === 'value') {
           if (eventName) {
-            element.setAttribute(realAttrName, this[propertyName]);
+            element.setAttribute(realAttrName, this[propName]);
           } else {
             eventName = 'change';
           }
-          this.#bind(element, propertyName, realAttrName, eventName);
+          this.#bind(element, propName, realAttrName, eventName);
         }
 
         // If the element is a web component,
         // save a mapping from the attribute name in this web component
         // to the property name in the parent web component.
         if (isWC) {
-          element.propertyToParentPropertyMap.set(
-            Wrec.getPropertyName(realAttrName),
-            propertyName
+          element.propToParentPropMap.set(
+            Wrec.getPropName(realAttrName),
+            propName
           );
         }
       }
@@ -242,9 +241,9 @@ class Wrec extends HTMLElement {
     }
   }
 
-  #evaluateInContext(expression) {
+  #evaluateInContext(expr) {
     // oxlint-disable-next-line no-eval
-    return (() => eval(expression)).call(this);
+    return (() => eval(expr)).call(this);
   }
 
   #evaluateText(element) {
@@ -265,37 +264,33 @@ class Wrec extends HTMLElement {
       const text = element.textContent.trim();
       // Only add a binding the element is a "textarea" and
       // its text content is a single property reference.
-      const propertyName = this.#propertyReferenceName(element, text);
-      if (localName === 'textarea' && propertyName) {
+      const propName = this.#propRefName(element, text);
+      if (localName === 'textarea' && propName) {
         // Configure data binding.
-        this.#bind(element, propertyName, null, 'change');
-        element.textContent = this[propertyName];
+        this.#bind(element, propName, null, 'change');
+        element.textContent = this[propName];
       } else {
         this.#registerPlaceholders(text, element);
       }
     }
   }
 
-  static getAttributeName(propertyName) {
-    let attrName = Wrec.#propToAttrMap.get(propertyName);
+  static getAttrName(propName) {
+    let attrName = Wrec.#propToAttrMap.get(propName);
     if (!attrName) {
-      attrName = propertyName
-        .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-        .toLowerCase();
-      Wrec.#propToAttrMap.set(propertyName, attrName);
+      attrName = propName.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+      Wrec.#propToAttrMap.set(propName, attrName);
     }
     return attrName;
   }
 
-  static getPropertyName(attrName) {
-    let propertyName = Wrec.#attrToPropMap.get(attrName);
-    if (!propertyName) {
-      propertyName = attrName.replace(/-([a-z])/g, (_, char) =>
-        char.toUpperCase()
-      );
-      Wrec.#attrToPropMap.set(attrName, propertyName);
+  static getPropName(attrName) {
+    let propName = Wrec.#attrToPropMap.get(attrName);
+    if (!propName) {
+      propName = attrName.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
+      Wrec.#attrToPropMap.set(attrName, propName);
     }
-    return propertyName;
+    return propName;
   }
 
   #makeReactive(root) {
@@ -307,52 +302,52 @@ class Wrec extends HTMLElement {
       if (!element.firstElementChild) this.#evaluateText(element);
     }
     /* These lines are useful for debugging.
-    console.log("#propertyToExpressionsMap =", this.constructor["#propertyToExpressionsMap"]);
+    console.log("#propToExprsMap =", this.constructor["#propToExprsMap"]);
     console.log(
-      "#expressionToReferencesMap =",
-      this.#expressionToReferencesMap
+      "#exprToRefsMap =",
+      this.#exprToRefsMap
     );
-    console.log("#propertyToComputedMap =", this.constructor["#propertyToComputedMap"]);
+    console.log("#propToComputedMap =", this.constructor["#propToComputedMap"]);
     console.log("this.constructor.name =", this.constructor.name);
     console.log(
-      "propertyToParentPropertyMap =",
-      this.propertyToParentPropertyMap"]
+      "propToParentPropMap =",
+      this.propToParentPropMap"]
     );
     */
   }
 
   static get observedAttributes() {
-    return Object.keys(this.properties || {}).map(Wrec.getAttributeName);
+    return Object.keys(this.properties || {}).map(Wrec.getAttrName);
   }
 
-  #propertyReferenceName(element, text) {
+  #propRefName(element, text) {
     if (!REFERENCE_RE.test(text)) return;
-    const propertyName = text.substring(SKIP);
-    if (this[propertyName] === undefined) {
-      this.#throwInvalidReference(element, null, propertyName);
+    const propName = text.substring(SKIP);
+    if (this[propName] === undefined) {
+      this.#throwInvalidRef(element, null, propName);
     }
-    return propertyName;
+    return propName;
   }
 
-  #react(propertyName) {
+  #react(propName) {
     // Update all expression references.
-    const map = this.constructor['#propertyToExpressionsMap'];
-    const expressions = map.get(propertyName) || [];
-    for (const expression of expressions) {
-      const value = this.#evaluateInContext(expression);
-      const references = this.#expressionToReferencesMap.get(expression) || [];
-      for (const reference of references) {
-        if (reference instanceof Element) {
-          this.#updateElementContent(reference, value);
+    const map = this.constructor['#propToExprsMap'];
+    const exprs = map.get(propName) || [];
+    for (const expr of exprs) {
+      const value = this.#evaluateInContext(expr);
+      const refs = this.#exprToRefsMap.get(expr) || [];
+      for (const ref of refs) {
+        if (ref instanceof Element) {
+          this.#updateElementContent(ref, value);
         } else {
-          updateValue(reference.element, reference.attrName, value);
+          updateValue(ref.element, ref.attrName, value);
         }
       }
     }
 
     // Wait for the DOM to update.
     requestAnimationFrame(() => {
-      this.#updateBindings(propertyName);
+      this.#updateBindings(propName);
     });
   }
 
@@ -363,29 +358,29 @@ class Wrec extends HTMLElement {
     }
   }
 
-  #registerComputedProperty(propertyName, config) {
+  #registerComputedProp(propName, config) {
     const {computed, uses} = config;
 
-    let map = this.constructor['#propertyToComputedMap'];
-    if (!map) map = this.constructor['#propertyToComputedMap'] = new Map();
+    let map = this.constructor['#propToComputedMap'];
+    if (!map) map = this.constructor['#propToComputedMap'] = new Map();
 
-    function register(referencedProperty, expression) {
-      let computes = map.get(referencedProperty);
+    function register(referencedProp, expr) {
+      let computes = map.get(referencedProp);
       if (!computes) {
         computes = [];
-        map.set(referencedProperty, computes);
+        map.set(referencedProp, computes);
       }
-      computes.push([propertyName, expression]);
+      computes.push([propName, expr]);
     }
 
     const matches = computed.match(REFERENCES_RE) || [];
     for (const match of matches) {
-      const referencedProperty = match.substring(SKIP);
-      if (this[referencedProperty] === undefined) {
-        this.#throwInvalidReference(null, propertyName, referencedProperty);
+      const referencedProp = match.substring(SKIP);
+      if (this[referencedProp] === undefined) {
+        this.#throwInvalidRef(null, propName, referencedProp);
       }
-      if (typeof this[referencedProperty] !== 'function') {
-        register(referencedProperty, computed);
+      if (typeof this[referencedProp] !== 'function') {
+        register(referencedProp, computed);
       }
     }
 
@@ -414,23 +409,23 @@ class Wrec extends HTMLElement {
     // the mapping will be the same for every instance of the web component.
     if (!this.constructor.processed) {
       matches.forEach(capture => {
-        const propertyName = capture.substring(SKIP);
-        const map = this.constructor['#propertyToExpressionsMap'];
-        let expressions = map.get(propertyName);
-        if (!expressions) {
-          expressions = [];
-          map.set(propertyName, expressions);
+        const propName = capture.substring(SKIP);
+        const map = this.constructor['#propToExprsMap'];
+        let exprs = map.get(propName);
+        if (!exprs) {
+          exprs = [];
+          map.set(propName, exprs);
         }
-        expressions.push(text);
+        exprs.push(text);
       });
     }
 
-    let references = this.#expressionToReferencesMap.get(text);
-    if (!references) {
-      references = [];
-      this.#expressionToReferencesMap.set(text, references);
+    let refs = this.#exprToRefsMap.get(text);
+    if (!refs) {
+      refs = [];
+      this.#exprToRefsMap.set(text, refs);
     }
-    references.push(attrName ? {element, attrName} : element);
+    refs.push(attrName ? {element, attrName} : element);
 
     const value = this.#evaluateInContext(text);
     if (attrName) {
@@ -440,9 +435,9 @@ class Wrec extends HTMLElement {
     }
   }
 
-  #setFormValue(propertyName, value) {
+  #setFormValue(propName, value) {
     if (!this.#formData) return;
-    this.#formData.set(propertyName, value);
+    this.#formData.set(propName, value);
     this.#internals.setFormValue(this.#formData);
   }
 
@@ -455,51 +450,43 @@ class Wrec extends HTMLElement {
     );
   }
 
-  #throwInvalidReference(element, attrName, propertyName) {
-    this.#throw(
-      element,
-      attrName,
-      `refers to missing property "${propertyName}"`
-    );
+  #throwInvalidRef(element, attrName, propName) {
+    this.#throw(element, attrName, `refers to missing property "${propName}"`);
   }
 
-  #typedAttribute(propertyName, attrName) {
-    return this.#typedValue(propertyName, this.getAttribute(attrName));
+  #typedAttribute(propName, attrName) {
+    return this.#typedValue(propName, this.getAttribute(attrName));
   }
 
-  #typedValue(propertyName, stringValue) {
+  #typedValue(propName, stringValue) {
     if (stringValue?.match(REFERENCES_RE)) return stringValue;
 
-    const {type} = this.constructor.properties[propertyName];
+    const {type} = this.constructor.properties[propName];
     if (type === String) return stringValue;
     if (type === Number) {
       const number = Number(stringValue);
       if (!isNaN(number)) return number;
-      this.#throw(
-        null,
-        propertyName,
-        `must be a number, but was "${stringValue}"`
-      );
+      this.#throw(null, propName, `must be a number, but was "${stringValue}"`);
     }
     if (type === Boolean) {
       if (stringValue === 'true') return true;
       if (stringValue === 'false') return false;
-      if (stringValue && stringValue !== propertyName) {
+      if (stringValue && stringValue !== propName) {
         this.#throw(
           null,
-          propertyName,
+          propName,
           'is a Boolean attribute, so its value ' +
             'must match attribute name or be missing'
         );
       }
-      return stringValue === propertyName;
+      return stringValue === propName;
     }
-    this.#throw(null, propertyName, 'does not specify its type');
+    this.#throw(null, propName, 'does not specify its type');
   }
 
-  #updateBindings(propertyName) {
-    const value = this[propertyName];
-    const bindings = this.#propertyToBindingsMap.get(propertyName) || [];
+  #updateBindings(propName) {
+    const value = this[propName];
+    const bindings = this.#propToBindingsMap.get(propName) || [];
     for (const binding of bindings) {
       if (binding instanceof Element) {
         if (binding.localName === 'textarea') {
@@ -534,24 +521,24 @@ class Wrec extends HTMLElement {
   }
 
   #validateAttributes() {
-    const propertyNames = new Set(Object.keys(this.constructor.properties));
+    const propNames = new Set(Object.keys(this.constructor.properties));
     for (const attrName of this.getAttributeNames()) {
       if (attrName === 'id') continue;
       if (attrName.startsWith('on')) continue;
-      if (!propertyNames.has(Wrec.getPropertyName(attrName))) {
+      if (!propNames.has(Wrec.getPropName(attrName))) {
         this.#throw(null, attrName, 'is not a supported attribute');
       }
     }
   }
 
-  #validateExpression(element, attrName, expression) {
-    const matches = expression.match(REFERENCES_RE);
+  #validateExpression(element, attrName, expr) {
+    const matches = expr.match(REFERENCES_RE);
     if (!matches) return;
 
     matches.forEach(capture => {
-      const propertyName = capture.substring(SKIP);
-      if (this[propertyName] === undefined) {
-        this.#throwInvalidReference(element, attrName, propertyName);
+      const propName = capture.substring(SKIP);
+      if (this[propName] === undefined) {
+        this.#throwInvalidRef(element, attrName, propName);
       }
     });
 
