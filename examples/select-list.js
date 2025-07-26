@@ -22,8 +22,13 @@ class SelectList extends Wrec {
 
   connectedCallback() {
     super.connectedCallback();
+    if (!this.value) this.value = this.values.split(',')[0];
+    this.#fixValue();
+  }
 
-    // Wait for the DOM to update.
+  // This handles the case when the specified value
+  // is not in the list of values.
+  #fixValue() {
     requestAnimationFrame(() => {
       const values = this.values.split(',');
       if (!values.includes(this.value)) this.value = values[0];
