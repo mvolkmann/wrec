@@ -25,8 +25,6 @@ function updateAttribute(element, attrName, value) {
 
 function updateValue(element, attrName, value) {
   if (element instanceof CSSRule) {
-    //TODO: This doesn't work in Safari 18.5!
-    //TODO: This causes the "sliders" test in color-demo.spec.ts to fail.
     element.style.setProperty(attrName, value); // CSS variable
   } else {
     updateAttribute(element, attrName, value);

@@ -16,13 +16,11 @@ export default defineConfig({
     {
       name: 'firefox',
       use: {...devices['Desktop Firefox']}
-    }
-    /* See TODO comments in the updateValue method in wrec.js.
-    {
-      name: "webkit",
-      use: { ...devices["Desktop Safari"] },
     },
-    */
+    {
+      name: 'webkit',
+      use: {...devices['Desktop Safari']}
+    }
 
     /* Test against mobile view ports. */
     /*
