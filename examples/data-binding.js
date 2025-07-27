@@ -59,10 +59,7 @@ class DataBinding extends Wrec {
   `;
 
   getLabels() {
-    return this.colors
-      .split(',')
-      .map(color => capitalize(color))
-      .join(',');
+    return this.colors.split(',').map(capitalize).join(',');
   }
 }
 
