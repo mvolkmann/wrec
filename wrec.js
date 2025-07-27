@@ -252,7 +252,8 @@ class Wrec extends HTMLElement {
     if (localName === 'style') {
       for (const rule of element.sheet.cssRules) {
         if (rule.type === CSSRule.STYLE_RULE) {
-          for (const prop of rule.style) {
+          const props = [...rule.style];
+          for (const prop of props) {
             if (prop.startsWith('--')) {
               const value = rule.style.getPropertyValue(prop);
               this.#registerPlaceholders(value, rule, prop);
@@ -302,17 +303,16 @@ class Wrec extends HTMLElement {
       if (!element.firstElementChild) this.#evaluateText(element);
     }
     /* These lines are useful for debugging.
-    console.log("#propToExprsMap =", this.constructor["#propToExprsMap"]);
-    console.log(
-      "#exprToRefsMap =",
-      this.#exprToRefsMap
-    );
-    console.log("#propToComputedMap =", this.constructor["#propToComputedMap"]);
-    console.log("this.constructor.name =", this.constructor.name);
-    console.log(
-      "propToParentPropMap =",
-      this.propToParentPropMap"]
-    );
+    if (this.constructor.name === 'ColorDemo') {
+      console.log('#propToExprsMap =', this.constructor['#propToExprsMap']);
+      console.log('#exprToRefsMap =', this.#exprToRefsMap);
+      console.log(
+        '#propToComputedMap =',
+        this.constructor['#propToComputedMap']
+      );
+      console.log('this.constructor.name =', this.constructor.name);
+      console.log('propToParentPropMap =', this.propToParentPropMap);
+    }
     */
   }
 
@@ -416,7 +416,7 @@ class Wrec extends HTMLElement {
           exprs = [];
           map.set(propName, exprs);
         }
-        exprs.push(text);
+        if (!exprs.includes(text)) exprs.push(text);
       });
     }
 

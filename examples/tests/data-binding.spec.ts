@@ -83,13 +83,20 @@ test('colors', async ({page}) => {
   await page.waitForTimeout(100);
   await testColors(values);
 
+  const capitalize = str =>
+    str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
+
   // Change the list of values in the radio-group element.
   values = 'white,gray,black';
+  let labels = values.split(',').map(capitalize).join(',');
+  await setAttribute(radioGroup, 'labels', labels);
   await setAttribute(radioGroup, 'values', values);
   await testColors(values);
 
   // Change the list of values in the select-list element.
   values = 'purple,orange,cyan,brown';
+  labels = values.split(',').map(capitalize).join(',');
+  await setAttribute(selectList, 'labels', labels);
   await setAttribute(selectList, 'values', values);
   await testColors(values);
 });
