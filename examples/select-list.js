@@ -15,15 +15,24 @@ class SelectList extends Wrec {
       <!-- prettier-ignore -->
       this.values
         .split(",")
-        .map((value, index) => this.makeOption(value, index, this.labels))
+        .map(this.makeOption.bind(this))
         .join("")
     </select>
   `;
+
+  #labelArray = [];
 
   connectedCallback() {
     super.connectedCallback();
     if (!this.value) this.value = this.values.split(',')[0];
     this.#fixValue();
+  }
+
+  attributeChangedCallback(attrName, oldValue, newValue) {
+    super.attributeChangedCallback(attrName, oldValue, newValue);
+    if (attrName === 'labels') {
+      this.#labelArray = this.labels.split(',');
+    }
   }
 
   // This handles the case when the specified value
@@ -38,10 +47,9 @@ class SelectList extends Wrec {
   // This method cannot be private because it is
   // called from the expression in the html method.
   makeOption(value, index) {
-    let label = this.labels.split(',')[index];
-    if (!label) return '';
-    value = value.trim();
-    return html`<option value="${value}">${label}</option>`;
+    return html`
+      <option value="${value.trim()}">${this.#labelArray[index]}</option>
+    `;
   }
 }
 
