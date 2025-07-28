@@ -8,7 +8,14 @@ const SKIP = 'this.'.length;
 const defaultForType = type =>
   type === Number ? 0 : type === Boolean ? false : '';
 
+function isPrimitive(value) {
+  const t = typeof value;
+  return t === 'string' || t === 'number' || t === 'boolean';
+}
+
 function updateAttribute(element, attrName, value) {
+  if (!isPrimitive(value)) return;
+
   const currentValue = element.getAttribute(attrName);
   if (typeof value === 'boolean') {
     if (value) {
@@ -129,12 +136,13 @@ class Wrec extends HTMLElement {
 
     // Copy the property value to a private property.
     // The property is replaced below with Object.defineProperty.
-    const value =
+    const {type, value} = config;
+    const typedValue =
       observedAttributes.includes(attrName) && this.hasAttribute(attrName)
         ? this.#typedAttribute(propName, attrName)
-        : config.value || defaultForType(config.type);
+        : value || defaultForType(type);
     const privateName = '#' + propName;
-    this[privateName] = value;
+    this[privateName] = typedValue;
 
     if (config.computed) this.#registerComputedProp(propName, config);
 
@@ -160,7 +168,7 @@ class Wrec extends HTMLElement {
 
         // If there is a matching attribute on the custom element,
         // update that attribute.
-        if (this.hasAttribute(attrName)) {
+        if (isPrimitive(value) && this.hasAttribute(attrName)) {
           const oldValue = this.#typedAttribute(propName, attrName);
           if (value !== oldValue) updateAttribute(this, propName, value);
         }
@@ -172,11 +180,10 @@ class Wrec extends HTMLElement {
         const parentProp = this.propToParentPropMap.get(propName);
         if (parentProp) {
           const parent = this.getRootNode().host;
-          parent.setAttribute(parentProp, value);
-          //parent[parentProp] = value;
+          parent[parentProp] = value;
         }
 
-        this.#setFormValue(propName, value);
+        if (isPrimitive(value)) this.#setFormValue(propName, value);
 
         if (config.dispatch) {
           this.dispatchEvent(
