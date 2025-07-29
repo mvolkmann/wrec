@@ -69,18 +69,18 @@ class TablePlus extends Wrec {
 
   configureSort() {
     const tr = this.shadowRoot?.querySelector('table > thead > tr');
-    if (!tr) return;
+    if (!tr) return; // should never happen
 
     tr.innerHTML = ''; // removes existing children
 
     this.headers.forEach((header, index) => {
       const property = this.properties[index];
-      const span2 = document.createElement('span');
-      span2.className = 'sort-indicator';
 
       const th = document.createElement('th');
-      const span1 = document.createElement('span');
-      span1.textContent = header;
+      th.innerHTML = `
+        <span>${header}</span>
+        <span class="sort-indicator"></span>
+      `;
       th.addEventListener('click', () => {
         const sameProperty = th === this.sortHeader;
         this.sortAscending = sameProperty ? !this.sortAscending : true;
@@ -107,12 +107,13 @@ class TablePlus extends Wrec {
           if (sortIndicator) sortIndicator.textContent = '';
         }
 
-        span2.textContent = this.sortAscending ? '\u25B2' : '\u25BC';
+        const sortIndicator = th.querySelector('.sort-indicator');
+        if (sortIndicator) {
+          sortIndicator.textContent = this.sortAscending ? '\u25B2' : '\u25BC';
+        }
         this.sortHeader = th;
       });
 
-      th.appendChild(span1);
-      th.appendChild(span2);
       tr.appendChild(th);
     });
   }
