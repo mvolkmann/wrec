@@ -267,7 +267,20 @@ class Wrec extends HTMLElement {
         }
       }
     } else {
-      const text = element.textContent.trim();
+      let text = element.textContent.trim();
+
+      // The browser strips the text from some element types that it deems to
+      // be invalid.  Examples include table, thead, tbody, tr, th, and td.
+      // To place a JavaScript expression in those elements,
+      // wrap it in an HTML comment
+      if (!text) {
+        element.childNodes.forEach(node => {
+          if (node.nodeType === Node.COMMENT_NODE) {
+            text += node.textContent.trim();
+          }
+        });
+      }
+
       // Only add a binding the element is a "textarea" and
       // its text content is a single property reference.
       const propName = this.#propRefName(element, text);
@@ -308,7 +321,7 @@ class Wrec extends HTMLElement {
       if (!element.firstElementChild) this.#evaluateText(element);
     }
     /* These lines are useful for debugging.
-    if (this.constructor.name === 'ColorDemo') {
+    if (this.constructor.name === 'TablePlus') {
       console.log('#propToExprsMap =', this.constructor['#propToExprsMap']);
       console.log('#exprToRefsMap =', this.#exprToRefsMap);
       console.log(
