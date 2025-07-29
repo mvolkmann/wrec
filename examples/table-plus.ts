@@ -10,6 +10,7 @@ class TablePlus extends Wrec {
     .sort-indicator {
       color: white;
       display: inline-block;
+      line-height: 1rem;
       margin-left: 0.5rem;
       width: 1rem;
     }
@@ -18,7 +19,7 @@ class TablePlus extends Wrec {
     }
     td,
     th {
-      border: 1px solid gray;
+      border: 2px solid gray;
       padding: 0.5rem;
     }
     th {
@@ -46,7 +47,6 @@ class TablePlus extends Wrec {
   properties: string[] = [];
   sortAscending = true;
   sortSpan: HTMLSpanElement | null = null;
-  sortHeader = '';
 
   connectedCallback() {
     super.connectedCallback();
@@ -104,7 +104,6 @@ class TablePlus extends Wrec {
         if (this.sortSpan) this.sortSpan.textContent = '';
 
         span2.textContent = this.sortAscending ? '\u25B2' : '\u25BC';
-        this.sortHeader = header;
         this.sortSpan = span2;
       });
 
