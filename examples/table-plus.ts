@@ -46,7 +46,7 @@ class TablePlus extends Wrec {
   headers: string[] = [];
   properties: string[] = [];
   sortAscending = true;
-  sortSpan: HTMLSpanElement | null = null;
+  sortHeader: HTMLTableCellElement | null = null;
 
   connectedCallback() {
     super.connectedCallback();
@@ -82,7 +82,7 @@ class TablePlus extends Wrec {
       const span1 = document.createElement('span');
       span1.textContent = header;
       th.addEventListener('click', () => {
-        const sameProperty = span2 === this.sortSpan;
+        const sameProperty = th === this.sortHeader;
         this.sortAscending = sameProperty ? !this.sortAscending : true;
 
         this.data.sort((a, b) => {
@@ -101,10 +101,14 @@ class TablePlus extends Wrec {
         this.data = [...this.data]; // triggers change
 
         // Clear sort indicator from previously selected header.
-        if (this.sortSpan) this.sortSpan.textContent = '';
+        if (this.sortHeader) {
+          const sortIndicator =
+            this.sortHeader.querySelector('.sort-indicator');
+          if (sortIndicator) sortIndicator.textContent = '';
+        }
 
         span2.textContent = this.sortAscending ? '\u25B2' : '\u25BC';
-        this.sortSpan = span2;
+        this.sortHeader = th;
       });
 
       th.appendChild(span1);
