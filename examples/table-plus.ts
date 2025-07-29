@@ -32,9 +32,7 @@ class TablePlus extends Wrec {
   static html = html`
     <table>
       <thead>
-        <tr>
-          <!-- this.headers.map(this.makeTh.bind(this)).join('') -->
-        </tr>
+        <tr></tr>
       </thead>
       <tbody>
         <!-- this.data.map(this.makeTr.bind(this)).join('') -->
@@ -55,10 +53,6 @@ class TablePlus extends Wrec {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => this.configureSort());
     });
-  }
-
-  makeTh(header) {
-    return html`<th>${header}</th>`;
   }
 
   makeTr(obj) {
