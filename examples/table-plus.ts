@@ -117,8 +117,8 @@ class TablePlus extends Wrec {
         return this.sortAscending ? compare : -compare;
       });
 
-      //TODO: Is there a more efficient way to trigger a re-render?
-      this.data = [...this.data]; // triggers change
+      // Trigger the property set method by assigning a clone.
+      this.data = [...this.data];
 
       // Clear sort indicator from previously selected header.
       if (this.sortHeader) {
