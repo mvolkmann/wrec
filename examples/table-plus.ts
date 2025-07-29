@@ -10,6 +10,7 @@ class TablePlus extends Wrec {
     .sort-indicator {
       color: white;
       display: inline-block;
+      margin-left: 0.5rem;
       width: 1rem;
     }
     table {
@@ -22,13 +23,8 @@ class TablePlus extends Wrec {
     }
     th {
       background-color: cornflowerblue;
-
-      > button {
-        background-color: transparent;
-        border: none;
-        color: white;
-        cursor: pointer;
-      }
+      color: white;
+      cursor: pointer;
     }
   `;
 
@@ -79,13 +75,14 @@ class TablePlus extends Wrec {
 
     this.headers.forEach((header, index) => {
       const property = this.properties[index];
-      const span = document.createElement('span');
-      span.className = 'sort-indicator';
+      const span2 = document.createElement('span');
+      span2.className = 'sort-indicator';
 
-      const button = document.createElement('button');
-      button.textContent = header;
-      button.addEventListener('click', () => {
-        const sameProperty = span === this.sortSpan;
+      const th = document.createElement('th');
+      const span1 = document.createElement('span');
+      span1.textContent = header;
+      th.addEventListener('click', () => {
+        const sameProperty = span2 === this.sortSpan;
         this.sortAscending = sameProperty ? !this.sortAscending : true;
 
         this.data.sort((a, b) => {
@@ -106,14 +103,13 @@ class TablePlus extends Wrec {
         // Clear sort indicator from previously selected header.
         if (this.sortSpan) this.sortSpan.textContent = '';
 
-        span.textContent = this.sortAscending ? '\u25B2' : '\u25BC';
+        span2.textContent = this.sortAscending ? '\u25B2' : '\u25BC';
         this.sortHeader = header;
-        this.sortSpan = span;
+        this.sortSpan = span2;
       });
 
-      const th = document.createElement('th');
-      th.appendChild(button);
-      th.appendChild(span);
+      th.appendChild(span1);
+      th.appendChild(span2);
       tr.appendChild(th);
     });
   }
