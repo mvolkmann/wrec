@@ -44,58 +44,16 @@ class TablePlus extends Wrec {
   headers: string[] = [];
   properties: string[] = [];
   sortAscending = true;
-  sortProperty = '';
+  sortButton: HTMLButtonElement | null = null;
+  sortHeader = '';
 
   connectedCallback() {
     super.connectedCallback();
-    const tr = this.shadowRoot?.querySelector('table > thead > tr');
-    if (!tr) return;
 
-    tr.innerHTML = ''; // removes existing children
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        this.headers.forEach((header, index) => {
-          const property = this.properties[index];
-          const button = document.createElement('button');
-          button.textContent = header;
-          button.addEventListener('click', () => {
-            const sameProperty = property === this.sortProperty;
-            this.sortAscending = sameProperty ? !this.sortAscending : true;
-
-            this.data.sort((a, b) => {
-              const aValue = a[property];
-              const bValue = b[property];
-              let compare =
-                typeof aValue === 'string'
-                  ? aValue.localeCompare(bValue)
-                  : typeof aValue === 'number'
-                  ? aValue - bValue
-                  : 0;
-              return this.sortAscending ? compare : -compare;
-            });
-
-            this.data = [...this.data];
-            this.sortProperty = property;
-          });
-          const th = document.createElement('th');
-          th.appendChild(button);
-          tr.appendChild(th);
-        });
-      });
-    });
-
-    /*
     //TODO: Why do I need to call this twice?
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const ths = this.shadowRoot?.querySelectorAll(
-          'table > thead > tr > th'
-        );
-        console.log('table-plus.ts: ths =', ths);
-      });
+      requestAnimationFrame(() => this.sort());
     });
-    */
   }
 
   makeTh(header) {
@@ -110,7 +68,51 @@ class TablePlus extends Wrec {
     </tr>`;
   }
 
-  sort() {}
+  sort() {
+    const tr = this.shadowRoot?.querySelector('table > thead > tr');
+    if (!tr) return;
+
+    tr.innerHTML = ''; // removes existing children
+
+    this.headers.forEach((header, index) => {
+      const property = this.properties[index];
+
+      const th = document.createElement('th');
+
+      const button = document.createElement('button');
+      button.textContent = header;
+      button.addEventListener('click', () => {
+        const sameProperty = button === this.sortButton;
+        this.sortAscending = sameProperty ? !this.sortAscending : true;
+
+        this.data.sort((a, b) => {
+          const aValue = a[property];
+          const bValue = b[property];
+          let compare =
+            typeof aValue === 'string'
+              ? aValue.localeCompare(bValue)
+              : typeof aValue === 'number'
+              ? aValue - bValue
+              : 0;
+          return this.sortAscending ? compare : -compare;
+        });
+
+        //TODO: Is there a more efficient way to trigger a re-render?
+        this.data = [...this.data]; // triggers change
+
+        //TODO: Clear the sort indicator when data is replaced.
+
+        if (this.sortButton) this.sortButton.textContent = this.sortHeader;
+        const unicode = this.sortAscending ? '\u25B2' : '\u25BC';
+        button.textContent = header + unicode;
+        this.sortButton = button;
+        this.sortHeader = header;
+      });
+
+      th.appendChild(button);
+      tr.appendChild(th);
+    });
+  }
 }
 
 TablePlus.register();
