@@ -1,5 +1,8 @@
 import Wrec, {css, createElement, html} from '../wrec.js';
 
+// This component demonstrates a different way of implementing reactivity.
+// Rather than relying on the parsing of JavaScript expressions in HTML,
+// it implements the propertyChangedCallback method which is unique to wrec.
 class TablePlus extends Wrec {
   static properties = {
     headings: {type: Array<string>, value: []},
