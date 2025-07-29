@@ -196,6 +196,10 @@ class Wrec extends HTMLElement {
 
         if (isPrimitive(value)) this.#setFormValue(propName, value);
 
+        if (this.propertyChangedCallback) {
+          this.propertyChangedCallback(propName, oldValue, value);
+        }
+
         if (config.dispatch) {
           this.dispatchEvent(
             new CustomEvent('change', {

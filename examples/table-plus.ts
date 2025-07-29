@@ -2,7 +2,8 @@ import Wrec, {css, createElement, html} from '../wrec.js';
 
 class TablePlus extends Wrec {
   static properties = {
-    headers: {type: Array<string>, value: []},
+    headings: {type: Array<string>, value: []},
+    properties: {type: Array<string>, value: []},
     data: {type: Array, value: []}
   };
 
@@ -34,14 +35,12 @@ class TablePlus extends Wrec {
       <thead>
         <tr></tr>
       </thead>
-      <tbody>
-        <!-- this.data.map(this.makeTr.bind(this)).join('') -->
-      </tbody>
+      <tbody></tbody>
     </table>
   `;
 
   data: object[] = [];
-  headers: string[] = [];
+  headings: string[] = [];
   properties: string[] = [];
   sortAscending = true;
   sortHeader: HTMLTableCellElement | null = null;
@@ -51,72 +50,92 @@ class TablePlus extends Wrec {
 
     //TODO: Why do I need to call this twice?
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => this.configureSort());
+      requestAnimationFrame(() => this.buildHeadings());
     });
   }
 
-  makeTr(obj) {
-    return html`<tr>
-      ${this.properties.map(prop => html`<td>${obj[prop]}</td>`).join('')}
-    </tr>`;
-  }
-
-  configureSort() {
+  buildHeadings() {
     const tr = this.shadowRoot?.querySelector('table > thead > tr');
     if (!tr) return; // should never happen
 
     tr.innerHTML = ''; // removes existing children
 
-    this.headers.forEach((header, index) => {
-      const property = this.properties[index];
-      const th = createElement(
-        'th',
-        {
-          'aria-label': `sort by ${header}`,
-          role: 'button',
-          tabindex: '0'
-        },
-        html`
-          <span>${header}</span>
-          <span class="sort-indicator"></span>
-        `
-      );
+    this.headings.forEach((header, index) => {
+      tr.appendChild(this.buildTh(header, index));
+    });
+  }
 
-      th.addEventListener('click', () => {
-        const sameProperty = th === this.sortHeader;
-        this.sortAscending = sameProperty ? !this.sortAscending : true;
+  buildRow(obj) {
+    return html`
+      <tr>
+        ${this.properties.map(prop => html`<td>${obj[prop]}</td>`).join('')}
+      </tr>
+    `;
+  }
 
-        this.data.sort((a, b) => {
-          const aValue = a[property];
-          const bValue = b[property];
-          let compare =
-            typeof aValue === 'string'
-              ? aValue.localeCompare(bValue)
-              : typeof aValue === 'number'
-              ? aValue - bValue
-              : 0;
-          return this.sortAscending ? compare : -compare;
-        });
+  buildRows() {
+    const tbody = this.shadowRoot?.querySelector('table > tbody');
+    if (!tbody) return; // should never happen
 
-        //TODO: Is there a more efficient way to trigger a re-render?
-        this.data = [...this.data]; // triggers change
+    const rows = this.data.map(this.buildRow.bind(this));
+    tbody.innerHTML = rows.join('');
+  }
 
-        // Clear sort indicator from previously selected header.
-        if (this.sortHeader) {
-          const sortIndicator =
-            this.sortHeader.querySelector('.sort-indicator');
-          if (sortIndicator) sortIndicator.textContent = '';
-        }
+  buildTh(heading, index) {
+    const property = this.properties[index];
+    const th = createElement(
+      'th',
+      {
+        'aria-label': `sort by ${heading}`,
+        role: 'button',
+        tabindex: '0'
+      },
+      html`
+        <span>${heading}</span>
+        <span class="sort-indicator"></span>
+      `
+    );
 
-        const sortIndicator = th.querySelector('.sort-indicator');
-        if (sortIndicator) {
-          sortIndicator.textContent = this.sortAscending ? '\u25B2' : '\u25BC';
-        }
-        this.sortHeader = th;
+    th.addEventListener('click', () => {
+      const sameProperty = th === this.sortHeader;
+      this.sortAscending = sameProperty ? !this.sortAscending : true;
+
+      this.data.sort((a, b) => {
+        const aValue = a[property];
+        const bValue = b[property];
+        let compare =
+          typeof aValue === 'string'
+            ? aValue.localeCompare(bValue)
+            : typeof aValue === 'number'
+            ? aValue - bValue
+            : 0;
+        return this.sortAscending ? compare : -compare;
       });
 
-      tr.appendChild(th);
+      //TODO: Is there a more efficient way to trigger a re-render?
+      this.data = [...this.data]; // triggers change
+
+      // Clear sort indicator from previously selected header.
+      if (this.sortHeader) {
+        const sortIndicator = this.sortHeader.querySelector('.sort-indicator');
+        if (sortIndicator) sortIndicator.textContent = '';
+      }
+
+      const sortIndicator = th.querySelector('.sort-indicator');
+      if (sortIndicator) {
+        sortIndicator.textContent = this.sortAscending ? '\u25B2' : '\u25BC';
+      }
+      this.sortHeader = th;
     });
+    return th;
+  }
+
+  propertyChangedCallback(propName: string) {
+    if (propName === 'headings') {
+      this.buildHeadings();
+    } else if (propName === 'properties' || propName === 'data') {
+      this.buildRows();
+    }
   }
 }
 
