@@ -5,6 +5,17 @@ const REFERENCE_RE = new RegExp(`^this.${IDENTIFIER}$`);
 const REFERENCES_RE = new RegExp(`this.${IDENTIFIER}`, 'g');
 const SKIP = 'this.'.length;
 
+export function createElement(name, attributes, innerHTML) {
+  const element = document.createElement(name);
+  if (attributes) {
+    for (const [attrName, value] of Object.entries(attributes)) {
+      element.setAttribute(attrName, value);
+    }
+  }
+  if (innerHTML) element.innerHTML = innerHTML;
+  return element;
+}
+
 const defaultForType = type =>
   type === Number ? 0 : type === Boolean ? false : '';
 

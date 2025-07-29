@@ -1,4 +1,4 @@
-import Wrec, {css, html} from '../wrec.js';
+import Wrec, {css, createElement, html} from '../wrec.js';
 
 class TablePlus extends Wrec {
   static properties = {
@@ -75,12 +75,19 @@ class TablePlus extends Wrec {
 
     this.headers.forEach((header, index) => {
       const property = this.properties[index];
+      const th = createElement(
+        'th',
+        {
+          'aria-label': `sort by ${header}`,
+          role: 'button',
+          tabindex: '0'
+        },
+        html`
+          <span>${header}</span>
+          <span class="sort-indicator"></span>
+        `
+      );
 
-      const th = document.createElement('th');
-      th.innerHTML = `
-        <span>${header}</span>
-        <span class="sort-indicator"></span>
-      `;
       th.addEventListener('click', () => {
         const sameProperty = th === this.sortHeader;
         this.sortAscending = sameProperty ? !this.sortAscending : true;
