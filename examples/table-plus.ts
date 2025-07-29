@@ -34,18 +34,15 @@ class TablePlus extends Wrec {
     </table>
   `;
 
-  makeTd(value) {
-    return html`<td>${value}</td>`;
-  }
-
   makeTh(header) {
     return html`<th>${header}</th>`;
   }
 
   makeTr(obj) {
-    const fn = this.makeTd.bind(this);
     return html`<tr>
-      ${Object.values(obj).map(fn).join('')}
+      ${Object.values(obj)
+        .map(v => html`<td>${v}</td>`)
+        .join('')}
     </tr>`;
   }
 }
