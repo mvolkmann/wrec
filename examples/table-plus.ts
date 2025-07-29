@@ -7,6 +7,11 @@ class TablePlus extends Wrec {
   };
 
   static css = css`
+    .sort-indicator {
+      color: white;
+      display: inline-block;
+      width: 1rem;
+    }
     table {
       border-collapse: collapse;
     }
@@ -44,7 +49,7 @@ class TablePlus extends Wrec {
   headers: string[] = [];
   properties: string[] = [];
   sortAscending = true;
-  sortButton: HTMLButtonElement | null = null;
+  sortSpan: HTMLSpanElement | null = null;
   sortHeader = '';
 
   connectedCallback() {
@@ -74,13 +79,13 @@ class TablePlus extends Wrec {
 
     this.headers.forEach((header, index) => {
       const property = this.properties[index];
-
-      const th = document.createElement('th');
+      const span = document.createElement('span');
+      span.className = 'sort-indicator';
 
       const button = document.createElement('button');
       button.textContent = header;
       button.addEventListener('click', () => {
-        const sameProperty = button === this.sortButton;
+        const sameProperty = span === this.sortSpan;
         this.sortAscending = sameProperty ? !this.sortAscending : true;
 
         this.data.sort((a, b) => {
@@ -98,16 +103,17 @@ class TablePlus extends Wrec {
         //TODO: Is there a more efficient way to trigger a re-render?
         this.data = [...this.data]; // triggers change
 
-        //TODO: Clear the sort indicator when data is replaced.
+        // Clear sort indicator from previously selected header.
+        if (this.sortSpan) this.sortSpan.textContent = '';
 
-        if (this.sortButton) this.sortButton.textContent = this.sortHeader;
-        const unicode = this.sortAscending ? '\u25B2' : '\u25BC';
-        button.textContent = header + unicode;
-        this.sortButton = button;
+        span.textContent = this.sortAscending ? '\u25B2' : '\u25BC';
         this.sortHeader = header;
+        this.sortSpan = span;
       });
 
+      const th = document.createElement('th');
       th.appendChild(button);
+      th.appendChild(span);
       tr.appendChild(th);
     });
   }
