@@ -34,6 +34,20 @@ class TablePlus extends Wrec {
     </table>
   `;
 
+  connectedCallback() {
+    super.connectedCallback();
+    //const tr = this.shadowRoot?.querySelector('table > thead > tr');
+    //TODO: Why do I need to call this twice?
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const ths = this.shadowRoot?.querySelectorAll(
+          'table > thead > tr > th'
+        );
+        console.log('table-plus.ts: ths =', ths);
+      });
+    });
+  }
+
   makeTh(header) {
     return html`<th>${header}</th>`;
   }
