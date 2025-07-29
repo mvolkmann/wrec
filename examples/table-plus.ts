@@ -52,7 +52,7 @@ class TablePlus extends Wrec {
 
     //TODO: Why do I need to call this twice?
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => this.sort());
+      requestAnimationFrame(() => this.configureSort());
     });
   }
 
@@ -62,13 +62,11 @@ class TablePlus extends Wrec {
 
   makeTr(obj) {
     return html`<tr>
-      ${Object.values(obj)
-        .map(v => html`<td>${v}</td>`)
-        .join('')}
+      ${this.properties.map(prop => html`<td>${obj[prop]}</td>`).join('')}
     </tr>`;
   }
 
-  sort() {
+  configureSort() {
     const tr = this.shadowRoot?.querySelector('table > thead > tr');
     if (!tr) return;
 
