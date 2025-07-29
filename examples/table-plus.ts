@@ -51,6 +51,7 @@ class TablePlus extends Wrec {
   connectedCallback() {
     super.connectedCallback();
 
+    // Sorting only works if I call this twice.
     //TODO: Why do I need to call this twice?
     requestAnimationFrame(() => {
       requestAnimationFrame(() => this.buildHeadings());
@@ -86,6 +87,7 @@ class TablePlus extends Wrec {
 
   buildTh(heading, index) {
     const property = this.properties[index];
+
     const th = createElement(
       'th',
       {
@@ -124,12 +126,15 @@ class TablePlus extends Wrec {
         if (sortIndicator) sortIndicator.textContent = '';
       }
 
+      // Add sort indicator to currently selected header.
       const sortIndicator = th.querySelector('.sort-indicator');
       if (sortIndicator) {
         sortIndicator.textContent = this.sortAscending ? '\u25B2' : '\u25BC';
       }
+
       this.sortHeader = th;
     });
+
     return th;
   }
 
