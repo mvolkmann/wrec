@@ -17,7 +17,13 @@ class TablePlus extends Wrec {
     }
     th {
       background-color: cornflowerblue;
-      color: white;
+
+      > button {
+        background-color: transparent;
+        border: none;
+        color: white;
+        cursor: pointer;
+      }
     }
   `;
 
@@ -34,9 +40,52 @@ class TablePlus extends Wrec {
     </table>
   `;
 
+  data: object[] = [];
+  headers: string[] = [];
+  properties: string[] = [];
+  sortAscending = true;
+  sortProperty = '';
+
   connectedCallback() {
     super.connectedCallback();
-    //const tr = this.shadowRoot?.querySelector('table > thead > tr');
+    const tr = this.shadowRoot?.querySelector('table > thead > tr');
+    if (!tr) return;
+
+    tr.innerHTML = ''; // removes existing children
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        this.headers.forEach((header, index) => {
+          const property = this.properties[index];
+          const button = document.createElement('button');
+          button.textContent = header;
+          button.addEventListener('click', () => {
+            const sameProperty = property === this.sortProperty;
+            this.sortAscending = sameProperty ? !this.sortAscending : true;
+
+            this.data.sort((a, b) => {
+              const aValue = a[property];
+              const bValue = b[property];
+              let compare =
+                typeof aValue === 'string'
+                  ? aValue.localeCompare(bValue)
+                  : typeof aValue === 'number'
+                  ? aValue - bValue
+                  : 0;
+              return this.sortAscending ? compare : -compare;
+            });
+
+            this.data = [...this.data];
+            this.sortProperty = property;
+          });
+          const th = document.createElement('th');
+          th.appendChild(button);
+          tr.appendChild(th);
+        });
+      });
+    });
+
+    /*
     //TODO: Why do I need to call this twice?
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -46,6 +95,7 @@ class TablePlus extends Wrec {
         console.log('table-plus.ts: ths =', ths);
       });
     });
+    */
   }
 
   makeTh(header) {
@@ -59,6 +109,8 @@ class TablePlus extends Wrec {
         .join('')}
     </tr>`;
   }
+
+  sort() {}
 }
 
 TablePlus.register();
