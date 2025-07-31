@@ -25,6 +25,12 @@ export function createElement(
   return element;
 }
 
+function stringToNumber(str: string | null): number {
+  const n = Number(str);
+  if (isNaN(n)) throw new Error(`Cannot convert "${str}" to a number.`);
+  return n;
+}
+
 type AnyClass = new (...args: any[]) => any;
 
 const defaultForType = (type: AnyClass) =>
@@ -218,6 +224,17 @@ class Wrec extends HTMLElement {
         return this[privateName];
       },
       set(value) {
+        if (type === Number && typeof value === 'string') {
+          value = stringToNumber(value);
+        }
+        if (value.constructor !== type) {
+          this.#throw(
+            null,
+            propName,
+            `was set to a ${value.constructor.name}, but must be a ${type.name}`
+          );
+        }
+
         const oldValue = this[privateName];
         if (value === oldValue) return;
 
@@ -581,11 +598,7 @@ class Wrec extends HTMLElement {
     const ctor = this.#ctor;
     const {type} = ctor.properties[propName];
     if (type === String) return stringValue;
-    if (type === Number) {
-      const number = Number(stringValue);
-      if (!isNaN(number)) return number;
-      this.#throw(null, propName, `must be a number, but was "${stringValue}"`);
-    }
+    if (type === Number) return stringToNumber(stringValue);
     if (type === Boolean) {
       if (stringValue === 'true') return true;
       if (stringValue === 'false' || stringValue === 'null') return false;

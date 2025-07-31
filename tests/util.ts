@@ -37,7 +37,9 @@ export function setProperty(locator: Locator, name: string, value: unknown) {
 
 export function setInputRangeValue(locator: Locator, value: number) {
   return locator.evaluate((el: HTMLInputElement, value) => {
-    el.value = String(value);
+    // @ts-ignore We want to assign a number here because
+    // wrec creates a property with a set method that expects a number.
+    el.value = value;
     el.dispatchEvent(new Event('input', {bubbles: true}));
     el.dispatchEvent(new Event('change', {bubbles: true}));
   }, value);
