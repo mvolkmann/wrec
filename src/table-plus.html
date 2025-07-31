@@ -6,7 +6,7 @@
       window.onload = () => {
         const tablePlus = document.querySelector('table-plus');
         // The property "properties" must be set before the property "headings"
-        // because changing headings triggers the buildTh method
+        // because changing "headings" triggers the "buildTh" method
         // which uses properties to determine the data to sort.
         tablePlus.properties = ['name', 'age', 'occupation'];
         tablePlus.headings = ['Name', 'Age', 'Occupation'];
