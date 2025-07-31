@@ -25,12 +25,13 @@ export function setAttribute(locator: Locator, name: string, value: string) {
   );
 }
 
-export function setProperty(locator: Locator, name: string, value: string) {
+export function setProperty(locator: Locator, name: string, value: unknown) {
+  type Arg = {name: string; value: unknown};
   return locator.evaluate(
-    (el: HTMLElement, [name, value]) => {
+    (el: HTMLElement, {name, value}: Arg) => {
       (el as any)[name] = value;
     },
-    [name, value]
+    {name, value}
   );
 }
 
