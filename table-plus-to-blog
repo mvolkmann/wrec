@@ -1,0 +1,10 @@
+#!/bin/zsh
+# This creates the files required to
+# demonstrate the table-plus web component in the wrec blog page,
+# copies them to the blog directory, and fixes an import.
+
+npm run minify
+cp dist/wrec.min.js $HOME/Documents/blog/src/js
+cp dist/table-plus.js $HOME/Documents/blog/src/js
+sed -i '' '3s/wrec/wrec.min.js/' $HOME/Documents/blog/src/js/table-plus.js
+echo "ready"
