@@ -77,6 +77,7 @@ class Wrec extends HTMLElement {
   static formAssociated = false;
   static processed = false;
   static properties: Record<string, any> = {};
+  static propToComputedMap: Map<string, string[][]> | null = null;
   static propToExprsMap: Map<string, string[]> | null = null;
 
   #ctor: typeof Wrec = this.constructor as typeof Wrec;
@@ -98,12 +99,8 @@ class Wrec extends HTMLElement {
 
     const ctor = this.#ctor;
     if (!ctor.properties) ctor.properties = {};
-
-    let map = WrecIndexed['#propToComputedMap'];
-    if (!map) WrecIndexed['#propToComputedMap'] = new Map();
-
-    map = ctor.propToExprsMap;
-    if (!map) ctor.propToExprsMap = new Map();
+    if (!ctor.propToComputedMap) ctor.propToComputedMap = new Map();
+    if (!ctor.propToExprsMap) ctor.propToExprsMap = new Map();
 
     if (ctor.formAssociated) {
       this.#internals = this.attachInternals();
@@ -225,7 +222,7 @@ class Wrec extends HTMLElement {
         this[privateName] = value;
 
         // Update all computed properties that reference this property.
-        const map = WrecIndexed['#propToComputedMap'];
+        const map = this.#ctor.propToComputedMap;
         const computes = map.get(propName) || [];
         for (const [computedName, expr] of computes) {
           this[computedName] = this.#evaluateInContext(expr);
@@ -398,12 +395,12 @@ class Wrec extends HTMLElement {
     }
     /* These lines are useful for debugging.
     if (this.constructor.name === 'BindingDemo') {
-      const ctor = this.#ctor;
-      console.log('propToExprsMap =', ctor.propToExprsMap);
-      console.log('#exprToRefsMap =', this.#exprToRefsMap);
-      console.log('#propToComputedMap =', WrecIndexed['#propToComputedMap']);
-      console.log('this.constructor.name =', this.constructor.name);
-      console.log('propToParentPropMap =', this.propToParentPropMap);
+    console.log('=== this.constructor.name =', this.constructor.name);
+    console.log('propToExprsMap =', this.#ctor.propToExprsMap);
+    console.log('#exprToRefsMap =', this.#exprToRefsMap);
+    console.log('propToComputedMap =', this.#ctor.propToComputedMap);
+    console.log('propToParentPropMap =', this.propToParentPropMap);
+    console.log('\n');
     }
     */
   }
@@ -453,7 +450,7 @@ class Wrec extends HTMLElement {
 
   #registerComputedProp(propName: string, config: Record<string, any>) {
     const {computed, uses} = config;
-    const map = WrecIndexed['#propToComputedMap'];
+    const map = this.#ctor.propToComputedMap!;
 
     function register(referencedProp: string, expr: string) {
       let computes = map.get(referencedProp);
@@ -461,6 +458,8 @@ class Wrec extends HTMLElement {
         computes = [];
         map.set(referencedProp, computes);
       }
+      // Each element is a tuple of a property name
+      // and an expression that uses the property.
       computes.push([propName, expr]);
     }
 
@@ -508,6 +507,8 @@ class Wrec extends HTMLElement {
     if (!ctor.processed) {
       matches.forEach(capture => {
         const propName = capture.substring(SKIP);
+        if (typeof this[propName] === 'function') return;
+
         const map = ctor.propToExprsMap;
         let exprs = map!.get(propName);
         if (!exprs) {
@@ -629,6 +630,7 @@ class Wrec extends HTMLElement {
     } else if (isHTML && t === 'string' && value.trim().startsWith('<')) {
       element.innerHTML = value;
       this.#wireEvents(element);
+      // This is necessary in case the new HTML contains JavaScript expressions.
       this.#makeReactive(element);
     } else if (isHTML) {
       element.textContent = value;
@@ -698,12 +700,6 @@ class Wrec extends HTMLElement {
     }
   }
 }
-
-interface WrecConstructor {
-  [key: string]: any;
-}
-
-const WrecIndexed = Wrec as WrecConstructor;
 
 export default Wrec;
 
