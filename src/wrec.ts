@@ -296,6 +296,10 @@ class Wrec extends HTMLElement {
         let [realAttrName, eventName] = attrName.split(':');
         if (realAttrName === 'value') {
           if (eventName) {
+            if ((element as any)['on' + eventName] === undefined) {
+              const msg = 'refers to an unsupported event name';
+              this.#throw(element, attrName, msg);
+            }
             element.setAttribute(realAttrName, this[propName]);
           } else {
             eventName = 'change';
