@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["DOM", "ESNext"],
+
+    "allowImportingTsExtensions": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "outDir": "dist",
+    "skipLibCheck": true,
+    "strict": true,
+    "sourceMap": true
+  }
+}

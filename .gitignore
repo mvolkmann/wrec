@@ -1,5 +1,12 @@
 .DS_Store
+dist/
 node_modules/
+
+# tsc output
+src/*.map
+src/slots-demo.js
+src/table-plus.js
+src/wrec.js
 
 # Playwright
 test-results/
