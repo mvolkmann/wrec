@@ -2,7 +2,7 @@
   "name": "wrec",
   "description": "a small library that greatly simplifies building web components",
   "author": "R. Mark Volkmann",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -24,9 +24,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "clean": "rm -rf dist",
     "preview": "vite preview",
     "lint": "oxlint",
-    "minify": "tsc --project tsconfig.wrec.json && terser dist/wrec.js -c -m -o dist/wrec.min.js",
+    "minify": "tsc && terser dist/wrec.js -c -m -o dist/wrec.min.js",
+    "reinstall": "rm -rf node_modules package-lock.json && npm install",
     "test": "npx playwright test",
     "testui": "npx playwright test --ui"
   },

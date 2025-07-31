@@ -1,4 +1,4 @@
-import Wrec, {html} from './wrec.ts';
+import Wrec, {html} from './wrec';
 
 class NumberBind extends Wrec {
   static properties = {

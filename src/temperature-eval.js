@@ -1,4 +1,4 @@
-import Wrec, {html} from './wrec.ts';
+import Wrec, {html} from './wrec';
 
 class TemperatureEval extends Wrec {
   static properties = {

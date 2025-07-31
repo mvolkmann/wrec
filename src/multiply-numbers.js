@@ -1,4 +1,4 @@
-import Wrec, {html} from './wrec.ts';
+import Wrec, {html} from './wrec';
 
 class MultiplyNumbers extends Wrec {
   static properties = {

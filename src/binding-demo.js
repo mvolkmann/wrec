@@ -1,4 +1,4 @@
-import Wrec, {css, html} from './wrec.ts';
+import Wrec, {css, html} from './wrec';
 
 class BindingDemo extends Wrec {
   static formAssociated = true;

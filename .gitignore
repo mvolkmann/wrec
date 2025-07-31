@@ -1,6 +1,8 @@
 .DS_Store
-dist/
 node_modules/
+dist/*.js
+dist/*.js.map
+!dist/*.min.js
 
 # tsc output
 src/*.map
