@@ -71,7 +71,6 @@ function updateValue(
 class Wrec extends HTMLElement {
   static #propToAttrMap = new Map();
   static #attrToPropMap = new Map();
-  static _template: HTMLTemplateElement | null = null;
   static css = '';
   static html = '';
   static formAssociated = false;
@@ -79,6 +78,7 @@ class Wrec extends HTMLElement {
   static properties: Record<string, any> = {};
   static propToComputedMap: Map<string, string[][]> | null = null;
   static propToExprsMap: Map<string, string[]> | null = null;
+  static template: HTMLTemplateElement | null = null;
 
   #ctor: typeof Wrec = this.constructor as typeof Wrec;
   #exprToRefsMap = new Map();
@@ -143,9 +143,9 @@ class Wrec extends HTMLElement {
 
   #buildDOM() {
     const ctor = this.#ctor;
-    let template = ctor._template;
+    let template = ctor.template;
     if (!template) {
-      template = ctor._template = document.createElement('template');
+      template = ctor.template = document.createElement('template');
       let text = ctor.css ? `<style>${ctor.css}</style>` : '';
       text += ctor.html;
       template.innerHTML = text;
@@ -163,9 +163,11 @@ class Wrec extends HTMLElement {
       if (this.shadowRoot) {
         this.#wireEvents(this.shadowRoot);
         this.#makeReactive(this.shadowRoot);
+        // This line cannot be moved to the #registerPlaceholders method
+        // because that needs to be called multiple times
+        // for the first instance of each Wrec subclass.
+        this.#ctor.processed = true;
       }
-      const ctor = this.#ctor;
-      ctor.processed = true;
       this.#computeProps();
     });
   }
@@ -481,8 +483,8 @@ class Wrec extends HTMLElement {
     }
   }
 
-  // Do not place untrusted expressions in
-  // attribute values or the text content of elements!
+  // WARNING: Do not place untrusted JavaScript expressions
+  // in attribute values or the text content of elements!
   #registerPlaceholders(
     text: string | null,
     element: HTMLElement | CSSStyleRule,
@@ -492,6 +494,7 @@ class Wrec extends HTMLElement {
 
     const matches = this.#validateExpression(element, attrName, text);
     if (!matches) {
+      // Handle escaped periods in expressions.
       const value = text.replaceAll('this..', 'this.');
       if (attrName) {
         updateValue(element, attrName, value);
