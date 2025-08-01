@@ -1,5 +1,3 @@
-// NOTE: After copying dist/table-plus.js to the blog directory src/js,
-// change the import from './wrec' to './wrec.min.js'!
 import Wrec, {css, createElement, html} from './wrec';
 
 interface LooseObject {
@@ -9,7 +7,7 @@ interface LooseObject {
 // This component demonstrates a different way of implementing reactivity.
 // Rather than relying on the parsing of JavaScript expressions in HTML,
 // it implements the propertyChangedCallback method which is unique to wrec.
-class TablePlus extends Wrec {
+class TableManual extends Wrec {
   static properties = {
     headings: {type: Array<string>, value: []},
     properties: {type: Array<string>, value: []},
@@ -151,4 +149,4 @@ class TablePlus extends Wrec {
   }
 }
 
-TablePlus.register();
+TableManual.register();

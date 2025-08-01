@@ -4,7 +4,7 @@ interface LooseObject {
   [key: string]: any;
 }
 
-class TableMinus extends Wrec {
+class TableWired extends Wrec {
   static properties = {
     headings: {type: Array<string>, value: []},
     properties: {type: Array<string>, value: []},
@@ -117,4 +117,4 @@ class TableMinus extends Wrec {
   }
 }
 
-TableMinus.register();
+TableWired.register();

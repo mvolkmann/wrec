@@ -4,12 +4,6 @@ dist/*.js
 dist/*.js.map
 !dist/*.min.js
 
-# tsc output
-src/*.map
-src/slots-demo.js
-src/table-plus.js
-src/wrec.js
-
 # Playwright
 test-results/
 playwright-report/

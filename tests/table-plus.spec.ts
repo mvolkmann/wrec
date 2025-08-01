@@ -3,15 +3,15 @@ import {expect, Page, test} from '@playwright/test';
 import {setProperty, waitForNextFrame} from './util';
 
 test.beforeEach(async ({page}: {page: Page}) => {
-  await page.goto('http://localhost:5173/table-plus.html');
+  await page.goto('http://localhost:5173/table-demo.html');
 });
 
 test('has title', async ({page}: {page: Page}) => {
-  await expect(page).toHaveTitle(/table-plus/);
+  await expect(page).toHaveTitle(/Table Demo/);
 });
 
 test('renders table with data', async ({page}: {page: Page}) => {
-  const tablePlus = page.locator('table-plus');
+  const tablePlus = page.locator('table-wired');
 
   // Wait for component to initialize
   await waitForNextFrame(page);
@@ -39,7 +39,7 @@ test('renders table with data', async ({page}: {page: Page}) => {
 });
 
 test('sorts by name column', async ({page}: {page: Page}) => {
-  const tablePlus = page.locator('table-plus');
+  const tablePlus = page.locator('table-wired');
   await waitForNextFrame(page);
 
   const table = tablePlus.locator('table');
@@ -73,7 +73,7 @@ test('sorts by name column', async ({page}: {page: Page}) => {
 });
 
 test('sorts by age column', async ({page}: {page: Page}) => {
-  const tablePlus = page.locator('table-plus');
+  const tablePlus = page.locator('table-wired');
   await waitForNextFrame(page);
 
   const table = tablePlus.locator('table');
@@ -107,7 +107,7 @@ test('sorts by age column', async ({page}: {page: Page}) => {
 });
 
 test('updates data dynamically', async ({page}: {page: Page}) => {
-  const tablePlus = page.locator('table-plus');
+  const tablePlus = page.locator('table-wired');
   await waitForNextFrame(page);
 
   const table = tablePlus.locator('table');
@@ -143,7 +143,7 @@ test('headers have correct accessibility attributes', async ({
 }: {
   page: Page;
 }) => {
-  const tablePlus = page.locator('table-plus');
+  const tablePlus = page.locator('table-wired');
   await waitForNextFrame(page);
 
   const table = tablePlus.locator('table');

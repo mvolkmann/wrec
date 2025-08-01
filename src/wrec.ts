@@ -181,8 +181,6 @@ class Wrec extends HTMLElement {
       template = ctor.template = document.createElement('template');
       let text = ctor.css ? `<style>${ctor.css}</style>` : '';
       text += ctor.html;
-      console.log('wrec.ts #buildDOM:', ctor.name);
-      console.log('wrec.ts #buildDOM: text =', text);
       template.innerHTML = text;
     }
     this.shadowRoot?.replaceChildren(template.content.cloneNode(true));
@@ -395,6 +393,8 @@ class Wrec extends HTMLElement {
       let commentText = '';
 
       if (localName === 'textarea') {
+        // When an HTML comment appears in a textarea element,
+        // a text node is created rather than a comment element.
         const match = element.textContent?.match(HTML_COMMENT_TEXT_RE);
         if (match) commentText = match[1];
       } else {
@@ -761,7 +761,6 @@ export function css(strings: TemplateStringsArray, ...values: unknown[]) {
     const match = CSS_PROPERTY_RE.exec(result);
     if (!match) break;
 
-    console.log('wrec.ts css: match[1] =', match[1]);
     const propValue = match[2];
     if (REFS_TEST_RE.test(propValue)) {
       const propName = match[1];

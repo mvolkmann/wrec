@@ -14,12 +14,10 @@ class ColorDemo extends Wrec {
       font-family: sans-serif;
     }
     p {
-      --size: this.size * 2;
       color: this.color;
-      font-size: calc(var(--size) * 1px);
+      font-size: this.size + 'px';
     }
   `;
-  // font-size: this.size + 'px';
 
   static html = html`
     <color-picker color="this.color"></color-picker>

@@ -1,8 +1,8 @@
 <html>
   <head>
-    <title>table-plus</title>
-    <script src="table-minus.js" type="module"></script>
-    <script src="table-plus.js" type="module"></script>
+    <title>Table Demo</title>
+    <script src="table-manual.js" type="module"></script>
+    <script src="table-wired.js" type="module"></script>
     <script>
       window.onload = () => {
         const properties = ['name', 'age', 'occupation'];
@@ -13,18 +13,18 @@
           {name: 'Charlie', age: 35, occupation: 'Teacher'}
         ];
 
-        const tablePlus = document.querySelector('table-plus');
+        const tableManual = document.querySelector('table-manual');
         // The property "properties" must be set before the property "headings"
         // because changing "headings" triggers the "buildTh" method
         // which uses properties to determine the data to sort.
-        tablePlus.properties = properties;
-        tablePlus.headings = headings;
-        tablePlus.data = data;
+        tableManual.properties = properties;
+        tableManual.headings = headings;
+        tableManual.data = data;
 
-        const tableMinus = document.querySelector('table-minus');
-        tableMinus.properties = properties;
-        tableMinus.headings = headings;
-        tableMinus.data = data;
+        const tableWired = document.querySelector('table-wired');
+        tableWired.properties = properties;
+        tableWired.headings = headings;
+        tableWired.data = data;
       };
     </script>
     <style>
@@ -34,8 +34,8 @@
     </style>
   </head>
   <body>
-    <table-plus></table-plus>
+    <table-manual></table-manual>
     <hr />
-    <table-minus></table-minus>
+    <table-wired></table-wired>
   </body>
 </html>
