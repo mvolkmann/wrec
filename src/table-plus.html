@@ -1,20 +1,30 @@
 <html>
   <head>
     <title>table-plus</title>
+    <script src="table-minus.js" type="module"></script>
     <script src="table-plus.js" type="module"></script>
     <script>
       window.onload = () => {
-        const tablePlus = document.querySelector('table-plus');
-        // The property "properties" must be set before the property "headings"
-        // because changing "headings" triggers the "buildTh" method
-        // which uses properties to determine the data to sort.
-        tablePlus.properties = ['name', 'age', 'occupation'];
-        tablePlus.headings = ['Name', 'Age', 'Occupation'];
-        tablePlus.data = [
+        const properties = ['name', 'age', 'occupation'];
+        const headings = ['Name', 'Age', 'Occupation'];
+        const data = [
           {name: 'Alice', age: 30, occupation: 'Engineer'},
           {name: 'Bob', age: 25, occupation: 'Designer'},
           {name: 'Charlie', age: 35, occupation: 'Teacher'}
         ];
+
+        const tablePlus = document.querySelector('table-plus');
+        // The property "properties" must be set before the property "headings"
+        // because changing "headings" triggers the "buildTh" method
+        // which uses properties to determine the data to sort.
+        tablePlus.properties = properties;
+        tablePlus.headings = headings;
+        tablePlus.data = data;
+
+        const tableMinus = document.querySelector('table-minus');
+        tableMinus.properties = properties;
+        tableMinus.headings = headings;
+        tableMinus.data = data;
       };
     </script>
     <style>
@@ -25,5 +35,7 @@
   </head>
   <body>
     <table-plus></table-plus>
+    <hr />
+    <table-minus></table-minus>
   </body>
 </html>
