@@ -31,6 +31,9 @@ class TableMinus extends Wrec {
       background-color: cornflowerblue;
       color: white;
       cursor: pointer;
+      > span {
+        pointer-events: none;
+      }
     }
   `;
 
@@ -55,10 +58,11 @@ class TableMinus extends Wrec {
     return html`<td>${value}</td>`;
   }
 
-  makeTh(heading: string) {
+  makeTh(heading: string, index) {
     return html`
       <th
         aria-label="sort by ${heading}"
+        data-property="${this.properties[index]}"
         onclick="sort"
         role="button"
         tabindex="0"
@@ -78,17 +82,9 @@ class TableMinus extends Wrec {
   }
 
   sort(event: Event) {
-    let th = event.target as HTMLTableCellElement;
-    if (!th) return;
-    if (th.localName === 'span') {
-      th = th.parentElement! as HTMLTableCellElement;
-    }
-    const heading = th.querySelector('span')?.textContent;
-    const index = this.headings.indexOf(heading);
-    const property = this.properties[index];
-
-    const sameProperty = th === this.sortHeader;
-    this.sortAscending = sameProperty ? !this.sortAscending : true;
+    let th = event.target! as HTMLTableCellElement;
+    const property = th.getAttribute('data-property')!;
+    this.sortAscending = th === this.sortHeader ? !this.sortAscending : true;
 
     this.data.sort((a: LooseObject, b: LooseObject) => {
       const aValue = a[property];
@@ -116,6 +112,7 @@ class TableMinus extends Wrec {
     if (sortIndicator) {
       sortIndicator.textContent = this.sortAscending ? '\u25B2' : '\u25BC';
     }
+
     this.sortHeader = th;
   }
 }
