@@ -13,12 +13,11 @@ class SlotsDemo extends Wrec {
     :host {
       --border-radius: 1rem;
       --color: this.color;
-      --width: this.width;
       border: 1px solid var(--color);
       border-radius: var(--border-radius);
       display: inline-block;
       font-family: sans-serif;
-      width: var(--width);
+      width: this.width;
     }
 
     .content {

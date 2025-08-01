@@ -41,11 +41,11 @@ class TableMinus extends Wrec {
     <table>
       <thead>
         <tr>
-          <!-- this.headings.map(this.makeTh.bind(this)).join('') -->
+          this.headings.map(this.makeTh.bind(this)).join('')
         </tr>
       </thead>
       <tbody>
-        <!-- this.data.map(this.makeTr.bind(this)).join('') -->
+        this.data.map(this.makeTr.bind(this)).join('')
       </tbody>
     </table>
   `;
@@ -76,7 +76,7 @@ class TableMinus extends Wrec {
   makeTr(obj: LooseObject, index: number) {
     return html`
       <tr>
-        <!-- this.properties.map(this.makeTd.bind(this, ${index})).join('') -->
+        this.properties.map(this.makeTd.bind(this, ${index})).join('')
       </tr>
     `;
   }

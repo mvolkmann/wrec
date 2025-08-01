@@ -78,7 +78,6 @@ class ToggleSwitch extends Wrec {
 
   toggle() {
     this.checked = !this.checked;
-    console.log('toggle-switch.js toggle: this.checked =', this.checked);
   }
 }
 

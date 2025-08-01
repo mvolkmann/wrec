@@ -1,8 +1,12 @@
+const CSS_PROPERTY_RE = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g;
 const FIRST_CHAR = 'a-zA-Z_$';
 const OTHER_CHAR = FIRST_CHAR + '0-9';
 const IDENTIFIER = `[${FIRST_CHAR}][${OTHER_CHAR}]*`;
-const REFERENCE_RE = new RegExp(`^this.${IDENTIFIER}$`);
-const REFERENCES_RE = new RegExp(`this.${IDENTIFIER}`, 'g');
+const HTML_COMMENT_TEXT_RE = /<!--\s*(.*?)\s*-->/;
+const HTML_ELEMENT_TEXT_RE = /<(\w+)(?:\s[^>]*)?>((?:[^<]|<(?!\w))*?)<\/\1>/g;
+const REF_RE = new RegExp(`^this\\.${IDENTIFIER}$`);
+const REFS_RE = new RegExp(`this\\.${IDENTIFIER}(\\.${IDENTIFIER})*`, 'g');
+const REFS_TEST_RE = new RegExp(`this\\.${IDENTIFIER}(\\.${IDENTIFIER})*`);
 const SKIP = 'this.'.length;
 
 type HTMLValueElement =
@@ -23,6 +27,29 @@ export function createElement(
   }
   if (innerHTML) element.innerHTML = innerHTML;
   return element;
+}
+
+// This takes a string like "this.foo.bar" and returns "foo".
+const getPropName = (str: string) => str.substring(SKIP).split('.')[0];
+
+function interpolate(strings: TemplateStringsArray, values: unknown[]) {
+  let result = strings[0];
+  values.forEach((value, i) => {
+    result += value + strings[i + 1];
+  });
+  return result;
+}
+
+const removeHtmlComments = (str: string) => str.replace(/<!--[\s\S]*?-->/g, '');
+
+// This returns a new string where a specified substring is replaced.
+function replace(
+  full: string,
+  index: number,
+  length: number,
+  replacement: string
+): string {
+  return full.slice(0, index) + replacement + full.slice(index + length);
 }
 
 function stringToNumber(str: string | null): number {
@@ -154,6 +181,8 @@ class Wrec extends HTMLElement {
       template = ctor.template = document.createElement('template');
       let text = ctor.css ? `<style>${ctor.css}</style>` : '';
       text += ctor.html;
+      console.log('wrec.ts #buildDOM:', ctor.name);
+      console.log('wrec.ts #buildDOM: text =', text);
       template.innerHTML = text;
     }
     this.shadowRoot?.replaceChildren(template.content.cloneNode(true));
@@ -363,29 +392,29 @@ class Wrec extends HTMLElement {
         }
       }
     } else {
-      let text = element.textContent?.trim() ?? '';
+      let commentText = '';
 
-      // The browser strips the text from some element types that it deems to
-      // be invalid.  Examples include table, thead, tbody, tr, th, and td.
-      // To place a JavaScript expression in those elements,
-      // wrap it in an HTML comment
-      if (!text) {
-        element.childNodes.forEach(node => {
-          if (node.nodeType === Node.COMMENT_NODE) {
-            text += node?.textContent?.trim() ?? '';
-          }
-        });
+      if (localName === 'textarea') {
+        const match = element.textContent?.match(HTML_COMMENT_TEXT_RE);
+        if (match) commentText = match[1];
+      } else {
+        const comment = Array.from(element.childNodes).find(
+          node => node.nodeType === Node.COMMENT_NODE
+        );
+        if (comment) commentText = comment.textContent ?? '';
       }
 
-      // Only add a binding the element is a "textarea" and
-      // its text content is a single property reference.
-      const propName = this.#propRefName(element, text);
-      if (localName === 'textarea' && propName) {
-        // Configure data binding.
-        this.#bind(element, propName, null, 'change');
-        element.textContent = this[propName];
-      } else {
-        this.#registerPlaceholders(text, element);
+      if (commentText) {
+        // Only add a binding if the element is a "textarea" and
+        // its text content is a single property reference.
+        const propName = this.#propRefName(element, commentText);
+        if (localName === 'textarea' && propName) {
+          // Configure data binding.
+          this.#bind(element, propName, null, 'change');
+          element.textContent = this[propName];
+        } else {
+          this.#registerPlaceholders(commentText, element);
+        }
       }
     }
   }
@@ -417,14 +446,14 @@ class Wrec extends HTMLElement {
       if (!element.firstElementChild) this.#evaluateText(element);
     }
     /* These lines are useful for debugging.
-    if (this.constructor.name === 'BindingDemo') {
+    //if (this.constructor.name === 'TableMinus') {
     console.log('=== this.constructor.name =', this.constructor.name);
     console.log('propToExprsMap =', this.#ctor.propToExprsMap);
     console.log('#exprToRefsMap =', this.#exprToRefsMap);
     console.log('propToComputedMap =', this.#ctor.propToComputedMap);
     console.log('propToParentPropMap =', this.propToParentPropMap);
     console.log('\n');
-    }
+    //}
     */
   }
 
@@ -433,8 +462,8 @@ class Wrec extends HTMLElement {
   }
 
   #propRefName(element: HTMLElement, text: string | null) {
-    if (!text || !REFERENCE_RE.test(text)) return;
-    const propName = text.substring(SKIP);
+    if (!text || !REF_RE.test(text)) return;
+    const propName = getPropName(text);
     if (this[propName] === undefined) {
       this.#throwInvalidRef(element, '', propName);
     }
@@ -486,7 +515,7 @@ class Wrec extends HTMLElement {
       computes.push([propName, expr]);
     }
 
-    const matches = computed.match(REFERENCES_RE) || [];
+    const matches = computed.match(REFS_RE) || [];
     for (const match of matches) {
       const referencedProp = match.substring(SKIP);
       if (this[referencedProp] === undefined) {
@@ -530,7 +559,7 @@ class Wrec extends HTMLElement {
     const ctor = this.#ctor;
     if (!ctor.processed) {
       matches.forEach(capture => {
-        const propName = capture.substring(SKIP);
+        const propName = getPropName(capture);
         if (typeof this[propName] === 'function') return;
 
         const map = ctor.propToExprsMap;
@@ -593,7 +622,7 @@ class Wrec extends HTMLElement {
   }
 
   #typedValue(propName: string, stringValue: string | null) {
-    if (stringValue?.match(REFERENCES_RE)) return stringValue;
+    if (stringValue?.match(REFS_RE)) return stringValue;
 
     const ctor = this.#ctor;
     const {type} = ctor.properties[propName];
@@ -675,11 +704,11 @@ class Wrec extends HTMLElement {
     attrName: string | undefined,
     expr: string
   ) {
-    const matches = expr.match(REFERENCES_RE);
+    const matches = expr.match(REFS_RE);
     if (!matches) return;
 
     matches.forEach(capture => {
-      const propName = capture.substring(SKIP);
+      const propName = getPropName(capture);
       if (this[propName] === undefined) {
         this.#throwInvalidRef(element, attrName, propName);
       }
@@ -723,7 +752,47 @@ class Wrec extends HTMLElement {
 
 export default Wrec;
 
-// These enable the VS Code extensions Prettier and es6-string-html to
-// provide formatting and syntax highlighting of tagged template literals.
-export const css = String.raw;
-export const html = String.raw;
+export function css(strings: TemplateStringsArray, ...values: unknown[]) {
+  let result = interpolate(strings, values);
+
+  // Replace JavaScript expressions in CSS property values
+  // with a reference to a CSS variable whose value is the expression.
+  while (true) {
+    const match = CSS_PROPERTY_RE.exec(result);
+    if (!match) break;
+
+    console.log('wrec.ts css: match[1] =', match[1]);
+    const propValue = match[2];
+    if (REFS_TEST_RE.test(propValue)) {
+      const propName = match[1];
+      if (!propName.startsWith('--')) {
+        const replacement = `--${propName}: ${propValue};
+        ${propName}: var(--${propName});`;
+        //console.log('wrec.ts css: replacing', match[0]);
+        //console.log('wrec.ts css: with', replacement);
+        result = replace(result, match.index, match[0].length, replacement);
+      }
+    }
+  }
+
+  return result;
+}
+
+export function html(strings: TemplateStringsArray, ...values: unknown[]) {
+  let result = interpolate(strings, values);
+
+  // Replace JavaScript expressions in HTML element text content
+  // with an HTML comment containing the expression.
+  while (true) {
+    const match = HTML_ELEMENT_TEXT_RE.exec(result);
+    if (!match) break;
+    const textContent = removeHtmlComments(match[2]);
+    if (REFS_TEST_RE.test(textContent)) {
+      const comment = `<!-- ${textContent.trim()} -->`;
+      const index = match.index + match[0].indexOf('>') + 1;
+      result = replace(result, index, textContent.length, comment);
+    }
+  }
+
+  return result;
+}
