@@ -1,14 +1,12 @@
 import Wrec, {css, html} from './wrec';
 
-interface LooseObject {
-  [key: string]: any;
-}
+type LooseObject = Record<string, unknown>;
 
 class TableWired extends Wrec {
   static properties = {
-    headings: {type: Array<string>, value: []},
-    properties: {type: Array<string>, value: []},
-    data: {type: Array, value: []}
+    headings: {type: Array<string>},
+    properties: {type: Array<string>},
+    data: {type: Array<object>}
   };
 
   static css = css`
@@ -58,7 +56,7 @@ class TableWired extends Wrec {
     return html`<td>${value}</td>`;
   }
 
-  makeTh(heading: string, index) {
+  makeTh(heading: string, index: number) {
     return html`
       <th
         aria-label="sort by ${heading}"
@@ -91,9 +89,9 @@ class TableWired extends Wrec {
       const bValue = b[property];
       let compare =
         typeof aValue === 'string'
-          ? aValue.localeCompare(bValue)
+          ? aValue.localeCompare(bValue as string)
           : typeof aValue === 'number'
-          ? aValue - bValue
+          ? aValue - (bValue as number)
           : 0;
       return this.sortAscending ? compare : -compare;
     });

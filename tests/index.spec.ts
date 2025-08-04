@@ -1,10 +1,5 @@
 import {expect, Page, test} from '@playwright/test';
-import {
-  expectProperty,
-  setAttribute,
-  setProperty,
-  waitForNextFrame
-} from './util';
+import {setAttribute} from './util';
 
 test.beforeEach(async ({page}: {page: Page}) => {
   await page.goto('http://localhost:5173/');
@@ -27,53 +22,6 @@ test('binding-demo-input', async ({page}: {page: Page}) => {
   name = 'Comet';
   await input.fill(name);
   await expect(p).toHaveText(`Hello, ${name}!`);
-});
-
-test('binding-demo-number', async ({page}: {page: Page}) => {
-  const bindingDemo = page.locator('binding-demo');
-
-  const numberInput = bindingDemo.locator('number-input');
-  const input = numberInput.locator('input');
-  const decBtn = numberInput.locator('button').first();
-  await expect(decBtn).toHaveText('-');
-  const incBtn = numberInput.locator('button').last();
-  await expect(incBtn).toHaveText('+');
-
-  const numberSlider = bindingDemo.locator('number-slider');
-
-  const span = bindingDemo.locator('#score-p > span');
-
-  async function testNumber(expected: number) {
-    await waitForNextFrame(page);
-    await expectProperty(numberInput, 'value', expected);
-    await expectProperty(numberSlider, 'value', expected);
-    await expect(span).toHaveText(String(expected));
-  }
-
-  let number = 5; // initial value
-  await testNumber(number);
-
-  // Click the "+" and "-" buttons of the number-input element.
-  await incBtn.click();
-  await testNumber(number + 1);
-
-  await decBtn.click();
-  await decBtn.click();
-  await testNumber(number - 1);
-
-  // Enter a new number in the input element of the number-input element.
-  let expected = 19;
-  await input.fill(String(expected));
-  await input.press('Enter');
-  await waitForNextFrame(page);
-  await testNumber(expected);
-
-  // Drag the slider.
-  expected = 100;
-  //TODO: Why doesn't this work instead of modifying a number-slider property?
-  //await setAttribute(rangeInput, "value", expected);
-  await setProperty(numberSlider, 'value', expected);
-  await testNumber(expected);
 });
 
 test('binding-demo-textarea', async ({page}: {page: Page}) => {

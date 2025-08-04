@@ -5,33 +5,20 @@ class SelectList extends Wrec {
 
   static properties = {
     name: {type: String, required: true},
-    labels: {type: String, required: true},
-    values: {type: String, required: true},
+    labels: {type: String},
+    values: {type: String},
     value: {type: String}
   };
 
   static html = html`
     <select name="${this.name}" value="this.value">
-      <!-- prettier-ignore -->
-      this.values
-        .split(",")
-        .map(this.makeOption.bind(this))
-        .join("")
+      this.makeOptions(this.labels, this.values)
     </select>
   `;
-
-  #labelArray = [];
 
   connectedCallback() {
     super.connectedCallback();
     this.#fixValue();
-  }
-
-  attributeChangedCallback(attrName, oldValue, newValue) {
-    super.attributeChangedCallback(attrName, oldValue, newValue);
-    if (attrName === 'labels') {
-      this.#labelArray = this.labels.split(',');
-    }
   }
 
   // This handles the case when the specified value
@@ -39,20 +26,19 @@ class SelectList extends Wrec {
   #fixValue() {
     requestAnimationFrame(() => {
       const values = this.values.split(',');
-      if (this.value) {
-        if (!values.includes(this.value)) this.value = values[0];
-      } else {
-        this.value = values[0];
-      }
+      if (!this.value || !values.includes(this.value)) this.value = values[0];
     });
   }
 
-  // This method cannot be private because it is
-  // called from the expression in the html method.
-  makeOption(value, index) {
-    return html`
-      <option value="${value.trim()}">${this.#labelArray[index]}</option>
-    `;
+  makeOptions(labels, values) {
+    const labelArray = labels.split(',');
+    const valueArray = values.split(',');
+    return valueArray
+      .map(
+        (value, index) =>
+          html`<option value="${value.trim()}">${labelArray[index]}</option>`
+      )
+      .join('');
   }
 }
 

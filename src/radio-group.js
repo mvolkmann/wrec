@@ -4,9 +4,9 @@ class RadioGroup extends Wrec {
   static formAssociated = true;
 
   static properties = {
-    labels: {type: String, required: true},
+    labels: {type: String},
     name: {type: String, required: true},
-    values: {type: String, required: true},
+    values: {type: String},
     value: {type: String}
   };
 
@@ -23,33 +23,22 @@ class RadioGroup extends Wrec {
   `;
 
   static html = html`
-    <div>
-      <!-- prettier-ignore -->
-      this.values
-        .split(",")
-        .map(this.makeRadio.bind(this))
-        .join("")
-    </div>
+    <div>this.makeButtons(this.labels, this.values, this.value)</div>
   `;
-
-  #labelArray = [];
 
   connectedCallback() {
     super.connectedCallback();
     this.#fixValue();
   }
 
-  attributeChangedCallback(attrName, oldValue, newValue) {
-    super.attributeChangedCallback(attrName, oldValue, newValue);
-    if (attrName === 'value') {
+  propertyChangedCallback(propName, oldValue, newValue) {
+    if (propName === 'value') {
       // Update the checked state of the radio buttons.
       const inputs = this.shadowRoot.querySelectorAll('input');
       for (const input of inputs) {
         input.checked = input.value === newValue;
       }
-    } else if (attrName === 'labels') {
-      this.#labelArray = this.labels.split(',');
-    } else if (attrName === 'values') {
+    } else if (propName === 'values') {
       this.#fixValue();
     }
   }
@@ -59,11 +48,7 @@ class RadioGroup extends Wrec {
   #fixValue() {
     requestAnimationFrame(() => {
       const values = this.values.split(',');
-      if (this.value) {
-        if (!values.includes(this.value)) this.value = values[0];
-      } else {
-        this.value = values[0];
-      }
+      if (!this.value || !values.includes(this.value)) this.value = values[0];
     });
   }
 
@@ -73,23 +58,25 @@ class RadioGroup extends Wrec {
     this.value = event.target.value;
   }
 
-  // This method cannot be private because it is
-  // called from the expression in the html method.
-  makeRadio(value, index) {
-    value = value.trim();
-    return html`
-      <div>
-        <input
-          type="radio"
-          id="${value}"
-          name="${this.name}"
-          onchange="handleChange"
-          value="${value}"
-          ${value === this.value ? 'checked' : ''}
-        />
-        <label for="${value}">${this.#labelArray[index]}</label>
-      </div>
-    `;
+  makeButtons(labels, values) {
+    const labelArray = labels.split(',');
+    const valueArray = values.split(',').map(value => value.trim());
+    return valueArray
+      .map(
+        (value, index) =>
+          html` <div>
+            <input
+              type="radio"
+              id="${value}"
+              name="${this.name}"
+              onchange="handleChange"
+              value="${value}"
+              ${value === this.value ? 'checked' : ''}
+            />
+            <label for="${value}">${labelArray[index]}</label>
+          </div>`
+      )
+      .join('');
   }
 }
 

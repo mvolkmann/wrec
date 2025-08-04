@@ -1,3 +1,10 @@
+import {ChangeListener, State} from './state';
+
+type HTMLValueElement =
+  | HTMLInputElement
+  | HTMLSelectElement
+  | HTMLTextAreaElement;
+
 const CSS_PROPERTY_RE = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g;
 const FIRST_CHAR = 'a-zA-Z_$';
 const OTHER_CHAR = FIRST_CHAR + '0-9';
@@ -8,11 +15,6 @@ const REF_RE = new RegExp(`^this\\.${IDENTIFIER}$`);
 const REFS_RE = new RegExp(`this\\.${IDENTIFIER}(\\.${IDENTIFIER})*`, 'g');
 const REFS_TEST_RE = new RegExp(`this\\.${IDENTIFIER}(\\.${IDENTIFIER})*`);
 const SKIP = 'this.'.length;
-
-type HTMLValueElement =
-  | HTMLInputElement
-  | HTMLSelectElement
-  | HTMLTextAreaElement;
 
 export function createElement(
   name: string,
@@ -61,7 +63,17 @@ function stringToNumber(str: string | null): number {
 type AnyClass = new (...args: any[]) => any;
 
 const defaultForType = (type: AnyClass) =>
-  type === Number ? 0 : type === Boolean ? false : '';
+  type === String
+    ? ''
+    : type === Number
+    ? 0
+    : type === Boolean
+    ? false
+    : type === Array
+    ? []
+    : type === Object
+    ? {}
+    : undefined;
 
 function isPrimitive(value: unknown) {
   const t = typeof value;
@@ -101,7 +113,7 @@ function updateValue(
   }
 }
 
-class Wrec extends HTMLElement {
+class Wrec extends HTMLElement implements ChangeListener {
   static #propToAttrMap = new Map();
   static #attrToPropMap = new Map();
   static css = '';
@@ -121,6 +133,8 @@ class Wrec extends HTMLElement {
   // This must be an instance property and cannot be private because
   // child components need to access the property in their parent component.
   propToParentPropMap = new Map();
+  #state: State | null = null;
+  #stateToComponentPropertyMap = new Map<string, string>();
 
   // This tells TypeScript that it's okay to access properties by string keys.
   [key: string]: any;
@@ -144,7 +158,7 @@ class Wrec extends HTMLElement {
 
   attributeChangedCallback(
     attrName: string,
-    _: string,
+    oldValue: string,
     newValue: string | number | boolean | undefined
   ) {
     // Update corresponding property.
@@ -152,6 +166,7 @@ class Wrec extends HTMLElement {
     const value = this.#typedValue(propName, String(newValue));
     this[propName] = value;
     this.#setFormValue(propName, String(value));
+    this.propertyChangedCallback(propName, oldValue, newValue);
   }
 
   // attrName must be "value" OR undefined!
@@ -163,7 +178,9 @@ class Wrec extends HTMLElement {
   ) {
     element.addEventListener(eventName, (event: Event) => {
       const target = event.target as HTMLValueElement;
-      this[propName] = target.value;
+      const {value} = target;
+      const {type} = this.#ctor.properties[propName];
+      this[propName] = type === Number ? stringToNumber(value) : value;
     });
 
     let bindings = this.#propToBindingsMap.get(propName);
@@ -184,6 +201,11 @@ class Wrec extends HTMLElement {
       template.innerHTML = text;
     }
     this.shadowRoot?.replaceChildren(template.content.cloneNode(true));
+  }
+
+  changed(stateProp: string, _oldStateValue: unknown, newStateValue: unknown) {
+    const componentProp = this.#stateToComponentPropertyMap.get(stateProp);
+    if (componentProp) this[componentProp] = newStateValue;
   }
 
   connectedCallback() {
@@ -251,6 +273,8 @@ class Wrec extends HTMLElement {
         return this[privateName];
       },
       set(value) {
+        this.#validateType(propName, type, value);
+
         if (type === Number && typeof value === 'string') {
           value = stringToNumber(value);
         }
@@ -266,6 +290,8 @@ class Wrec extends HTMLElement {
         if (value === oldValue) return;
 
         this[privateName] = value;
+        const {stateProp} = this.#ctor.properties[propName];
+        if (stateProp) this.#state.set(stateProp, value);
 
         // Update all computed properties that reference this property.
         const map = this.#ctor.propToComputedMap;
@@ -296,9 +322,7 @@ class Wrec extends HTMLElement {
 
         if (isPrimitive(value)) this.#setFormValue(propName, value);
 
-        if (this.propertyChangedCallback) {
-          this.propertyChangedCallback(propName, oldValue, value);
-        }
+        this.propertyChangedCallback(propName, oldValue, value);
 
         if (config.dispatch) {
           this.dispatchEvent(
@@ -401,7 +425,7 @@ class Wrec extends HTMLElement {
         const comment = Array.from(element.childNodes).find(
           node => node.nodeType === Node.COMMENT_NODE
         );
-        if (comment) commentText = comment.textContent ?? '';
+        if (comment) commentText = comment.textContent?.trim() ?? '';
       }
 
       if (commentText) {
@@ -446,20 +470,27 @@ class Wrec extends HTMLElement {
       if (!element.firstElementChild) this.#evaluateText(element);
     }
     /* These lines are useful for debugging.
-    //if (this.constructor.name === 'TableMinus') {
-    console.log('=== this.constructor.name =', this.constructor.name);
-    console.log('propToExprsMap =', this.#ctor.propToExprsMap);
-    console.log('#exprToRefsMap =', this.#exprToRefsMap);
-    console.log('propToComputedMap =', this.#ctor.propToComputedMap);
-    console.log('propToParentPropMap =', this.propToParentPropMap);
-    console.log('\n');
-    //}
+    if (this.constructor.name === 'DataBinding2') {
+      console.log('=== this.constructor.name =', this.constructor.name);
+      console.log('propToExprsMap =', this.#ctor.propToExprsMap);
+      console.log('#exprToRefsMap =', this.#exprToRefsMap);
+      console.log('propToComputedMap =', this.#ctor.propToComputedMap);
+      console.log('propToParentPropMap =', this.propToParentPropMap);
+      console.log('\n');
+    }
     */
   }
 
   static get observedAttributes() {
     return Object.keys(this.properties || {}).map(Wrec.getAttrName);
   }
+
+  // Subclasses can override this to add functionality.
+  propertyChangedCallback(
+    _propName: string,
+    _oldValue: unknown,
+    _newValue: unknown
+  ) {}
 
   #propRefName(element: HTMLElement, text: string | null) {
     if (!text || !REF_RE.test(text)) return;
@@ -687,6 +718,24 @@ class Wrec extends HTMLElement {
     //TODO: Do you ever need to update a CSSStyleRule?
   }
 
+  /**
+   * @param stateName - unique name for th2nd parameter State object
+   * @param state - State object
+   * @param map - object whose keys are state properties and
+   * whose values are component properties
+   */
+  useState(state: State, map: Record<string, string>) {
+    this.#state = state;
+    for (const [stateProp, componentProp] of Object.entries(map)) {
+      this.#stateToComponentPropertyMap.set(stateProp, componentProp);
+      const value = state.get(stateProp);
+      if (value !== undefined) this[componentProp] = value;
+      const config = this.#ctor.properties[componentProp];
+      config.stateProp = stateProp;
+    }
+    state.addListener(this, Object.keys(map));
+  }
+
   #validateAttributes() {
     const ctor = this.#ctor;
     const propNames = new Set(Object.keys(ctor.properties));
@@ -715,6 +764,22 @@ class Wrec extends HTMLElement {
     });
 
     return matches;
+  }
+
+  #validateType(propName: string, type: AnyClass, value: unknown) {
+    if (value instanceof type) return;
+
+    let t = typeof value as string;
+    if (t === 'object') t = (value as object).constructor.name;
+
+    // Handle primitive types.
+    if (t === type.name.toLowerCase()) return;
+
+    this.#throw(
+      null,
+      propName,
+      `was set to a ${t}, but must be a ${type.name}`
+    );
   }
 
   #wireEvents(root: ShadowRoot | HTMLElement) {
@@ -767,8 +832,6 @@ export function css(strings: TemplateStringsArray, ...values: unknown[]) {
       if (!propName.startsWith('--')) {
         const replacement = `--${propName}: ${propValue};
         ${propName}: var(--${propName});`;
-        //console.log('wrec.ts css: replacing', match[0]);
-        //console.log('wrec.ts css: with', replacement);
         result = replace(result, match.index, match[0].length, replacement);
       }
     }

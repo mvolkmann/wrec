@@ -1,17 +1,15 @@
 import Wrec, {css, createElement, html} from './wrec';
 
-interface LooseObject {
-  [key: string]: any;
-}
+type LooseObject = Record<string, unknown>;
 
 // This component demonstrates a different way of implementing reactivity.
 // Rather than relying on the parsing of JavaScript expressions in HTML,
 // it implements the propertyChangedCallback method which is unique to wrec.
 class TableManual extends Wrec {
   static properties = {
-    headings: {type: Array<string>, value: []},
-    properties: {type: Array<string>, value: []},
-    data: {type: Array, value: []}
+    headings: {type: Array<string>},
+    properties: {type: Array<string>},
+    data: {type: Array<object>}
   };
 
   static css = css`
@@ -112,9 +110,9 @@ class TableManual extends Wrec {
         const bValue = b[property];
         let compare =
           typeof aValue === 'string'
-            ? aValue.localeCompare(bValue)
+            ? aValue.localeCompare(bValue as string)
             : typeof aValue === 'number'
-            ? aValue - bValue
+            ? aValue - (bValue as number)
             : 0;
         return this.sortAscending ? compare : -compare;
       });
