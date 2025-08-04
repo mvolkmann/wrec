@@ -4,15 +4,32 @@ import Wrec, {css, html} from '../wrec';
 const capitalize = str =>
   str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
 
+const state = new State();
+const colors = 'red,green,blue';
+state.set('labels', getLabels(colors));
+state.set('colors', colors);
+state.set('color', 'blue');
+state.set('size', 18);
+//state.addListener(new LabelMaker(), ['colors']);
+state.addListener(
+  {
+    changed(property: string, oldValue: unknown, newValue: unknown) {
+      if (property === 'colors') {
+        state.set('labels', getLabels(newValue as string));
+      }
+    }
+  },
+  ['colors']
+);
+
+function getLabels(colors: string): string {
+  return colors.split(',').map(capitalize).join(',');
+}
+
 class DataBinding2 extends Wrec {
   static properties = {
     color: {type: String},
     colors: {type: String},
-    labels: {
-      type: String,
-      computed: 'this.getLabels()',
-      uses: 'colors'
-    },
     size: {type: Number, value: 18}
   };
 
@@ -45,35 +62,21 @@ class DataBinding2 extends Wrec {
     super.connectedCallback();
 
     requestAnimationFrame(() => {
-      this.colors = 'red,green,blue'; //TODO: Why repeat this string?
-      const labels = this.getLabels();
+      const db = document.querySelector('data-binding2')!;
+      const root = db.shadowRoot!;
+      const rg = root.querySelector('radio-group') as Wrec;
+      const sl = root.querySelector('select-list') as Wrec;
+      const ns = root.querySelector('number-slider') as Wrec;
 
-      const db = document.querySelector('data-binding2');
-      const {shadowRoot} = db;
-      const rg = shadowRoot.querySelector('radio-group');
-      const sl = shadowRoot.querySelector('select-list');
-      const ns = shadowRoot.querySelector('number-slider');
-
-      const state = new State();
-      rg.useState(state, {color: 'value', colors: 'values', labels: 'labels'});
-      sl.useState(state, {color: 'value', colors: 'values', labels: 'labels'});
-      ns.useState(state, {size: 'value'});
       this.useState(state, {
         color: 'color',
         colors: 'colors',
-        labels: 'labels',
         size: 'size'
       });
-
-      state.set('colors', 'red,green,blue');
-      state.set('labels', labels);
-      state.set('color', 'blue');
-      state.set('size', 18);
+      rg.useState(state, {color: 'value', colors: 'values', labels: 'labels'});
+      sl.useState(state, {color: 'value', colors: 'values', labels: 'labels'});
+      ns.useState(state, {size: 'value'});
     });
-  }
-
-  getLabels() {
-    return this.colors.split(',').map(capitalize).join(',');
   }
 }
 
