@@ -5,6 +5,13 @@ type HTMLValueElement =
   | HTMLSelectElement
   | HTMLTextAreaElement;
 
+type Ref =
+  | HTMLElement
+  | CSSStyleRule
+  | {element: HTMLElement | CSSStyleRule; attrName: string};
+
+class WrecError extends Error {}
+
 const CSS_PROPERTY_RE = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g;
 const FIRST_CHAR = 'a-zA-Z_$';
 const OTHER_CHAR = FIRST_CHAR + '0-9';
@@ -56,7 +63,7 @@ function replace(
 
 function stringToNumber(str: string | null): number {
   const n = Number(str);
-  if (isNaN(n)) throw new Error(`Cannot convert "${str}" to a number.`);
+  if (isNaN(n)) throw new WrecError(`Cannot convert "${str}" to a number.`);
   return n;
 }
 
@@ -114,8 +121,8 @@ function updateValue(
 }
 
 class Wrec extends HTMLElement implements ChangeListener {
-  static #propToAttrMap = new Map();
-  static #attrToPropMap = new Map();
+  static #propToAttrMap = new Map<string, string>();
+  static #attrToPropMap = new Map<string, string>();
   static css = '';
   static html = '';
   static formAssociated = false;
@@ -126,13 +133,13 @@ class Wrec extends HTMLElement implements ChangeListener {
   static template: HTMLTemplateElement | null = null;
 
   #ctor: typeof Wrec = this.constructor as typeof Wrec;
-  #exprToRefsMap = new Map();
+  #exprToRefsMap = new Map<string, Ref[]>();
   #formData;
   #internals: ElementInternals | null = null;
-  #propToBindingsMap = new Map();
+  #propToBindingsMap = new Map<string, Ref[]>();
   // This must be an instance property and cannot be private because
   // child components need to access the property in their parent component.
-  propToParentPropMap = new Map();
+  #propToParentPropMap = new Map<string, string>();
   #state: State | null = null;
   #stateToComponentPropertyMap = new Map<string, string>();
 
@@ -314,7 +321,7 @@ class Wrec extends HTMLElement implements ChangeListener {
 
         // If this property is bound to a parent web component property,
         // update that as well.
-        const parentProp = this.propToParentPropMap.get(propName);
+        const parentProp = this.#propToParentPropMap.get(propName);
         if (parentProp) {
           const parent = this.getRootNode().host;
           parent[parentProp] = value;
@@ -335,6 +342,13 @@ class Wrec extends HTMLElement implements ChangeListener {
         }
       }
     });
+  }
+
+  disconnectedCallback() {
+    //TODO: Should more cleanup be performed here?
+    this.#exprToRefsMap.clear();
+    this.#propToParentPropMap.clear();
+    this.#stateToComponentPropertyMap.clear();
   }
 
   // This inserts a dash before each uppercase letter
@@ -379,7 +393,7 @@ class Wrec extends HTMLElement implements ChangeListener {
         // save a mapping from the attribute name in this web component
         // to the property name in the parent web component.
         if (isWC) {
-          (element as Wrec).propToParentPropMap.set(
+          (element as Wrec).#propToParentPropMap.set(
             Wrec.getPropName(realAttrName),
             propName
           );
@@ -391,8 +405,8 @@ class Wrec extends HTMLElement implements ChangeListener {
   }
 
   #evaluateInContext(expr: string) {
-    // oxlint-disable-next-line no-eval
-    return (() => eval(expr)).call(this);
+    // This approach is safer than using the eval function.
+    return new Function('return ' + expr).call(this);
   }
 
   #evaluateText(element: HTMLElement) {
@@ -475,7 +489,7 @@ class Wrec extends HTMLElement implements ChangeListener {
       console.log('propToExprsMap =', this.#ctor.propToExprsMap);
       console.log('#exprToRefsMap =', this.#exprToRefsMap);
       console.log('propToComputedMap =', this.#ctor.propToComputedMap);
-      console.log('propToParentPropMap =', this.propToParentPropMap);
+      console.log('#propToParentPropMap =', this.#propToParentPropMap);
       console.log('\n');
     }
     */
@@ -508,10 +522,13 @@ class Wrec extends HTMLElement implements ChangeListener {
     const exprs = map!.get(propName) || [];
     for (const expr of exprs) {
       const value = this.#evaluateInContext(expr);
-      const refs = this.#exprToRefsMap.get(expr) || [];
+      const refs: Ref[] = this.#exprToRefsMap.get(expr) ?? [];
       for (const ref of refs) {
+        console.log('wrec.ts #react: ref =', ref);
         if (ref instanceof HTMLElement) {
           this.#updateElementContent(ref, value);
+        } else if (ref instanceof CSSStyleRule) {
+          //TODO: Does something need to be done here?
         } else {
           updateValue(ref.element, ref.attrName, value);
         }
@@ -632,7 +649,7 @@ class Wrec extends HTMLElement implements ChangeListener {
     const ctor = this.#ctor;
     const name =
       element instanceof HTMLElement ? element.localName : 'CSS rule';
-    throw new Error(
+    throw new WrecError(
       `component ${ctor.elementName()}` +
         (element ? `, element "${name}"` : '') +
         (attrName ? `, attribute "${attrName}"` : '') +
@@ -685,10 +702,16 @@ class Wrec extends HTMLElement implements ChangeListener {
         } else {
           binding.textContent = value;
         }
+      } else if (binding instanceof CSSStyleRule) {
+        //TODO: Does something need to be done here?
       } else {
         const {element, attrName} = binding;
-        updateAttribute(element, attrName, value);
-        element[attrName] = value;
+        if (element instanceof HTMLElement) {
+          const propName = Wrec.getPropName(attrName);
+          (element as any)[propName] = value;
+        } else if (element instanceof CSSStyleRule) {
+          element.style.setProperty(attrName, value);
+        }
       }
     }
   }
@@ -708,6 +731,7 @@ class Wrec extends HTMLElement implements ChangeListener {
     if (localName === 'textarea') {
       (element as HTMLTextAreaElement).value = value;
     } else if (isHTML && t === 'string' && value.trim().startsWith('<')) {
+      //TODO: Consider sanitizing this HTML.
       element.innerHTML = value;
       this.#wireEvents(element);
       // This is necessary in case the new HTML contains JavaScript expressions.
@@ -715,7 +739,6 @@ class Wrec extends HTMLElement implements ChangeListener {
     } else if (isHTML) {
       element.textContent = value;
     }
-    //TODO: Do you ever need to update a CSSStyleRule?
   }
 
   /**
