@@ -1,4 +1,4 @@
-import Wrec, {css, html} from './wrec';
+import Wrec, {css, html} from '../wrec';
 
 type LooseObject = Record<string, unknown>;
 

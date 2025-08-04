@@ -7,7 +7,7 @@ import {
 } from './util';
 
 test.beforeEach(async ({page}) => {
-  await page.goto('http://localhost:5173/data-binding.html');
+  await page.goto('http://localhost:5173/examples/data-binding.html');
 });
 
 test('has title', async ({page}) => {

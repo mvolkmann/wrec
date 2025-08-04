@@ -1,4 +1,4 @@
-import Wrec, {css, html} from './wrec';
+import Wrec, {css, html} from '../wrec';
 
 class BasicWrec extends Wrec {
   static css = css`

@@ -50,7 +50,7 @@ export default defineConfig({
   // Run local server before starting tests.
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:5173',
+    url: 'http://localhost:5173/examples/',
     reuseExistingServer: true
   }
 });

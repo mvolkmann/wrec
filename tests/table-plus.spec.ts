@@ -3,7 +3,7 @@ import {expect, Page, test} from '@playwright/test';
 import {setProperty, waitForNextFrame} from './util';
 
 test.beforeEach(async ({page}: {page: Page}) => {
-  await page.goto('http://localhost:5173/table-demo.html');
+  await page.goto('http://localhost:5173/examples/table-demo.html');
 });
 
 test('has title', async ({page}: {page: Page}) => {

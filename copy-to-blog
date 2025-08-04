@@ -5,6 +5,6 @@
 
 npm run minify
 cp dist/wrec.min.js $HOME/Documents/blog/src/js
-cp dist/table-wired.js $HOME/Documents/blog/src/js
-sed -i '' '3s/wrec/wrec.min.js/' $HOME/Documents/blog/src/js/table-wired.js
+cp dist/examples/table-wired.js $HOME/Documents/blog/src/js
+sed -i '' '1s/\.\/wrec/\/wrec.min.js/' $HOME/Documents/blog/src/js/table-wired.js
 echo "ready"

@@ -1,4 +1,4 @@
-import Wrec, {css, html} from './wrec';
+import Wrec, {css, html} from '../wrec';
 
 class SlotsDemo extends Wrec {
   static properties = {

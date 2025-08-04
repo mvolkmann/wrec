@@ -2,7 +2,7 @@ import {expect, Page, test} from '@playwright/test';
 import {expectProperty, setProperty, waitForNextFrame} from './util';
 
 test.beforeEach(async ({page}: {page: Page}) => {
-  await page.goto('http://localhost:5173/number-bind.html');
+  await page.goto('http://localhost:5173/examples/number-bind.html');
 });
 
 test('number-bind', async ({page}: {page: Page}) => {

@@ -1,4 +1,4 @@
-import Wrec, {css, html} from './wrec';
+import Wrec, {css, html} from '../wrec';
 
 class NumberInput extends Wrec {
   static formAssociated = true;

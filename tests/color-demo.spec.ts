@@ -2,7 +2,7 @@ import {expect, Locator, Page, test} from '@playwright/test';
 import {setInputRangeValue} from './util';
 
 test.beforeEach(async ({page}: {page: Page}) => {
-  await page.goto('http://localhost:5173/color-demo.html');
+  await page.goto('http://localhost:5173/examples/color-demo.html');
 });
 
 test('has title', async ({page}: {page: Page}) => {

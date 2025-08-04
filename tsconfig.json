@@ -13,5 +13,5 @@
     "strict": true,
     "sourceMap": true
   },
-  "files": ["src/table-wired.ts", "src/wrec.ts"]
+  "files": ["src/examples/table-wired.ts", "src/wrec.ts"]
 }

@@ -2,7 +2,7 @@ import {Page, test} from '@playwright/test';
 import {expectProperty} from './util';
 
 test.beforeEach(async ({page}: {page: Page}) => {
-  await page.goto('http://localhost:5173/toggle-switch.html');
+  await page.goto('http://localhost:5173/examples/toggle-switch.html');
 });
 
 test('toggle-switch', async ({page}: {page: Page}) => {

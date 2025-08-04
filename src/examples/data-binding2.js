@@ -1,5 +1,5 @@
-import {State} from './state';
-import Wrec, {css, html} from './wrec';
+import {State} from '../state';
+import Wrec, {css, html} from '../wrec';
 
 const capitalize = str =>
   str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
