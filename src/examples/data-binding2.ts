@@ -10,7 +10,6 @@ state.set('labels', getLabels(colors));
 state.set('colors', colors);
 state.set('color', 'blue');
 state.set('size', 18);
-//state.addListener(new LabelMaker(), ['colors']);
 state.addListener(
   {
     changed(property: string, oldValue: unknown, newValue: unknown) {
