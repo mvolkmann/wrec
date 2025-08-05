@@ -1,0 +1,33 @@
+<html>
+  <head>
+    <style>
+      body {
+        font-family: sans-serif;
+      }
+    </style>
+    <script src="hello-world.js" type="module"></script>
+    <script src="labeled-input.js" type="module"></script>
+    <script type="module">
+      import {State} from '../state.js';
+      const state = new State();
+      state.addProperty('name', 'World');
+
+      window.onload = () => {
+        const li = document.querySelector('labeled-input');
+        li.useState(state, {name: 'value'});
+        const hw = document.querySelector('hello-world');
+        hw.useState(state, {name: 'name'});
+
+        const button = document.querySelector('button');
+        button.addEventListener('click', () => {
+          state.name = 'World';
+        });
+      };
+    </script>
+  </head>
+  <body>
+    <labeled-input label="Name"></labeled-input>
+    <hello-world></hello-world>
+    <button>Reset</button>
+  </body>
+</html>

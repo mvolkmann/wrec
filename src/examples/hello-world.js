@@ -11,12 +11,7 @@ class HelloWorld extends Wrec {
     }
   `;
 
-  static html = html`
-    <p>
-      Hello, <span>this.name</span>. Shouting
-      <span>this.name.toUpperCase()</span>!
-    </p>
-  `;
+  static html = html` <p>Hello, <span>this.name</span>!</p> `;
 }
 
 HelloWorld.register();

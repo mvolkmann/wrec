@@ -8,12 +8,12 @@ test.beforeEach(async ({page}: {page: Page}) => {
 test('hello-world', async ({page}: {page: Page}) => {
   let component = page.locator('hello-world').first();
   let p = component.locator('p');
-  await expect(p).toHaveText('Hello, World. Shouting WORLD!');
+  await expect(p).toHaveText('Hello, World!');
 
   component = page.locator('hello-world').last();
   p = component.locator('p');
-  await expect(p).toHaveText('Hello, Mark. Shouting MARK!');
+  await expect(p).toHaveText('Hello, Mark!');
 
   await setAttribute(component, 'name', 'Tami');
-  await expect(p).toHaveText('Hello, Tami. Shouting TAMI!');
+  await expect(p).toHaveText('Hello, Tami!');
 });
