@@ -1,5 +1,3 @@
-// JavaScript does not allow creating a subclass of the Proxy class.
-
 export type ChangeListener = {
   changed: (property: string, oldValue: unknown, newValue: unknown) => void;
 };
@@ -11,6 +9,7 @@ type ListenerData = {
 
 type LooseObject = Record<string, unknown>;
 
+// JavaScript does not allow creating a subclass of the Proxy class.
 export class State {
   #listeners: ListenerData[] = [];
   #proxy: LooseObject;

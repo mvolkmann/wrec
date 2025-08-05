@@ -788,6 +788,7 @@ class Wrec extends HTMLElement implements ChangeListener {
     return matches;
   }
 
+  // When type is an array, this can't validate the type of the array elements.
   #validateType(propName: string, type: AnyClass, value: unknown) {
     if (value instanceof type) return;
 
