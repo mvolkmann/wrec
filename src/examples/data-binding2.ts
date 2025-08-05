@@ -6,16 +6,14 @@ const capitalize = str =>
 
 const state = new State();
 const colors = 'red,green,blue';
-state.set('labels', getLabels(colors));
-state.set('colors', colors);
-state.set('color', 'blue');
-state.set('size', 18);
+state.addProperty('labels', getLabels(colors));
+state.addProperty('colors', colors);
+state.addProperty('color', 'blue');
+state.addProperty('size', 18);
 state.addListener(
   {
     changed(property: string, oldValue: unknown, newValue: unknown) {
-      if (property === 'colors') {
-        state.set('labels', getLabels(newValue as string));
-      }
+      if (property === 'colors') state.labels = getLabels(newValue as string);
     }
   },
   ['colors']

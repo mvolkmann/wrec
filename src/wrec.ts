@@ -298,7 +298,7 @@ class Wrec extends HTMLElement implements ChangeListener {
 
         this[privateName] = value;
         const {stateProp} = this.#ctor.properties[propName];
-        if (stateProp) this.#state.set(stateProp, value);
+        if (stateProp) this.#state[stateProp] = value;
 
         // Update all computed properties that reference this property.
         const map = this.#ctor.propToComputedMap;
@@ -524,7 +524,6 @@ class Wrec extends HTMLElement implements ChangeListener {
       const value = this.#evaluateInContext(expr);
       const refs: Ref[] = this.#exprToRefsMap.get(expr) ?? [];
       for (const ref of refs) {
-        console.log('wrec.ts #react: ref =', ref);
         if (ref instanceof HTMLElement) {
           this.#updateElementContent(ref, value);
         } else if (ref instanceof CSSStyleRule) {
@@ -751,7 +750,7 @@ class Wrec extends HTMLElement implements ChangeListener {
     this.#state = state;
     for (const [stateProp, componentProp] of Object.entries(map)) {
       this.#stateToComponentPropertyMap.set(stateProp, componentProp);
-      const value = state.get(stateProp);
+      const value = state[stateProp];
       if (value !== undefined) this[componentProp] = value;
       const config = this.#ctor.properties[componentProp];
       config.stateProp = stateProp;

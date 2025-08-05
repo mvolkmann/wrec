@@ -15,6 +15,9 @@ export class State {
   #listeners: ListenerData[] = [];
   #proxy: LooseObject;
 
+  // This tells TypeScript that it's okay to access properties by string keys.
+  [key: string]: any;
+
   constructor() {
     const handler = {
       set: (target: LooseObject, property: string, newValue: unknown) => {
@@ -36,6 +39,19 @@ export class State {
     this.#listeners.push({listener, propertySet});
   }
 
+  addProperty(propName: string, initialValue: unknown) {
+    Object.defineProperty(this, propName, {
+      enumerable: true,
+      get() {
+        return this.#proxy[propName];
+      },
+      set(newValue: unknown) {
+        this.#proxy[propName] = newValue;
+      }
+    });
+    this.#proxy[propName] = initialValue;
+  }
+
   #notifyListeners(property: string, oldValue: unknown, newValue: unknown) {
     for (const {listener, propertySet} of this.#listeners) {
       if (!propertySet || propertySet.has(property)) {
@@ -44,16 +60,7 @@ export class State {
     }
   }
 
-  get(property: string) {
-    return this.#proxy[property];
-  }
-
   removeListener(listener: ChangeListener) {
     this.#listeners = this.#listeners.filter(obj => obj.listener !== listener);
-  }
-
-  set(property: string, newValue: unknown) {
-    const oldValue = this.#proxy[property];
-    if (newValue !== oldValue) this.#proxy[property] = newValue;
   }
 }
