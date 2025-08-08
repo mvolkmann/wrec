@@ -280,21 +280,13 @@ class Wrec extends HTMLElement implements ChangeListener {
         return this[privateName];
       },
       set(value) {
-        this.#validateType(propName, type, value);
-
         if (type === Number && typeof value === 'string') {
           value = stringToNumber(value);
         }
-        if (value.constructor !== type) {
-          this.#throw(
-            null,
-            propName,
-            `was set to a ${value.constructor.name}, but must be a ${type.name}`
-          );
-        }
-
         const oldValue = this[privateName];
         if (value === oldValue) return;
+
+        this.#validateType(propName, type, value);
 
         this[privateName] = value;
         const {stateProp} = this.#ctor.properties[propName];
@@ -789,20 +781,30 @@ class Wrec extends HTMLElement implements ChangeListener {
   }
 
   // When type is an array, this can't validate the type of the array elements.
-  #validateType(propName: string, type: AnyClass, value: unknown) {
+  #validateType(propName: string, type: AnyClass, value: any) {
     if (value instanceof type) return;
 
     let t = typeof value as string;
-    if (t === 'object') t = (value as object).constructor.name;
+    if (t === 'object') {
+      const {constructor} = value;
+      t = constructor.name;
+      if (constructor !== type) {
+        this.#throw(
+          null,
+          propName,
+          `was set to a ${t}, but must be a ${type.name}`
+        );
+      }
+    }
 
     // Handle primitive types.
-    if (t === type.name.toLowerCase()) return;
-
-    this.#throw(
-      null,
-      propName,
-      `was set to a ${t}, but must be a ${type.name}`
-    );
+    if (t !== type.name.toLowerCase()) {
+      this.#throw(
+        null,
+        propName,
+        `was set to a ${t}, but must be a ${type.name}`
+      );
+    }
   }
 
   #wireEvents(root: ShadowRoot | HTMLElement) {
