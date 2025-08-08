@@ -140,7 +140,6 @@ class Wrec extends HTMLElement implements ChangeListener {
   // This must be an instance property and cannot be private because
   // child components need to access the property in their parent component.
   #propToParentPropMap = new Map<string, string>();
-  #state: State | null = null;
   #stateToComponentPropertyMap = new Map<string, string>();
 
   // This tells TypeScript that it's okay to access properties by string keys.
@@ -289,8 +288,8 @@ class Wrec extends HTMLElement implements ChangeListener {
         this.#validateType(propName, type, value);
 
         this[privateName] = value;
-        const {stateProp} = this.#ctor.properties[propName];
-        if (stateProp) this.#state[stateProp] = value;
+        const {state, stateProp} = this.#ctor.properties[propName];
+        if (stateProp) state[stateProp] = value;
 
         this.#updateComputedProperties(propName);
         this.#updateAttribute(propName, type, value, attrName);
@@ -750,12 +749,14 @@ class Wrec extends HTMLElement implements ChangeListener {
    * whose values are component properties
    */
   useState(state: State, map: Record<string, string>) {
-    this.#state = state;
     for (const [stateProp, componentProp] of Object.entries(map)) {
+      //TODO: This won't work as expected if this component uses more than
+      // one State object that has the same state property name!
       this.#stateToComponentPropertyMap.set(stateProp, componentProp);
       const value = state[stateProp];
       if (value !== undefined) this[componentProp] = value;
       const config = this.#ctor.properties[componentProp];
+      config.state = state;
       config.stateProp = stateProp;
     }
     state.addListener(this, Object.keys(map));
