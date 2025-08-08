@@ -292,42 +292,13 @@ class Wrec extends HTMLElement implements ChangeListener {
         const {stateProp} = this.#ctor.properties[propName];
         if (stateProp) this.#state[stateProp] = value;
 
-        // Update all computed properties that reference this property.
         this.#updateComputedProperties(propName);
-
-        // If there is a matching attribute on the custom element,
-        // update that attribute.
-        if (isPrimitive(value) && this.hasAttribute(attrName)) {
-          const oldValue =
-            type === Boolean
-              ? this.hasAttribute(attrName)
-              : this.#typedAttribute(propName, attrName);
-          if (value !== oldValue) updateAttribute(this, propName, value);
-        }
-
+        this.#updateAttribute(propName, type, value, attrName);
         this.#react(propName);
-
-        // If this property is bound to a parent web component property,
-        // update that as well.
-        const parentProp = this.#propToParentPropMap.get(propName);
-        if (parentProp) {
-          const parent = this.getRootNode().host;
-          parent[parentProp] = value;
-        }
-
+        this.#updateParentProperty(propName, value);
         if (isPrimitive(value)) this.#setFormValue(propName, value);
-
         this.propertyChangedCallback(propName, oldValue, value);
-
-        if (config.dispatch) {
-          this.dispatchEvent(
-            new CustomEvent('change', {
-              bubbles: true, // up DOM tree
-              composed: true, // can pass through shadow DOM
-              detail: {propName}
-            })
-          );
-        }
+        if (config.dispatch) this.#dispatchChangeEvent(propName);
       }
     });
   }
@@ -337,6 +308,16 @@ class Wrec extends HTMLElement implements ChangeListener {
     this.#exprToRefsMap.clear();
     this.#propToParentPropMap.clear();
     this.#stateToComponentPropertyMap.clear();
+  }
+
+  #dispatchChangeEvent(propName: string) {
+    this.dispatchEvent(
+      new CustomEvent('change', {
+        bubbles: true, // up DOM tree
+        composed: true, // can pass through shadow DOM
+        detail: {propName}
+      })
+    );
   }
 
   // This inserts a dash before each uppercase letter
@@ -679,6 +660,17 @@ class Wrec extends HTMLElement implements ChangeListener {
     this.#throw(null, propName, 'does not specify its type');
   }
 
+  // Updates the matching attribute for a property if there is one.
+  #updateAttribute(propName: string, type: any, value: any, attrName: string) {
+    if (isPrimitive(value) && this.hasAttribute(attrName)) {
+      const oldValue =
+        type === Boolean
+          ? this.hasAttribute(attrName)
+          : this.#typedAttribute(propName, attrName);
+      if (value !== oldValue) updateAttribute(this, propName, value);
+    }
+  }
+
   #updateBindings(propName: string) {
     const value = this[propName];
     const bindings = this.#propToBindingsMap.get(propName) || [];
@@ -703,6 +695,7 @@ class Wrec extends HTMLElement implements ChangeListener {
     }
   }
 
+  // Updates all computed properties that reference this property.
   #updateComputedProperties(propName: string) {
     const map = this.#ctor.propToComputedMap!;
     const computes = map.get(propName) || [];
@@ -734,6 +727,20 @@ class Wrec extends HTMLElement implements ChangeListener {
     } else if (isHTML) {
       element.textContent = value;
     }
+  }
+
+  // Update corresponding parent web component property if bound to one.
+  #updateParentProperty(propName: string, value: any) {
+    const parentProp = this.#propToParentPropMap.get(propName);
+    if (!parentProp) return;
+
+    const root = this.getRootNode();
+    if (!(root instanceof ShadowRoot)) return;
+    const {host} = root;
+    if (!host) return;
+
+    const parent = host as Record<string, any>;
+    parent[parentProp] = value;
   }
 
   /**
