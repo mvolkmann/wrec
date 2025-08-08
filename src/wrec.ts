@@ -274,6 +274,8 @@ class Wrec extends HTMLElement implements ChangeListener {
 
     if (config.computed) this.#registerComputedProp(propName, config);
 
+    const self = this;
+
     Object.defineProperty(this, propName, {
       enumerable: true,
       get() {
@@ -293,11 +295,7 @@ class Wrec extends HTMLElement implements ChangeListener {
         if (stateProp) this.#state[stateProp] = value;
 
         // Update all computed properties that reference this property.
-        const map = this.#ctor.propToComputedMap;
-        const computes = map.get(propName) || [];
-        for (const [computedName, expr] of computes) {
-          this[computedName] = this.#evaluateInContext(expr);
-        }
+        self.#updateComputedProperties(propName);
 
         // If there is a matching attribute on the custom element,
         // update that attribute.
@@ -704,6 +702,14 @@ class Wrec extends HTMLElement implements ChangeListener {
           element.style.setProperty(attrName, value);
         }
       }
+    }
+  }
+
+  #updateComputedProperties(propName: string) {
+    const map = this.#ctor.propToComputedMap!;
+    const computes = map.get(propName) || [];
+    for (const [computedName, expr] of computes) {
+      this[computedName] = this.#evaluateInContext(expr);
     }
   }
 
