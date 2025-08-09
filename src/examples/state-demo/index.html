@@ -8,21 +8,25 @@
     <script src="../number-slider.js" type="module"></script>
     <script type="module">
       import {State} from '../../state.js';
-      const state = new State();
-      state.addProperty('color', 'black');
-      state.addProperty('name', 'World');
+      const state1 = new State();
+      state1.addProperty('color', 'black');
+      const state2 = new State();
+      state2.addProperty('name', 'World');
 
       window.onload = () => {
         const c1 = document.querySelector('component-one');
-        c1.useState(state, {color: 'color', name: 'name'});
+        c1.useState(state1, {color: 'color'});
+        c1.useState(state2, {name: 'name'});
 
         const c2 = document.querySelector('component-two');
-        c2.useState(state, {color: 'color', name: 'name'});
+        c2.useState(state1, {color: 'color'});
+        c2.useState(state2, {name: 'name'});
       };
     </script>
   </head>
   <body>
     <component-one></component-one>
+    <hr />
     <component-two></component-two>
   </body>
 </html>
