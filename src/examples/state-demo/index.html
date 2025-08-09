@@ -1,0 +1,28 @@
+<html>
+  <head>
+    <title>Data Binding Demo with State</title>
+    <script src="./component-one.js" type="module"></script>
+    <script src="./component-two.js" type="module"></script>
+    <script src="../color-picker.js" type="module"></script>
+    <script src="../labeled-input.js" type="module"></script>
+    <script src="../number-slider.js" type="module"></script>
+    <script type="module">
+      import {State} from '../../state.js';
+      const state = new State();
+      state.addProperty('color', 'black');
+      state.addProperty('name', 'World');
+
+      window.onload = () => {
+        const c1 = document.querySelector('component-one');
+        c1.useState(state, {color: 'color', name: 'name'});
+
+        const c2 = document.querySelector('component-two');
+        c2.useState(state, {color: 'color', name: 'name'});
+      };
+    </script>
+  </head>
+  <body>
+    <component-one name="Mark"></component-one>
+    <component-two color="black" name="Mark"></component-two>
+  </body>
+</html>
