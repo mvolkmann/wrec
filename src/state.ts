@@ -1,5 +1,10 @@
 export type ChangeListener = {
-  changed: (property: string, oldValue: unknown, newValue: unknown) => void;
+  changed: (
+    stateId: symbol,
+    property: string,
+    oldValue: unknown,
+    newValue: unknown
+  ) => void;
 };
 
 type ListenerData = {
@@ -11,6 +16,7 @@ type LooseObject = Record<string, unknown>;
 
 // JavaScript does not allow creating a subclass of the Proxy class.
 export class State {
+  #id = Symbol('objectId');
   #listeners: ListenerData[] = [];
   #proxy: LooseObject;
 
@@ -51,10 +57,14 @@ export class State {
     this.#proxy[propName] = initialValue;
   }
 
+  get id() {
+    return this.#id;
+  }
+
   #notifyListeners(property: string, oldValue: unknown, newValue: unknown) {
     for (const {listener, propertySet} of this.#listeners) {
       if (!propertySet || propertySet.has(property)) {
-        listener.changed(property, oldValue, newValue);
+        listener.changed(this.#id, property, oldValue, newValue);
       }
     }
   }

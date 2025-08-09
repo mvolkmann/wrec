@@ -209,8 +209,14 @@ class Wrec extends HTMLElement implements ChangeListener {
     this.shadowRoot?.replaceChildren(template.content.cloneNode(true));
   }
 
-  changed(stateProp: string, _oldStateValue: unknown, newStateValue: unknown) {
-    const componentProp = this.#stateToComponentPropertyMap.get(stateProp);
+  changed(
+    stateId: symbol,
+    stateProp: string,
+    _oldStateValue: unknown,
+    newStateValue: unknown
+  ) {
+    const stateKey = `${stateId.toString()}:${stateProp}`;
+    const componentProp = this.#stateToComponentPropertyMap.get(stateKey);
     if (componentProp) this[componentProp] = newStateValue;
   }
 
@@ -750,9 +756,8 @@ class Wrec extends HTMLElement implements ChangeListener {
    */
   useState(state: State, map: Record<string, string>) {
     for (const [stateProp, componentProp] of Object.entries(map)) {
-      //TODO: This won't work as expected if this component uses more than
-      // one State object that has the same state property name!
-      this.#stateToComponentPropertyMap.set(stateProp, componentProp);
+      const stateKey = `${state.id.toString()}:${stateProp}`;
+      this.#stateToComponentPropertyMap.set(stateKey, componentProp);
       const value = state[stateProp];
       if (value !== undefined) this[componentProp] = value;
       const config = this.#ctor.properties[componentProp];

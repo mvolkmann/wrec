@@ -12,7 +12,12 @@ state.addProperty('color', 'blue');
 state.addProperty('size', 18);
 state.addListener(
   {
-    changed(property: string, oldValue: unknown, newValue: unknown) {
+    changed(
+      _stateId: symbol,
+      property: string,
+      _oldValue: unknown,
+      newValue: unknown
+    ) {
       if (property === 'colors') state.labels = getLabels(newValue as string);
     }
   },
