@@ -1,4 +1,6 @@
-import {ChangeListener, State} from './state';
+import type {ChangeListener, State} from './state';
+
+type AnyClass = new (...args: any[]) => any;
 
 type HTMLValueElement =
   | HTMLInputElement
@@ -38,6 +40,40 @@ export function createElement(
   return element;
 }
 
+const defaultForType = (type: AnyClass) =>
+  type === String
+    ? ''
+    : type === Number
+    ? 0
+    : type === Boolean
+    ? false
+    : type === Array
+    ? []
+    : type === Object
+    ? {}
+    : undefined;
+
+// This differs from document.getElementById
+// in that it searches across open shadow DOMs.
+function getElementById(root: Element, id: string): Element | null {
+  if (root.id === id) return root;
+
+  const {shadowRoot} = root;
+  if (shadowRoot) {
+    for (const child of Array.from(shadowRoot.children)) {
+      const el = getElementById(child, id);
+      if (el) return el;
+    }
+  }
+
+  for (const child of Array.from(root.children)) {
+    const el = getElementById(child, id);
+    if (el) return el;
+  }
+
+  return null;
+}
+
 // This takes a string like "this.foo.bar" and returns "foo".
 const getPropName = (str: string) => str.substring(SKIP).split('.')[0];
 
@@ -47,6 +83,11 @@ function interpolate(strings: TemplateStringsArray, values: unknown[]) {
     result += value + strings[i + 1];
   });
   return result;
+}
+
+function isPrimitive(value: unknown) {
+  const t = typeof value;
+  return t === 'string' || t === 'number' || t === 'boolean';
 }
 
 const removeHtmlComments = (str: string) => str.replace(/<!--[\s\S]*?-->/g, '');
@@ -67,44 +108,30 @@ function stringToNumber(str: string | null): number {
   return n;
 }
 
-type AnyClass = new (...args: any[]) => any;
-
-const defaultForType = (type: AnyClass) =>
-  type === String
-    ? ''
-    : type === Number
-    ? 0
-    : type === Boolean
-    ? false
-    : type === Array
-    ? []
-    : type === Object
-    ? {}
-    : undefined;
-
-function isPrimitive(value: unknown) {
-  const t = typeof value;
-  return t === 'string' || t === 'number' || t === 'boolean';
-}
-
 function updateAttribute(
   element: HTMLElement,
   attrName: string,
   value: string | number | boolean
 ) {
-  if (!isPrimitive(value)) return;
-
-  const currentValue = element.getAttribute(attrName);
-  if (typeof value === 'boolean') {
-    if (value) {
-      if (currentValue !== attrName) {
-        element.setAttribute(attrName, attrName);
+  // Attributes can only be set to primitive values.
+  if (isPrimitive(value)) {
+    // Set the attribute.
+    const currentValue = element.getAttribute(attrName);
+    if (typeof value === 'boolean') {
+      if (value) {
+        if (currentValue !== attrName) {
+          element.setAttribute(attrName, attrName);
+        }
+      } else {
+        element.removeAttribute(attrName);
       }
-    } else {
-      element.removeAttribute(attrName);
+    } else if (currentValue !== value) {
+      element.setAttribute(attrName, String(value));
     }
-  } else if (currentValue !== value) {
-    element.setAttribute(attrName, String(value));
+  } else {
+    // Set the corresponding property.
+    const propName = Wrec.getPropName(attrName);
+    (element as Record<string, any>)[propName] = value;
   }
 }
 
@@ -126,6 +153,7 @@ class Wrec extends HTMLElement implements ChangeListener {
   static css = '';
   static html = '';
   static formAssociated = false;
+  static idToPropertyMap = new Map<string, any>();
   static processed = false;
   static properties: Record<string, any> = {};
   static propToComputedMap: Map<string, string[][]> | null = null;
@@ -230,6 +258,7 @@ class Wrec extends HTMLElement implements ChangeListener {
       if (this.shadowRoot) {
         this.#wireEvents(this.shadowRoot);
         this.#makeReactive(this.shadowRoot);
+        Wrec.#setProperties();
         // This line cannot be moved to the #registerPlaceholders method
         // because that needs to be called multiple times
         // for the first instance of each Wrec subclass.
@@ -303,7 +332,7 @@ class Wrec extends HTMLElement implements ChangeListener {
         this.#updateParentProperty(propName, value);
         if (isPrimitive(value)) this.#setFormValue(propName, value);
         this.propertyChangedCallback(propName, oldValue, value);
-        if (config.dispatch) this.#dispatchChangeEvent(propName);
+        if (config.dispatch) this.dispatch('change', {propName});
       }
     });
   }
@@ -315,12 +344,12 @@ class Wrec extends HTMLElement implements ChangeListener {
     this.#stateToComponentPropertyMap.clear();
   }
 
-  #dispatchChangeEvent(propName: string) {
+  dispatch(name: string, detail: any) {
     this.dispatchEvent(
-      new CustomEvent('change', {
+      new CustomEvent(name, {
         bubbles: true, // up DOM tree
         composed: true, // can pass through shadow DOM
-        detail: {propName}
+        detail
       })
     );
   }
@@ -458,13 +487,13 @@ class Wrec extends HTMLElement implements ChangeListener {
       if (!element.firstElementChild) this.#evaluateText(element);
     }
     /* These lines are useful for debugging.
-    if (this.constructor.name === 'DataBinding2') {
-      console.log('=== this.constructor.name =', this.constructor.name);
-      console.log('propToExprsMap =', this.#ctor.propToExprsMap);
-      console.log('#exprToRefsMap =', this.#exprToRefsMap);
-      console.log('propToComputedMap =', this.#ctor.propToComputedMap);
-      console.log('#propToParentPropMap =', this.#propToParentPropMap);
-      console.log('\n');
+    if (this.constructor.name === "WrecModal") {
+      console.log("=== this.constructor.name =", this.constructor.name);
+      console.log("propToExprsMap =", this.#ctor.propToExprsMap);
+      console.log("#exprToRefsMap =", this.#exprToRefsMap);
+      console.log("propToComputedMap =", this.#ctor.propToComputedMap);
+      console.log("#propToParentPropMap =", this.#propToParentPropMap);
+      console.log("\n");
     }
     */
   }
@@ -492,6 +521,7 @@ class Wrec extends HTMLElement implements ChangeListener {
   #react(propName: string) {
     // Update all expression references.
     const ctor = this.#ctor;
+    const log = ctor.name === 'WrecModal';
     const map = ctor.propToExprsMap;
     const exprs = map!.get(propName) || [];
     for (const expr of exprs) {
@@ -614,6 +644,17 @@ class Wrec extends HTMLElement implements ChangeListener {
     this.#internals?.setFormValue(this.#formData);
   }
 
+  static #setProperties() {
+    for (const [id, properties] of Wrec.idToPropertyMap.entries()) {
+      const element = getElementById(document.body, id) as Record<string, any>;
+      if (element) {
+        for (const [propName, value] of Object.entries(properties)) {
+          element[propName] = value;
+        }
+      }
+    }
+  }
+
   #throw(
     element: HTMLElement | CSSStyleRule | null,
     attrName: string | undefined,
@@ -647,6 +688,8 @@ class Wrec extends HTMLElement implements ChangeListener {
 
     const ctor = this.#ctor;
     const {type} = ctor.properties[propName];
+    if (!type) this.#throw(null, propName, 'does not specify its type');
+
     if (type === String) return stringValue;
     if (type === Number) return stringToNumber(stringValue);
     if (type === Boolean) {
@@ -662,7 +705,6 @@ class Wrec extends HTMLElement implements ChangeListener {
       }
       return stringValue === propName;
     }
-    this.#throw(null, propName, 'does not specify its type');
   }
 
   // Updates the matching attribute for a property if there is one.
@@ -710,6 +752,8 @@ class Wrec extends HTMLElement implements ChangeListener {
   }
 
   #updateElementContent(element: HTMLElement | CSSStyleRule, value: string) {
+    if (value === undefined) return;
+
     const isHTML = element instanceof HTMLElement;
     const localName = isHTML ? element.localName : '';
     const t = typeof value;
@@ -833,7 +877,9 @@ class Wrec extends HTMLElement implements ChangeListener {
       for (const attr of Array.from(element.attributes)) {
         const attrName = attr.name;
         if (attrName.startsWith('on')) {
-          const eventName = attrName.slice(2).toLowerCase();
+          let eventName = attrName.slice(2);
+          eventName =
+            eventName[0].toLowerCase() + eventName.slice(1).toLowerCase();
           const attrValue = attr.value;
           this.#validateExpression(element, attrName, attrValue);
 
