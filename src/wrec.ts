@@ -148,12 +148,12 @@ function updateValue(
 }
 
 class Wrec extends HTMLElement implements ChangeListener {
-  static #propToAttrMap = new Map<string, string>();
   static #attrToPropMap = new Map<string, string>();
+  static #idToPropertiesMap = new Map<string, any>();
+  static #propToAttrMap = new Map<string, string>();
   static css = '';
   static html = '';
   static formAssociated = false;
-  static idToPropertyMap = new Map<string, any>();
   static processed = false;
   static properties: Record<string, any> = {};
   static propToComputedMap: Map<string, string[][]> | null = null;
@@ -274,6 +274,12 @@ class Wrec extends HTMLElement implements ChangeListener {
     for (const [propName, {computed}] of Object.entries(properties)) {
       if (computed) this[propName] = this.#evaluateInContext(computed);
     }
+  }
+
+  static dataForId(data: Record<string, any>): string {
+    const id = crypto.randomUUID();
+    Wrec.#idToPropertiesMap.set(id, data);
+    return id;
   }
 
   #defineProps() {
@@ -645,7 +651,7 @@ class Wrec extends HTMLElement implements ChangeListener {
   }
 
   static #setProperties() {
-    for (const [id, properties] of Wrec.idToPropertyMap.entries()) {
+    for (const [id, properties] of Wrec.#idToPropertiesMap.entries()) {
       const element = getElementById(document.body, id) as Record<string, any>;
       if (element) {
         for (const [propName, value] of Object.entries(properties)) {
