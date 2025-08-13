@@ -28,6 +28,13 @@ class DataBinding extends Wrec {
       font-size: this.size + 'px';
       margin: 6px 0;
     }
+
+    radio-group {
+      --border-color: cornflowerblue;
+      --direction: column;
+      --gap: 0;
+      --legend-color: blue;
+    }
   `;
 
   static html = html`
@@ -38,9 +45,13 @@ class DataBinding extends Wrec {
     <radio-group
       name="color1"
       labels="this.labels"
+      legend="Color"
       value="this.color"
       values="this.colors"
-    ></radio-group>
+    >
+      <div slot="before">Select a color for your new car.</div>
+      <div slot="after">Don't choose a color you will regret.</div>
+    </radio-group>
     <select-list
       name="color2"
       labels="this.labels"

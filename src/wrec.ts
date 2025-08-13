@@ -296,7 +296,8 @@ class Wrec extends HTMLElement implements ChangeListener {
     observedAttributes: string[]
   ) {
     const attrName = Wrec.getAttrName(propName);
-    if (config.required && !this.hasAttribute(attrName)) {
+    const has = this.hasAttribute(attrName);
+    if (config.required && !has) {
       this.#throw(this, propName, 'is a required attribute');
     }
 
@@ -305,8 +306,8 @@ class Wrec extends HTMLElement implements ChangeListener {
     const {type, value} = config;
     const typedValue =
       type === Boolean
-        ? value || this.hasAttribute(attrName)
-        : observedAttributes.includes(attrName) && this.hasAttribute(attrName)
+        ? value || has
+        : observedAttributes.includes(attrName) && has
         ? this.#typedAttribute(propName, attrName)
         : value || defaultForType(type);
     const privateName = '#' + propName;
@@ -358,6 +359,10 @@ class Wrec extends HTMLElement implements ChangeListener {
         detail
       })
     );
+  }
+
+  displayIfSet(value: any, display = 'block') {
+    return `display: ${value ? display : 'none'}`;
   }
 
   // This inserts a dash before each uppercase letter
@@ -527,7 +532,6 @@ class Wrec extends HTMLElement implements ChangeListener {
   #react(propName: string) {
     // Update all expression references.
     const ctor = this.#ctor;
-    const log = ctor.name === 'WrecModal';
     const map = ctor.propToExprsMap;
     const exprs = map!.get(propName) || [];
     for (const expr of exprs) {
