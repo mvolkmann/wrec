@@ -47,16 +47,6 @@ class RadioGroup extends Wrec {
     </fieldset>
   `;
 
-  propertyChangedCallback(propName, oldValue, newValue) {
-    if (propName === 'value') {
-      // Update the checked state of the radio buttons.
-      const inputs = this.shadowRoot.querySelectorAll('input');
-      for (const input of inputs) {
-        input.checked = input.value === newValue;
-      }
-    }
-  }
-
   handleChange(event) {
     this.value = event.target.value;
   }
@@ -78,6 +68,16 @@ class RadioGroup extends Wrec {
         <label for=${value}>${labelArray[index]}</label>
       </div>
     `).join('');
+  }
+
+  propertyChangedCallback(propName, _oldValue, newValue) {
+    if (propName === 'value') {
+      // Update the checked state of the radio buttons.
+      const inputs = this.shadowRoot.querySelectorAll('input');
+      for (const input of inputs) {
+        input.checked = input.value === newValue;
+      }
+    }
   }
 }
 
