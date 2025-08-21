@@ -70,7 +70,7 @@ class RadioGroup extends Wrec {
         />
         <label for=${value}>${labelArray[index]}</label>
       </div>
-    `).join('');
+    `);
   }
 }
 

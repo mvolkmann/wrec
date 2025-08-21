@@ -407,7 +407,8 @@ class Wrec extends HTMLElement implements ChangeListener {
 
   #evaluateInContext(expr: string) {
     // This approach is safer than using the eval function.
-    return new Function('return ' + expr).call(this);
+    const result = new Function('return ' + expr).call(this);
+    return Array.isArray(result) ? result.join('') : result;
   }
 
   #evaluateText(element: HTMLElement) {

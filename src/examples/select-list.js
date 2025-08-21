@@ -33,12 +33,10 @@ class SelectList extends Wrec {
   makeOptions(labels, values) {
     const labelArray = labels.split(',');
     const valueArray = values.split(',');
-    return valueArray
-      .map(
-        (value, index) =>
-          html`<option value="${value.trim()}">${labelArray[index]}</option>`
-      )
-      .join('');
+    return valueArray.map(
+      (value, index) =>
+        html`<option value="${value.trim()}">${labelArray[index]}</option>`
+    );
   }
 }
 
