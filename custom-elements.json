@@ -1,0 +1,3189 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "dist/state.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "",
+          "name": "State",
+          "members": [
+            {
+              "kind": "field",
+              "name": "#id",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "#listeners",
+              "privacy": "private",
+              "type": {
+                "text": "array"
+              },
+              "default": "[]"
+            },
+            {
+              "kind": "field",
+              "name": "#proxy",
+              "privacy": "private",
+              "default": "new Proxy({}, handler)"
+            },
+            {
+              "kind": "method",
+              "name": "addListener",
+              "parameters": [
+                {
+                  "name": "listener",
+                  "description": "object that has a \"changed\" method"
+                },
+                {
+                  "name": "properties",
+                  "default": "[]",
+                  "description": "array of properties of interest"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "addProperty",
+              "parameters": [
+                {
+                  "name": "propName"
+                },
+                {
+                  "name": "initialValue"
+                }
+              ]
+            },
+            {
+              "kind": "field",
+              "name": "id",
+              "readonly": true
+            },
+            {
+              "kind": "method",
+              "name": "#notifyListeners",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "property"
+                },
+                {
+                  "name": "oldValue"
+                },
+                {
+                  "name": "newValue"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "removeListener",
+              "parameters": [
+                {
+                  "name": "listener"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "State",
+          "declaration": {
+            "name": "State",
+            "module": "dist/state.js"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "dist/wrec.js",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "createElement",
+          "parameters": [
+            {
+              "name": "name"
+            },
+            {
+              "name": "attributes"
+            },
+            {
+              "name": "innerHTML"
+            }
+          ]
+        },
+        {
+          "kind": "class",
+          "description": "",
+          "name": "Wrec",
+          "members": [
+            {
+              "kind": "field",
+              "name": "#attrToPropMap",
+              "privacy": "private",
+              "static": true,
+              "default": "new Map()"
+            },
+            {
+              "kind": "field",
+              "name": "#idToPropertiesMap",
+              "privacy": "private",
+              "static": true,
+              "default": "new Map()"
+            },
+            {
+              "kind": "field",
+              "name": "#propToAttrMap",
+              "privacy": "private",
+              "static": true,
+              "default": "new Map()"
+            },
+            {
+              "kind": "field",
+              "name": "css",
+              "type": {
+                "text": "string"
+              },
+              "static": true,
+              "default": "''"
+            },
+            {
+              "kind": "field",
+              "name": "html",
+              "type": {
+                "text": "string"
+              },
+              "static": true,
+              "default": "''"
+            },
+            {
+              "kind": "field",
+              "name": "formAssociated",
+              "type": {
+                "text": "boolean"
+              },
+              "static": true,
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "processed",
+              "type": {
+                "text": "boolean"
+              },
+              "static": true,
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "properties",
+              "type": {
+                "text": "object"
+              },
+              "static": true,
+              "default": "{}"
+            },
+            {
+              "kind": "field",
+              "name": "propToComputedMap",
+              "type": {
+                "text": "null"
+              },
+              "static": true,
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "propToExprsMap",
+              "type": {
+                "text": "null"
+              },
+              "static": true,
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "template",
+              "type": {
+                "text": "null"
+              },
+              "static": true,
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "#ctor",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "#exprToRefsMap",
+              "privacy": "private",
+              "default": "new Map()"
+            },
+            {
+              "kind": "field",
+              "name": "#formData",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "#internals",
+              "privacy": "private",
+              "type": {
+                "text": "null"
+              },
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "#propToBindingsMap",
+              "privacy": "private",
+              "default": "new Map()"
+            },
+            {
+              "kind": "field",
+              "name": "#propToParentPropMap",
+              "privacy": "private",
+              "default": "new Map()"
+            },
+            {
+              "kind": "field",
+              "name": "#stateToComponentPropertyMap",
+              "privacy": "private",
+              "default": "new Map()"
+            },
+            {
+              "kind": "method",
+              "name": "#bind",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "element"
+                },
+                {
+                  "name": "propName"
+                },
+                {
+                  "name": "attrName"
+                },
+                {
+                  "name": "eventName"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#buildDOM",
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "changed",
+              "parameters": [
+                {
+                  "name": "stateId"
+                },
+                {
+                  "name": "stateProp"
+                },
+                {
+                  "name": "_oldStateValue"
+                },
+                {
+                  "name": "newStateValue"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#computeProps",
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "dataForId",
+              "static": true,
+              "parameters": [
+                {
+                  "name": "data"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#defineProps",
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "#defineProp",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName"
+                },
+                {
+                  "name": "config"
+                },
+                {
+                  "name": "observedAttributes"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "dispatch",
+              "parameters": [
+                {
+                  "name": "name"
+                },
+                {
+                  "name": "detail"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "elementName",
+              "static": true
+            },
+            {
+              "kind": "method",
+              "name": "#evaluateAttributes",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "element"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#evaluateInContext",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "expr"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#evaluateText",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "element"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "getAttrName",
+              "static": true,
+              "parameters": [
+                {
+                  "name": "propName"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "getPropName",
+              "static": true,
+              "parameters": [
+                {
+                  "name": "attrName"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#makeReactive",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "root"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "propertyChangedCallback",
+              "parameters": [
+                {
+                  "name": "_propName"
+                },
+                {
+                  "name": "_oldValue"
+                },
+                {
+                  "name": "_newValue"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#propRefName",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "element"
+                },
+                {
+                  "name": "text"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#react",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "register",
+              "static": true
+            },
+            {
+              "kind": "method",
+              "name": "#registerComputedProp",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName"
+                },
+                {
+                  "name": "config"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#registerPlaceholders",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "text"
+                },
+                {
+                  "name": "element"
+                },
+                {
+                  "name": "attrName",
+                  "default": "undefined"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#setFormValue",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName"
+                },
+                {
+                  "name": "value"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#setProperties",
+              "static": true,
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "#throw",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "element"
+                },
+                {
+                  "name": "attrName"
+                },
+                {
+                  "name": "message"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#throwInvalidRef",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "element"
+                },
+                {
+                  "name": "attrName"
+                },
+                {
+                  "name": "propName"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#typedAttribute",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName"
+                },
+                {
+                  "name": "attrName"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#typedValue",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName"
+                },
+                {
+                  "name": "stringValue"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#updateAttribute",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName"
+                },
+                {
+                  "name": "type"
+                },
+                {
+                  "name": "value"
+                },
+                {
+                  "name": "attrName"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#updateBindings",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#updateComputedProperties",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#updateElementContent",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "element"
+                },
+                {
+                  "name": "value"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#updateParentProperty",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName"
+                },
+                {
+                  "name": "value"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "useState",
+              "parameters": [
+                {
+                  "name": "state",
+                  "description": "State object"
+                },
+                {
+                  "name": "map",
+                  "description": "object whose keys are state properties and\nwhose values are component properties"
+                },
+                {
+                  "description": "unique name for th2nd parameter State object",
+                  "name": "stateName"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#validateAttributes",
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "#validateExpression",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "element"
+                },
+                {
+                  "name": "attrName"
+                },
+                {
+                  "name": "expr"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#validateType",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName"
+                },
+                {
+                  "name": "type"
+                },
+                {
+                  "name": "value"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#wireEvents",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "root"
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "name": "name",
+              "type": {
+                "text": "CustomEvent"
+              }
+            }
+          ],
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "customElement": true
+        },
+        {
+          "kind": "variable",
+          "name": "elementName"
+        },
+        {
+          "kind": "function",
+          "name": "css",
+          "parameters": [
+            {
+              "name": "strings"
+            },
+            {
+              "name": "values"
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "html",
+          "parameters": [
+            {
+              "name": "strings"
+            },
+            {
+              "name": "values"
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "createElement",
+          "declaration": {
+            "name": "createElement",
+            "module": "dist/wrec.js"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "elementName",
+          "declaration": {
+            "name": "anonymous_0",
+            "module": "dist/wrec.js"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "default",
+          "declaration": {
+            "name": "Wrec",
+            "module": "dist/wrec.js"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "css",
+          "declaration": {
+            "name": "css",
+            "module": "dist/wrec.js"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "html",
+          "declaration": {
+            "name": "html",
+            "module": "dist/wrec.js"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "dist/wrec.min.js",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "createElement",
+          "parameters": [
+            {
+              "name": "t"
+            },
+            {
+              "name": "e"
+            },
+            {
+              "name": "r"
+            }
+          ]
+        },
+        {
+          "kind": "variable",
+          "name": "t"
+        },
+        {
+          "kind": "class",
+          "description": "",
+          "name": "Wrec",
+          "members": [
+            {
+              "kind": "field",
+              "name": "#t",
+              "privacy": "private",
+              "static": true,
+              "default": "new Map"
+            },
+            {
+              "kind": "field",
+              "name": "#e",
+              "privacy": "private",
+              "static": true,
+              "default": "new Map"
+            },
+            {
+              "kind": "field",
+              "name": "#r",
+              "privacy": "private",
+              "static": true,
+              "default": "new Map"
+            },
+            {
+              "kind": "field",
+              "name": "css",
+              "type": {
+                "text": "string"
+              },
+              "static": true,
+              "default": "\"\""
+            },
+            {
+              "kind": "field",
+              "name": "html",
+              "type": {
+                "text": "string"
+              },
+              "static": true,
+              "default": "\"\""
+            },
+            {
+              "kind": "field",
+              "name": "formAssociated",
+              "type": {
+                "text": "boolean"
+              },
+              "static": true,
+              "default": "(this.#n=this.attachInternals(),this.#i=new FormData,this.#n.setFormValue(this.#i))"
+            },
+            {
+              "kind": "field",
+              "name": "processed",
+              "type": {
+                "text": "boolean"
+              },
+              "static": true,
+              "default": "!1"
+            },
+            {
+              "kind": "field",
+              "name": "properties",
+              "type": {
+                "text": "object"
+              },
+              "static": true,
+              "default": "(t.properties={})"
+            },
+            {
+              "kind": "field",
+              "name": "propToComputedMap",
+              "type": {
+                "text": "null"
+              },
+              "static": true,
+              "default": "(t.propToComputedMap=new Map)"
+            },
+            {
+              "kind": "field",
+              "name": "propToExprsMap",
+              "type": {
+                "text": "null"
+              },
+              "static": true,
+              "default": "(t.propToExprsMap=new Map)"
+            },
+            {
+              "kind": "field",
+              "name": "template",
+              "type": {
+                "text": "null"
+              },
+              "static": true,
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "#s",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "#o",
+              "privacy": "private",
+              "default": "new Map"
+            },
+            {
+              "kind": "field",
+              "name": "#i",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "#n",
+              "privacy": "private",
+              "type": {
+                "text": "null"
+              },
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "#a",
+              "privacy": "private",
+              "default": "new Map"
+            },
+            {
+              "kind": "field",
+              "name": "#c",
+              "privacy": "private",
+              "default": "new Map"
+            },
+            {
+              "kind": "field",
+              "name": "#p",
+              "privacy": "private",
+              "default": "new Map"
+            },
+            {
+              "kind": "method",
+              "name": "#u",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                },
+                {
+                  "name": "r"
+                },
+                {
+                  "name": "s"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#f",
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "changed",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                },
+                {
+                  "name": "r"
+                },
+                {
+                  "name": "s"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#T",
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "dataForId",
+              "static": true,
+              "parameters": [
+                {
+                  "name": "t"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#d",
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "#R",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                },
+                {
+                  "name": "r"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "dispatch",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "elementName",
+              "static": true
+            },
+            {
+              "kind": "method",
+              "name": "#S",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#y",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#F",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "getAttrName",
+              "static": true,
+              "parameters": [
+                {
+                  "name": "t"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "getPropName",
+              "static": true,
+              "parameters": [
+                {
+                  "name": "t"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#g",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "propertyChangedCallback",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                },
+                {
+                  "name": "r"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#I",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#w",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "register",
+              "static": true
+            },
+            {
+              "kind": "method",
+              "name": "#P",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#$",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                },
+                {
+                  "name": "r",
+                  "default": "void 0"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#h",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#b",
+              "static": true,
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "#M",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                },
+                {
+                  "name": "r"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#_",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                },
+                {
+                  "name": "r"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#v",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#l",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#N",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                },
+                {
+                  "name": "r"
+                },
+                {
+                  "name": "s"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#W",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#A",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#L",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#x",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "useState",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#m",
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "#O",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                },
+                {
+                  "name": "r"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#C",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                },
+                {
+                  "name": "r"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#E",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "name": "t",
+              "type": {
+                "text": "CustomEvent"
+              }
+            }
+          ],
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "customElement": true
+        },
+        {
+          "kind": "function",
+          "name": "css",
+          "parameters": [
+            {
+              "name": "t"
+            },
+            {
+              "name": "e"
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "html",
+          "parameters": [
+            {
+              "name": "t"
+            },
+            {
+              "name": "e"
+            }
+          ]
+        },
+        {
+          "kind": "class",
+          "description": "",
+          "name": "State",
+          "members": [
+            {
+              "kind": "field",
+              "name": "#H",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "#D",
+              "privacy": "private",
+              "type": {
+                "text": "array"
+              },
+              "default": "[]"
+            },
+            {
+              "kind": "field",
+              "name": "#B",
+              "privacy": "private",
+              "default": "new Proxy({},t)"
+            },
+            {
+              "kind": "method",
+              "name": "addListener",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e",
+                  "default": "[]"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "addProperty",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                }
+              ]
+            },
+            {
+              "kind": "field",
+              "name": "id",
+              "readonly": true
+            },
+            {
+              "kind": "method",
+              "name": "#k",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "t"
+                },
+                {
+                  "name": "e"
+                },
+                {
+                  "name": "r"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "removeListener",
+              "parameters": [
+                {
+                  "name": "t"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "createElement",
+          "declaration": {
+            "name": "createElement",
+            "module": "dist/wrec.min.js"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "t",
+          "declaration": {
+            "name": "anonymous_0",
+            "module": "dist/wrec.min.js"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "default",
+          "declaration": {
+            "name": "Wrec",
+            "module": "dist/wrec.min.js"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "css",
+          "declaration": {
+            "name": "css",
+            "module": "dist/wrec.min.js"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "html",
+          "declaration": {
+            "name": "html",
+            "module": "dist/wrec.min.js"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "State",
+          "declaration": {
+            "name": "State",
+            "module": "dist/wrec.min.js"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/state.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "",
+          "name": "State",
+          "members": [
+            {
+              "kind": "field",
+              "name": "#id",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "#listeners",
+              "privacy": "private",
+              "type": {
+                "text": "ListenerData[]"
+              },
+              "default": "[]"
+            },
+            {
+              "kind": "field",
+              "name": "#proxy",
+              "privacy": "private",
+              "type": {
+                "text": "LooseObject"
+              },
+              "default": "new Proxy<LooseObject>({}, handler)"
+            },
+            {
+              "kind": "method",
+              "name": "addListener",
+              "parameters": [
+                {
+                  "name": "listener",
+                  "type": {
+                    "text": "ChangeListener"
+                  },
+                  "description": "object that has a \"changed\" method"
+                },
+                {
+                  "name": "properties",
+                  "default": "[]",
+                  "type": {
+                    "text": "string[]"
+                  },
+                  "description": "array of properties of interest"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "addProperty",
+              "parameters": [
+                {
+                  "name": "propName",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "initialValue",
+                  "type": {
+                    "text": "unknown"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "field",
+              "name": "id",
+              "readonly": true
+            },
+            {
+              "kind": "method",
+              "name": "#notifyListeners",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "property",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "oldValue",
+                  "type": {
+                    "text": "unknown"
+                  }
+                },
+                {
+                  "name": "newValue",
+                  "type": {
+                    "text": "unknown"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "removeListener",
+              "parameters": [
+                {
+                  "name": "listener",
+                  "type": {
+                    "text": "ChangeListener"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "State",
+          "declaration": {
+            "name": "State",
+            "module": "src/state.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/wrec.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "createElement",
+          "return": {
+            "type": {
+              "text": "HTMLElement"
+            }
+          },
+          "parameters": [
+            {
+              "name": "name",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "attributes",
+              "type": {
+                "text": "Record<string, string>"
+              }
+            },
+            {
+              "name": "innerHTML",
+              "type": {
+                "text": "string"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "class",
+          "description": "",
+          "name": "Wrec",
+          "members": [
+            {
+              "kind": "field",
+              "name": "#attrToPropMap",
+              "privacy": "private",
+              "static": true,
+              "default": "new Map<string, string>()"
+            },
+            {
+              "kind": "field",
+              "name": "#idToPropertiesMap",
+              "privacy": "private",
+              "static": true,
+              "default": "new Map<string, any>()"
+            },
+            {
+              "kind": "field",
+              "name": "#propToAttrMap",
+              "privacy": "private",
+              "static": true,
+              "default": "new Map<string, string>()"
+            },
+            {
+              "kind": "field",
+              "name": "css",
+              "type": {
+                "text": "string"
+              },
+              "static": true,
+              "default": "''"
+            },
+            {
+              "kind": "field",
+              "name": "html",
+              "type": {
+                "text": "string"
+              },
+              "static": true,
+              "default": "''"
+            },
+            {
+              "kind": "field",
+              "name": "formAssociated",
+              "type": {
+                "text": "boolean"
+              },
+              "static": true,
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "processed",
+              "type": {
+                "text": "boolean"
+              },
+              "static": true,
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "properties",
+              "type": {
+                "text": "Record<string, any>"
+              },
+              "static": true,
+              "default": "{}"
+            },
+            {
+              "kind": "field",
+              "name": "propToComputedMap",
+              "type": {
+                "text": "Map<string, string[][]> | null"
+              },
+              "static": true,
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "propToExprsMap",
+              "type": {
+                "text": "Map<string, string[]> | null"
+              },
+              "static": true,
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "template",
+              "type": {
+                "text": "HTMLTemplateElement | null"
+              },
+              "static": true,
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "#ctor",
+              "privacy": "private",
+              "type": {
+                "text": "typeof Wrec"
+              },
+              "default": "this.constructor"
+            },
+            {
+              "kind": "field",
+              "name": "#exprToRefsMap",
+              "privacy": "private",
+              "default": "new Map<string, Ref[]>()"
+            },
+            {
+              "kind": "field",
+              "name": "#formData",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "#internals",
+              "privacy": "private",
+              "type": {
+                "text": "ElementInternals | null"
+              },
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "#propToBindingsMap",
+              "privacy": "private",
+              "default": "new Map<string, Ref[]>()"
+            },
+            {
+              "kind": "field",
+              "name": "#propToParentPropMap",
+              "privacy": "private",
+              "default": "new Map<string, string>()"
+            },
+            {
+              "kind": "field",
+              "name": "#stateToComponentPropertyMap",
+              "privacy": "private",
+              "default": "new Map<string, string>()"
+            },
+            {
+              "kind": "method",
+              "name": "#bind",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "element",
+                  "type": {
+                    "text": "HTMLElement"
+                  }
+                },
+                {
+                  "name": "propName",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "attrName",
+                  "type": {
+                    "text": "string | null"
+                  }
+                },
+                {
+                  "name": "eventName",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#buildDOM",
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "changed",
+              "parameters": [
+                {
+                  "name": "stateId",
+                  "type": {
+                    "text": "symbol"
+                  }
+                },
+                {
+                  "name": "stateProp",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "_oldStateValue",
+                  "type": {
+                    "text": "unknown"
+                  }
+                },
+                {
+                  "name": "newStateValue",
+                  "type": {
+                    "text": "unknown"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#computeProps",
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "dataForId",
+              "static": true,
+              "return": {
+                "type": {
+                  "text": "string"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "data",
+                  "type": {
+                    "text": "Record<string, any>"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#defineProps",
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "#defineProp",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "config",
+                  "type": {
+                    "text": "Record<string, any>"
+                  }
+                },
+                {
+                  "name": "observedAttributes",
+                  "type": {
+                    "text": "string[]"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "dispatch",
+              "parameters": [
+                {
+                  "name": "name",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "detail",
+                  "type": {
+                    "text": "any"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "displayIfSet",
+              "parameters": [
+                {
+                  "name": "value",
+                  "type": {
+                    "text": "any"
+                  }
+                },
+                {
+                  "name": "display",
+                  "default": "'block'"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "elementName",
+              "static": true
+            },
+            {
+              "kind": "method",
+              "name": "#evaluateAttributes",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "element",
+                  "type": {
+                    "text": "HTMLElement"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#evaluateInContext",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "expr",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#evaluateText",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "element",
+                  "type": {
+                    "text": "HTMLElement"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "getAttrName",
+              "static": true,
+              "parameters": [
+                {
+                  "name": "propName",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "getPropName",
+              "static": true,
+              "parameters": [
+                {
+                  "name": "attrName",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#makeReactive",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "root",
+                  "type": {
+                    "text": "ShadowRoot | HTMLElement"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "propertyChangedCallback",
+              "parameters": [
+                {
+                  "name": "_propName",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "_oldValue",
+                  "type": {
+                    "text": "unknown"
+                  }
+                },
+                {
+                  "name": "_newValue",
+                  "type": {
+                    "text": "unknown"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#propRefName",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "element",
+                  "type": {
+                    "text": "HTMLElement"
+                  }
+                },
+                {
+                  "name": "text",
+                  "type": {
+                    "text": "string | null"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#react",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "register",
+              "static": true
+            },
+            {
+              "kind": "method",
+              "name": "#registerComputedProp",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "config",
+                  "type": {
+                    "text": "Record<string, any>"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#registerPlaceholders",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "text",
+                  "type": {
+                    "text": "string | null"
+                  }
+                },
+                {
+                  "name": "element",
+                  "type": {
+                    "text": "HTMLElement | CSSStyleRule"
+                  }
+                },
+                {
+                  "name": "attrName",
+                  "default": "undefined",
+                  "type": {
+                    "text": "string | undefined"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#setFormValue",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "value",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#setProperties",
+              "static": true,
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "#throw",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "element",
+                  "type": {
+                    "text": "HTMLElement | CSSStyleRule | null"
+                  }
+                },
+                {
+                  "name": "attrName",
+                  "type": {
+                    "text": "string | undefined"
+                  }
+                },
+                {
+                  "name": "message",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#throwInvalidRef",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "element",
+                  "type": {
+                    "text": "HTMLElement | CSSStyleRule | null"
+                  }
+                },
+                {
+                  "name": "attrName",
+                  "type": {
+                    "text": "string | undefined"
+                  }
+                },
+                {
+                  "name": "propName",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#typedAttribute",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "attrName",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#typedValue",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "stringValue",
+                  "type": {
+                    "text": "string | null"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#updateAttribute",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "type",
+                  "type": {
+                    "text": "any"
+                  }
+                },
+                {
+                  "name": "value",
+                  "type": {
+                    "text": "any"
+                  }
+                },
+                {
+                  "name": "attrName",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#updateBindings",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#updateComputedProperties",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#updateElementContent",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "element",
+                  "type": {
+                    "text": "HTMLElement | CSSStyleRule"
+                  }
+                },
+                {
+                  "name": "value",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#updateParentProperty",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "value",
+                  "type": {
+                    "text": "any"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "useState",
+              "parameters": [
+                {
+                  "name": "state",
+                  "type": {
+                    "text": "State"
+                  },
+                  "description": "State object"
+                },
+                {
+                  "name": "map",
+                  "type": {
+                    "text": "Record<string, string>"
+                  },
+                  "description": "object whose keys are state properties and\nwhose values are component properties"
+                },
+                {
+                  "description": "unique name for th2nd parameter State object",
+                  "name": "stateName"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#validateAttributes",
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "#validateExpression",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "element",
+                  "type": {
+                    "text": "HTMLElement | CSSStyleRule"
+                  }
+                },
+                {
+                  "name": "attrName",
+                  "type": {
+                    "text": "string | undefined"
+                  }
+                },
+                {
+                  "name": "expr",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#validateType",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "propName",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "type",
+                  "type": {
+                    "text": "AnyClass"
+                  }
+                },
+                {
+                  "name": "value",
+                  "type": {
+                    "text": "any"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "#wireEvents",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "root",
+                  "type": {
+                    "text": "ShadowRoot | HTMLElement"
+                  }
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "name": "name",
+              "type": {
+                "text": "CustomEvent"
+              }
+            }
+          ],
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "customElement": true
+        },
+        {
+          "kind": "variable",
+          "name": "elementName"
+        },
+        {
+          "kind": "function",
+          "name": "css",
+          "parameters": [
+            {
+              "name": "strings",
+              "type": {
+                "text": "TemplateStringsArray"
+              }
+            },
+            {
+              "name": "values",
+              "type": {
+                "text": "unknown[]"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "html",
+          "parameters": [
+            {
+              "name": "strings",
+              "type": {
+                "text": "TemplateStringsArray"
+              }
+            },
+            {
+              "name": "values",
+              "type": {
+                "text": "unknown[]"
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "createElement",
+          "declaration": {
+            "name": "createElement",
+            "module": "src/wrec.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "elementName",
+          "declaration": {
+            "name": "anonymous_0",
+            "module": "src/wrec.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "default",
+          "declaration": {
+            "name": "Wrec",
+            "module": "src/wrec.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "css",
+          "declaration": {
+            "name": "css",
+            "module": "src/wrec.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "html",
+          "declaration": {
+            "name": "html",
+            "module": "src/wrec.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tests/color-demo.spec.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tests/data-binding.spec.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tests/hello-world.spec.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tests/index.spec.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tests/number-bind.spec.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tests/state.spec.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tests/table-plus.spec.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tests/toggle-switch.spec.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tests/util.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "expectProperty",
+          "parameters": [
+            {
+              "name": "locator",
+              "type": {
+                "text": "Locator"
+              }
+            },
+            {
+              "name": "propertyName",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "expectedValue",
+              "type": {
+                "text": "boolean | number | string"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "getProperty",
+          "parameters": [
+            {
+              "name": "locator",
+              "type": {
+                "text": "Locator"
+              }
+            },
+            {
+              "name": "name",
+              "type": {
+                "text": "string"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "setAttribute",
+          "parameters": [
+            {
+              "name": "locator",
+              "type": {
+                "text": "Locator"
+              }
+            },
+            {
+              "name": "name",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "value",
+              "type": {
+                "text": "string"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "setProperty",
+          "parameters": [
+            {
+              "name": "locator",
+              "type": {
+                "text": "Locator"
+              }
+            },
+            {
+              "name": "name",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "value",
+              "type": {
+                "text": "unknown"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "setInputRangeValue",
+          "parameters": [
+            {
+              "name": "locator",
+              "type": {
+                "text": "Locator"
+              }
+            },
+            {
+              "name": "value",
+              "type": {
+                "text": "number"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "waitForNextFrame",
+          "parameters": [
+            {
+              "name": "page",
+              "type": {
+                "text": "Page"
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "expectProperty",
+          "declaration": {
+            "name": "expectProperty",
+            "module": "tests/util.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "getProperty",
+          "declaration": {
+            "name": "getProperty",
+            "module": "tests/util.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "setAttribute",
+          "declaration": {
+            "name": "setAttribute",
+            "module": "tests/util.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "setProperty",
+          "declaration": {
+            "name": "setProperty",
+            "module": "tests/util.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "setInputRangeValue",
+          "declaration": {
+            "name": "setInputRangeValue",
+            "module": "tests/util.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "waitForNextFrame",
+          "declaration": {
+            "name": "waitForNextFrame",
+            "module": "tests/util.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "dist/examples/table-wired.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/array-demo.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/basic-wrec.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/binding-demo.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/bulleted-list.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/color-demo.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/color-picker.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/counter-vanilla.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "",
+          "name": "CounterVanilla",
+          "members": [
+            {
+              "kind": "field",
+              "name": "count"
+            },
+            {
+              "kind": "method",
+              "name": "decrement"
+            },
+            {
+              "kind": "method",
+              "name": "increment"
+            },
+            {
+              "kind": "method",
+              "name": "#update",
+              "privacy": "private"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "count"
+            }
+          ],
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "tagName": "counter-vanilla",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "counter-vanilla",
+          "declaration": {
+            "name": "CounterVanilla",
+            "module": "src/examples/counter-vanilla.js"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/counter-wrec.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/data-binding.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/data-binding2.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/data-star.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/hello-world.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/labeled-input.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/multiply-numbers.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/number-bind.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/number-input.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/number-slider.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/radio-group-vanilla.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "\nA group of radio buttons.",
+          "name": "RadioGroupVanilla",
+          "cssProperties": [
+            {
+              "description": "the fieldset border color",
+              "name": "--border-color",
+              "default": "black"
+            },
+            {
+              "description": "the direction of the radio buttons",
+              "name": "--direction",
+              "default": "row"
+            },
+            {
+              "description": "the gap between the radio buttons",
+              "name": "--gap",
+              "default": "1rem"
+            },
+            {
+              "description": "the color of the legend text",
+              "name": "--legend-color"
+            }
+          ],
+          "cssParts": [
+            {
+              "name": "none"
+            }
+          ],
+          "slots": [
+            {
+              "description": "optional content to insert before the radio buttons",
+              "name": "before"
+            },
+            {
+              "description": "optional content to insert after the radio buttons",
+              "name": "after"
+            }
+          ],
+          "members": [
+            {
+              "kind": "field",
+              "name": "#labels",
+              "privacy": "private",
+              "type": {
+                "text": "string"
+              },
+              "default": "''"
+            },
+            {
+              "kind": "field",
+              "name": "#legend",
+              "privacy": "private",
+              "type": {
+                "text": "string"
+              },
+              "default": "''"
+            },
+            {
+              "kind": "field",
+              "name": "#name",
+              "privacy": "private",
+              "type": {
+                "text": "string"
+              },
+              "default": "''"
+            },
+            {
+              "kind": "field",
+              "name": "#value",
+              "privacy": "private",
+              "type": {
+                "text": "string"
+              },
+              "default": "''"
+            },
+            {
+              "kind": "field",
+              "name": "#values",
+              "privacy": "private",
+              "type": {
+                "text": "string"
+              },
+              "default": "''"
+            },
+            {
+              "kind": "method",
+              "name": "#fixValue",
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "handleChange",
+              "parameters": [
+                {
+                  "name": "event"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "makeButtons",
+              "parameters": [
+                {
+                  "name": "valueArray"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "render"
+            }
+          ],
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "tagName": "radio-group",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "RadioGroupVanilla",
+          "declaration": {
+            "name": "RadioGroupVanilla",
+            "module": "src/examples/radio-group-vanilla.js"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "radio-group-vanilla",
+          "declaration": {
+            "name": "RadioGroupVanilla",
+            "module": "src/examples/radio-group-vanilla.js"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/radio-group.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/rectangle-area.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/select-list.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/slots-demo.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/speedometer-dial.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/stop-light.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/table-manual.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/table-wired.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/temperature-eval.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/toggle-switch.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/state-demo/component-one.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/examples/state-demo/component-two.js",
+      "declarations": [],
+      "exports": []
+    }
+  ]
+}

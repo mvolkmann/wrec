@@ -1,19 +1,6 @@
-import Wrec, {css, html} from '../wrec';
+import Wrec, {css, html} from './wrec.min.js';
 
-/**
- * A group of radio buttons.
- * @tag radio-group
- * @csspart none
- * @cssproperty [--border-color=black] - the fieldset border color
- * @cssproperty [--direction=row] - the direction of the radio buttons
- * @cssproperty [--gap=1rem] - the gap between the radio buttons
- * @cssproperty --legend-color - the color of the legend text
- * @slot before - optional content to insert before the radio buttons
- * @slot after - optional content to insert after the radio buttons
- */
 class RadioGroup extends Wrec {
-  static formAssociated = true;
-
   static properties = {
     labels: {type: String},
     legend: {type: String},
@@ -51,34 +38,14 @@ class RadioGroup extends Wrec {
     }
   `;
 
-  /*
-    <code-bubble>
-      <pre>
-        <code class="language-html">
-        &lt;radio-group
-          labels=&quot;Red,Green,Blue&quot;
-          legend=&quot;Color&quot;
-          name=&quot;color&quot;
-          value=&quot;blue&quot;
-          values=&quot;red,green,blue&quot;
-        &gt;&lt;/radio-group&gt;
-        </code>
-      </pre>
-    </code-bubble>
-  */
   static html = html`
     <fieldset>
-      <legend style="this.displayIfSet(this.legend)">this.legend</legend>
+      <legend>this.legend</legend>
       <slot name="before"></slot>
       <div>this.makeButtons(this.labels, this.values, this.value)</div>
       <slot name="after"></slot>
     </fieldset>
   `;
-
-  connectedCallback() {
-    super.connectedCallback();
-    this.#fixValue();
-  }
 
   propertyChangedCallback(propName, oldValue, newValue) {
     if (propName === 'value') {
@@ -87,22 +54,9 @@ class RadioGroup extends Wrec {
       for (const input of inputs) {
         input.checked = input.value === newValue;
       }
-    } else if (propName === 'values') {
-      this.#fixValue();
     }
   }
 
-  // This handles the case when the specified value
-  // is not in the list of values.
-  #fixValue() {
-    requestAnimationFrame(() => {
-      const values = this.values.split(',');
-      if (!this.value || !values.includes(this.value)) this.value = values[0];
-    });
-  }
-
-  // This method cannot be private because it is called when
-  // a change event is dispatched from a radio button.
   handleChange(event) {
     this.value = event.target.value;
   }

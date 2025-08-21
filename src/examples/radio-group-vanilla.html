@@ -1,0 +1,23 @@
+<html>
+  <head>
+    <title>Radio Group Vanilla</title>
+    <script src="radio-group-vanilla.js" type="module"></script>
+    <style>
+      body {
+        font-family: sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <radio-group-vanilla
+      name="color"
+      labels="Red,Green,Blue"
+      legend="Color"
+      value="blue"
+      values="red,green,blue"
+    >
+      <div slot="before">Select a color for your new bike.</div>
+      <div slot="after">Don't choose a color you will regret.</div>
+    </radio-group-vanilla>
+  </body>
+</html>
