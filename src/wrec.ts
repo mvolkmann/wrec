@@ -114,18 +114,10 @@ function updateAttribute(
   value: string | number | boolean
 ) {
   // Attributes can only be set to primitive values.
-  if (isPrimitive(value)) {
+  if (isPrimitive(value) && typeof value !== 'boolean') {
     // Set the attribute.
     const currentValue = element.getAttribute(attrName);
-    if (typeof value === 'boolean') {
-      if (value) {
-        if (currentValue !== attrName) {
-          element.setAttribute(attrName, attrName);
-        }
-      } else {
-        element.removeAttribute(attrName);
-      }
-    } else if (currentValue !== value) {
+    if (currentValue !== value) {
       element.setAttribute(attrName, String(value));
     }
   } else {
@@ -154,7 +146,6 @@ class Wrec extends HTMLElement implements ChangeListener {
   static css = '';
   static html = '';
   static formAssociated = false;
-  static processed = false;
   static properties: Record<string, any> = {};
   static propToComputedMap: Map<string, string[][]> | null = null;
   static propToExprsMap: Map<string, string[]> | null = null;
@@ -259,10 +250,6 @@ class Wrec extends HTMLElement implements ChangeListener {
         this.#wireEvents(this.shadowRoot);
         this.#makeReactive(this.shadowRoot);
         Wrec.#setProperties();
-        // This line cannot be moved to the #registerPlaceholders method
-        // because that needs to be called multiple times
-        // for the first instance of each Wrec subclass.
-        this.#ctor.processed = true;
       }
       this.#computeProps();
     });
@@ -498,13 +485,13 @@ class Wrec extends HTMLElement implements ChangeListener {
       if (!element.firstElementChild) this.#evaluateText(element);
     }
     /* These lines are useful for debugging.
-    if (this.constructor.name === "WrecModal") {
-      console.log("=== this.constructor.name =", this.constructor.name);
-      console.log("propToExprsMap =", this.#ctor.propToExprsMap);
-      console.log("#exprToRefsMap =", this.#exprToRefsMap);
-      console.log("propToComputedMap =", this.#ctor.propToComputedMap);
-      console.log("#propToParentPropMap =", this.#propToParentPropMap);
-      console.log("\n");
+    if (this.constructor.name === 'DataBinding') {
+      console.log('=== this.constructor.name =', this.constructor.name);
+      console.log('propToExprsMap =', this.#ctor.propToExprsMap);
+      console.log('#exprToRefsMap =', this.#exprToRefsMap);
+      console.log('propToComputedMap =', this.#ctor.propToComputedMap);
+      console.log('#propToParentPropMap =', this.#propToParentPropMap);
+      console.log('\n');
     }
     */
   }
@@ -615,22 +602,35 @@ class Wrec extends HTMLElement implements ChangeListener {
       return;
     }
 
-    // Only map properties to expressions once for each web component because
-    // the mapping will be the same for every instance of the web component.
     const ctor = this.#ctor;
-    if (!ctor.processed) {
-      matches.forEach(capture => {
-        const propName = getPropName(capture);
-        if (typeof this[propName] === 'function') return;
+    matches.forEach(capture => {
+      const propName = getPropName(capture);
+      if (typeof this[propName] === 'function') return;
 
-        const map = ctor.propToExprsMap;
-        let exprs = map!.get(propName);
-        if (!exprs) {
-          exprs = [];
-          map!.set(propName, exprs);
+      const map = ctor.propToExprsMap;
+      let exprs = map!.get(propName);
+      if (!exprs) {
+        exprs = [];
+        map!.set(propName, exprs);
+      }
+      if (!exprs.includes(text)) exprs.push(text);
+    });
+
+    // Remove entries for detached elements.
+    for (const [expr, refs] of this.#exprToRefsMap.entries()) {
+      for (const ref of refs) {
+        const element =
+          ref instanceof HTMLElement || ref instanceof CSSStyleRule
+            ? ref
+            : (ref.element as HTMLElement);
+        if (element instanceof CSSStyleRule) continue;
+        if (!element.isConnected) {
+          this.#exprToRefsMap.set(
+            expr,
+            refs.filter(r => r !== ref)
+          );
         }
-        if (!exprs.includes(text)) exprs.push(text);
-      });
+      }
     }
 
     let refs = this.#exprToRefsMap.get(text);
