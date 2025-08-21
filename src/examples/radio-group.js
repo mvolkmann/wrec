@@ -114,16 +114,8 @@ class RadioGroup extends Wrec {
     `).join('');
   }
 
-  propertyChangedCallback(propName, oldValue, newValue) {
-    if (propName === 'value') {
-      // Update the checked state of the radio buttons.
-      const inputs = this.shadowRoot.querySelectorAll('input');
-      for (const input of inputs) {
-        input.checked = input.value === newValue;
-      }
-    } else if (propName === 'values') {
-      this.#fixValue();
-    }
+  propertyChangedCallback(propName) {
+    if (propName === 'values') this.#fixValue();
   }
 }
 
