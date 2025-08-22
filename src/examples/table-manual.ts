@@ -51,8 +51,8 @@ class TableManual extends Wrec {
     super.connectedCallback();
 
     requestAnimationFrame(() => {
-      this.buildRows();
       this.buildHeadings();
+      this.buildRows();
     });
   }
 
@@ -67,22 +67,18 @@ class TableManual extends Wrec {
     });
   }
 
-  buildRow(obj: LooseObject) {
-    return html`
-      <tr>
-        ${this.properties
-          .map((prop: string) => html`<td>${obj[prop]}</td>`)
-          .join('')}
-      </tr>
-    `;
-  }
-
   buildRows() {
     const tbody = this.shadowRoot?.querySelector('table > tbody');
     if (!tbody) return; // should never happen
 
-    const rows = this.data.map(this.buildRow.bind(this));
-    tbody.innerHTML = rows.join('');
+    // prettier-ignore
+    tbody.innerHTML = this.data.map(obj => html`
+      <tr>
+        ${this.properties
+          .map((prop: string) => `<td>${obj[prop]}</td>`)
+          .join('')}
+       </tr>
+    `).join('');
   }
 
   buildTh(heading: string, index: number) {
