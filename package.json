@@ -29,8 +29,8 @@
     "lint": "oxlint",
     "minify": "tsc && terser dist/wrec.js dist/state.js -c -m -o dist/wrec.min.js",
     "reinstall": "rm -rf node_modules package-lock.json && npm install",
-    "test": "npx playwright test",
-    "testui": "npx playwright test --ui"
+    "test": "playwright test",
+    "testui": "playwright test --ui"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.1",
