@@ -8,7 +8,7 @@ type LooseObject = Record<string, unknown>;
 class TableManual extends Wrec {
   static properties = {
     headings: {type: Array<string>},
-    properties: {type: Array<string>},
+    propNames: {type: Array<string>},
     data: {type: Array<object>}
   };
 
@@ -74,15 +74,15 @@ class TableManual extends Wrec {
     // prettier-ignore
     tbody.innerHTML = this.data.map(obj => html`
       <tr>
-        ${this.properties
-          .map((prop: string) => `<td>${obj[prop]}</td>`)
+        ${this.propNames
+          .map((propName: string) => `<td>${obj[propName]}</td>`)
           .join('')}
        </tr>
     `).join('');
   }
 
   buildTh(heading: string, index: number) {
-    const property = this.properties[index];
+    const propName = this.propNames[index];
 
     const th = createElement(
       'th',
@@ -102,8 +102,8 @@ class TableManual extends Wrec {
       this.sortAscending = sameProperty ? !this.sortAscending : true;
 
       this.data.sort((a: LooseObject, b: LooseObject) => {
-        const aValue = a[property];
-        const bValue = b[property];
+        const aValue = a[propName];
+        const bValue = b[propName];
         let compare =
           typeof aValue === 'string'
             ? aValue.localeCompare(bValue as string)
@@ -137,7 +137,7 @@ class TableManual extends Wrec {
   propertyChangedCallback(propName: string) {
     if (propName === 'headings') {
       this.buildHeadings();
-    } else if (propName === 'properties' || propName === 'data') {
+    } else if (propName === 'propNames' || propName === 'data') {
       this.buildRows();
     }
   }

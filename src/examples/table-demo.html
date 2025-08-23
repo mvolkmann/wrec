@@ -5,7 +5,7 @@
     <script src="table-wired.js" type="module"></script>
     <script>
       window.onload = () => {
-        const properties = ['name', 'age', 'occupation'];
+        const propNames = ['name', 'age', 'occupation'];
         const headings = ['Name', 'Age', 'Occupation'];
         const data = [
           {name: 'Alice', age: 30, occupation: 'Engineer'},
@@ -17,12 +17,12 @@
         // The property "properties" must be set before the property "headings"
         // because changing "headings" triggers the "buildTh" method
         // which uses properties to determine the data to sort.
-        tableManual.properties = properties;
+        tableManual.propNames = propNames;
         tableManual.headings = headings;
         tableManual.data = data;
 
         const tableWired = document.querySelector('table-wired');
-        tableWired.properties = properties;
+        tableWired.propNames = propNames;
         tableWired.headings = headings;
         tableWired.data = data;
       };

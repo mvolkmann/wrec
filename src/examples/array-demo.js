@@ -8,7 +8,7 @@ class ArrayDemo extends Wrec {
   static html = html`
     <h1>Array</h1>
     <p>count = <span>this.items.length</span></p>
-    <div>this.items.map(this.makeDiv.bind(this))</div>
+    <div>this.items.map(this.makeDiv)</div>
   `;
 
   makeDiv(item) {

@@ -5,7 +5,7 @@ type LooseObject = Record<string, unknown>;
 class TableWired extends Wrec {
   static properties = {
     headings: {type: Array<string>},
-    properties: {type: Array<string>},
+    propNames: {type: Array<string>},
     data: {type: Array<object>}
   };
 
@@ -43,7 +43,7 @@ class TableWired extends Wrec {
         </tr>
       </thead>
       <tbody>
-        this.data.map(this.makeTr.bind(this))
+        this.data.map((_obj, index) => this.makeTr(index))
       </tbody>
     </table>
   `;
@@ -51,8 +51,8 @@ class TableWired extends Wrec {
   sortAscending = true;
   sortHeader: HTMLTableCellElement | null = null;
 
-  makeTd(index: number, prop: string) {
-    const value = this.data[index][prop];
+  makeTd(dataIndex: number, prop: string) {
+    const value = this.data[dataIndex][prop];
     return html`<td>${value}</td>`;
   }
 
@@ -60,7 +60,7 @@ class TableWired extends Wrec {
     return html`
       <th
         aria-label="sort by ${heading}"
-        data-property="${this.properties[index]}"
+        data-property="${this.propNames[index]}"
         onclick="sort"
         role="button"
         tabindex="0"
@@ -71,10 +71,10 @@ class TableWired extends Wrec {
     `;
   }
 
-  makeTr(obj: LooseObject, index: number) {
+  makeTr(dataIndex: number) {
     return html`
       <tr>
-        this.properties.map(this.makeTd.bind(this, ${index}))
+        this.propNames.map(propName => this.makeTd(${dataIndex}, propName))
       </tr>
     `;
   }

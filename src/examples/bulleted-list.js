@@ -7,7 +7,7 @@ class BulletedList extends Wrec {
 
   static html = html`
     <ul>
-      this.items.split(',').map(this.makeItem.bind(this))
+      this.items.split(',').map(this.makeItem)
     </ul>
   `;
 
