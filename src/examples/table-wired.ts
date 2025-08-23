@@ -35,6 +35,7 @@ class TableWired extends Wrec {
     }
   `;
 
+  // bind is needed here because makeTh uses "this".
   static html = html`
     <table>
       <thead>
