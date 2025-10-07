@@ -3,7 +3,7 @@ import Wrec, {css, html} from '../wrec';
 class CounterWrec extends Wrec {
   static properties = {
     label: {type: String},
-    count: {type: Number}
+    count: {type: Number, dispatch: true}
   };
 
   static css = css`

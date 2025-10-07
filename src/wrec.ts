@@ -326,7 +326,7 @@ class Wrec extends HTMLElement implements ChangeListener {
         this.#updateParentProperty(propName, value);
         if (isPrimitive(value)) this.#setFormValue(propName, value);
         this.propertyChangedCallback(propName, oldValue, value);
-        if (config.dispatch) this.dispatch('change', {propName});
+        if (config.dispatch) this.dispatch('change', {[propName]: value});
       }
     });
   }
