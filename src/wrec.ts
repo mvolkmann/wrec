@@ -151,6 +151,7 @@ class Wrec extends HTMLElement implements ChangeListener {
   static propToExprsMap: Map<string, string[]> | null = null;
   static template: HTMLTemplateElement | null = null;
 
+  autoForm = true;
   #ctor: typeof Wrec = this.constructor as typeof Wrec;
   #exprToRefsMap = new Map<string, Ref[]>();
   #formData;
@@ -190,7 +191,7 @@ class Wrec extends HTMLElement implements ChangeListener {
     const propName = Wrec.getPropName(attrName);
     const value = this.#typedValue(propName, String(newValue));
     this[propName] = value;
-    this.#setFormValue(propName, String(value));
+    if (this.autoForm) this.setFormValue(propName, String(value));
     this.propertyChangedCallback(propName, oldValue, newValue);
   }
 
@@ -324,7 +325,9 @@ class Wrec extends HTMLElement implements ChangeListener {
         this.#updateAttribute(propName, type, value, attrName);
         this.#react(propName);
         this.#updateParentProperty(propName, value);
-        if (isPrimitive(value)) this.#setFormValue(propName, value);
+        if (this.autoForm && isPrimitive(value)) {
+          this.setFormValue(propName, value);
+        }
         this.propertyChangedCallback(propName, oldValue, value);
         if (config.dispatch) this.dispatch('change', {[propName]: value});
       }
@@ -649,7 +652,7 @@ class Wrec extends HTMLElement implements ChangeListener {
     }
   }
 
-  #setFormValue(propName: string, value: string) {
+  setFormValue(propName: string, value: string) {
     if (!this.#formData) return;
     this.#formData.set(propName, value);
     this.#internals?.setFormValue(this.#formData);

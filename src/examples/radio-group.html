@@ -1,0 +1,37 @@
+<html lang="en">
+  <head>
+    <title>Radio Group Vanilla</title>
+    <script src="number-input.js" type="module"></script>
+    <script src="number-input2.js" type="module"></script>
+    <script src="radio-group.js" type="module"></script>
+    <style>
+      body {
+        font-family: sans-serif;
+      }
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <form action="/process" method="POST">
+      <number-input label="Rating" value="1"></number-input>
+      <number-input2 label="Score" value="2"></number-input2>
+      <radio-group
+        name="color"
+        labels="Red,Green,Blue"
+        legend="Color"
+        value="blue"
+        values="red,green,blue"
+      >
+        <div slot="before">Select a color for your new bike.</div>
+        <div slot="after">Don't choose a color you will regret.</div>
+      </radio-group>
+      <div>
+        <button type="submit">Submit</button>
+      </div>
+    </form>
+  </body>
+</html>
