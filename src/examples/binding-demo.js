@@ -2,6 +2,7 @@ import Wrec, {css, html} from '../wrec';
 
 class BindingDemo extends Wrec {
   static formAssociated = true;
+
   static properties = {
     name: {type: String},
     power: {type: Boolean},

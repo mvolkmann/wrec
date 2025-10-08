@@ -145,16 +145,15 @@ class Wrec extends HTMLElement implements ChangeListener {
   static #propToAttrMap = new Map<string, string>();
   static css = '';
   static html = '';
-  static formAssociated = false;
   static properties: Record<string, any> = {};
   static propToComputedMap: Map<string, string[][]> | null = null;
   static propToExprsMap: Map<string, string[]> | null = null;
   static template: HTMLTemplateElement | null = null;
 
-  autoForm = true;
   #ctor: typeof Wrec = this.constructor as typeof Wrec;
   #exprToRefsMap = new Map<string, Ref[]>();
-  #formData;
+  #formAssoc: Record<string, string> = {};
+  #formData: FormData | undefined;
   #internals: ElementInternals | null = null;
   #propToBindingsMap = new Map<string, Ref[]>();
   // This must be an instance property and cannot be private because
@@ -174,12 +173,6 @@ class Wrec extends HTMLElement implements ChangeListener {
     if (!ctor.properties) ctor.properties = {};
     if (!ctor.propToComputedMap) ctor.propToComputedMap = new Map();
     if (!ctor.propToExprsMap) ctor.propToExprsMap = new Map();
-
-    if (ctor.formAssociated) {
-      this.#internals = this.attachInternals();
-      this.#formData = new FormData();
-      this.#internals.setFormValue(this.#formData);
-    }
   }
 
   attributeChangedCallback(
@@ -191,7 +184,8 @@ class Wrec extends HTMLElement implements ChangeListener {
     const propName = Wrec.getPropName(attrName);
     const value = this.#typedValue(propName, String(newValue));
     this[propName] = value;
-    if (this.autoForm) this.setFormValue(propName, String(value));
+    const formKey = this.#formAssoc[propName];
+    if (formKey) this.setFormValue(formKey, String(value));
     this.propertyChangedCallback(propName, oldValue, newValue);
   }
 
@@ -325,9 +319,8 @@ class Wrec extends HTMLElement implements ChangeListener {
         this.#updateAttribute(propName, type, value, attrName);
         this.#react(propName);
         this.#updateParentProperty(propName, value);
-        if (this.autoForm && isPrimitive(value)) {
-          this.setFormValue(propName, value);
-        }
+        const formKey = this.#formAssoc[propName];
+        if (formKey) this.setFormValue(formKey, String(value));
         this.propertyChangedCallback(propName, oldValue, value);
         if (config.dispatch) this.dispatch('change', {[propName]: value});
       }
@@ -552,6 +545,20 @@ class Wrec extends HTMLElement implements ChangeListener {
     }
   }
 
+  #recordFormAssoc() {
+    const formAssoc: Record<string, string> = {};
+    const pairs = (this.getAttribute('form-assoc') || '').split(',');
+    for (const pair of pairs) {
+      const [key, value] = pair.split(':');
+      formAssoc[key.trim()] = value.trim();
+    }
+
+    this.#formAssoc = formAssoc;
+    this.#formData = new FormData();
+    this.#internals = this.attachInternals();
+    this.#internals.setFormValue(this.#formData);
+  }
+
   #registerComputedProp(propName: string, config: Record<string, any>) {
     const {computed, uses} = config;
     const map = this.#ctor.propToComputedMap!;
@@ -653,7 +660,7 @@ class Wrec extends HTMLElement implements ChangeListener {
   }
 
   setFormValue(propName: string, value: string) {
-    if (!this.#formData) return;
+    if (!this.#formData || !isPrimitive(value)) return;
     this.#formData.set(propName, value);
     this.#internals?.setFormValue(this.#formData);
   }
@@ -829,6 +836,10 @@ class Wrec extends HTMLElement implements ChangeListener {
     const ctor = this.#ctor;
     const propNames = new Set(Object.keys(ctor.properties));
     for (const attrName of this.getAttributeNames()) {
+      if (attrName === 'form-assoc') {
+        this.#recordFormAssoc();
+        continue;
+      }
       if (attrName === 'id') continue;
       if (attrName.startsWith('on')) continue;
       if (!propNames.has(Wrec.getPropName(attrName))) {

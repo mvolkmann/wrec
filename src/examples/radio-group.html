@@ -2,7 +2,6 @@
   <head>
     <title>Radio Group Vanilla</title>
     <script src="number-input.js" type="module"></script>
-    <script src="number-input2.js" type="module"></script>
     <script src="radio-group.js" type="module"></script>
     <style>
       body {
@@ -17,9 +16,18 @@
   </head>
   <body>
     <form action="/process" method="POST">
-      <number-input label="Rating" value="1"></number-input>
-      <number-input2 label="Score" value="2"></number-input2>
+      <number-input
+        form-assoc="value: rating"
+        label="Rating"
+        value="1"
+      ></number-input>
+      <number-input
+        form-assoc="value: score"
+        label="Score"
+        value="2"
+      ></number-input>
       <radio-group
+        form-assoc="value: color"
         name="color"
         labels="Red,Green,Blue"
         legend="Color"
