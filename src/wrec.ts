@@ -144,6 +144,7 @@ class Wrec extends HTMLElement implements ChangeListener {
   static #idToPropertiesMap = new Map<string, any>();
   static #propToAttrMap = new Map<string, string>();
   static css = '';
+  static formAssociated = false;
   static html = '';
   static properties: Record<string, any> = {};
   static propToComputedMap: Map<string, string[][]> | null = null;
@@ -546,6 +547,13 @@ class Wrec extends HTMLElement implements ChangeListener {
   }
 
   #recordFormAssoc() {
+    if (!this.#ctor.formAssociated) {
+      const className = this.#ctor.name;
+      throw new WrecError(
+        `Add "static formAssociated = true;" to class ${className}.`
+      );
+    }
+
     const formAssoc: Record<string, string> = {};
     const pairs = (this.getAttribute('form-assoc') || '').split(',');
     for (const pair of pairs) {
