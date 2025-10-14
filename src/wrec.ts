@@ -155,6 +155,7 @@ class Wrec extends HTMLElement implements ChangeListener {
   #exprToRefsMap = new Map<string, Ref[]>();
   #formAssoc: Record<string, string> = {};
   #formData: FormData | undefined;
+  #initialValuesMap: Record<string, any> = {};
   #internals: ElementInternals | null = null;
   #propToBindingsMap = new Map<string, Ref[]>();
   // This must be an instance property and cannot be private because
@@ -239,6 +240,12 @@ class Wrec extends HTMLElement implements ChangeListener {
     this.#validateAttributes();
     this.#defineProps();
     this.#buildDOM();
+
+    const propNames = Object.keys(this.#ctor.properties);
+    const map = this.#initialValuesMap;
+    for (const propName of propNames) {
+      map[propName] = this[propName];
+    }
 
     // Wait for the DOM to update.
     requestAnimationFrame(() => {
@@ -453,6 +460,13 @@ class Wrec extends HTMLElement implements ChangeListener {
           this.#registerPlaceholders(commentText, element);
         }
       }
+    }
+  }
+
+  formResetCallback() {
+    const map = this.#initialValuesMap;
+    for (const propName of Object.keys(map)) {
+      this[propName] = map[propName];
     }
   }
 

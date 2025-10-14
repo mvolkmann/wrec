@@ -47,11 +47,6 @@ class BindingDemo extends Wrec {
       <p>Your story is <span>this.story</span>.</p>
     </div>
   `;
-
-  formResetCallback() {
-    this.name = '';
-    this.story = '';
-  }
 }
 
 BindingDemo.register();
