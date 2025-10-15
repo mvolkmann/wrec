@@ -25,6 +25,17 @@ const REFS_RE = new RegExp(`this\\.${IDENTIFIER}(\\.${IDENTIFIER})*`, 'g');
 const REFS_TEST_RE = new RegExp(`this\\.${IDENTIFIER}(\\.${IDENTIFIER})*`);
 const SKIP = 'this.'.length;
 
+function canDisable(element: Element) {
+  return (
+    element instanceof HTMLButtonElement ||
+    element instanceof HTMLFieldSetElement ||
+    element instanceof HTMLInputElement ||
+    element instanceof HTMLSelectElement ||
+    element instanceof HTMLTextAreaElement ||
+    element instanceof Wrec
+  );
+}
+
 export function createElement(
   name: string,
   attributes: Record<string, string>,
@@ -52,6 +63,25 @@ const defaultForType = (type: AnyClass) =>
     : type === Object
     ? {}
     : undefined;
+
+// This returns an array of all descendant elements of a given element,
+// including those in nested shadow DOMs.
+function getAllDescendants(root: Element | ShadowRoot): Element[] {
+  const elements = [];
+  let element = root.firstElementChild;
+  while (element) {
+    elements.push(element);
+    if (element.shadowRoot) {
+      elements.push(...getAllDescendants(element.shadowRoot));
+    }
+    // Process light DOM grandchildren.
+    if (element.firstElementChild) {
+      elements.push(...getAllDescendants(element));
+    }
+    element = element.nextElementSibling;
+  }
+  return elements;
+}
 
 // This differs from document.getElementById
 // in that it searches across open shadow DOMs.
@@ -182,13 +212,22 @@ class Wrec extends HTMLElement implements ChangeListener {
     oldValue: string,
     newValue: string | number | boolean | undefined
   ) {
-    // Update corresponding property.
-    const propName = Wrec.getPropName(attrName);
-    const value = this.#typedValue(propName, String(newValue));
-    this[propName] = value;
-    const formKey = this.#formAssoc[propName];
-    if (formKey) this.setFormValue(formKey, String(value));
-    this.propertyChangedCallback(propName, oldValue, newValue);
+    if (attrName === 'disabled') {
+      // Update all descendant form control elements.
+      const isDisabled = this.hasAttribute('disabled');
+      const elements = getAllDescendants(this.shadowRoot!);
+      for (const element of elements) {
+        if (canDisable(element)) element.disabled = isDisabled;
+      }
+    } else {
+      // Update the corresponding property.
+      const propName = Wrec.getPropName(attrName);
+      const value = this.#typedValue(propName, String(newValue));
+      this[propName] = value;
+      const formKey = this.#formAssoc[propName];
+      if (formKey) this.setFormValue(formKey, String(value));
+      this.propertyChangedCallback(propName, oldValue, newValue);
+    }
   }
 
   // attrName must be "value" OR undefined!
@@ -531,7 +570,9 @@ class Wrec extends HTMLElement implements ChangeListener {
   }
 
   static get observedAttributes() {
-    return Object.keys(this.properties || {}).map(Wrec.getAttrName);
+    const keys = Object.keys(this.properties || {}).map(Wrec.getAttrName);
+    keys.push('disabled');
+    return keys;
   }
 
   // Subclasses can override this to add functionality.

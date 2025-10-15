@@ -6,8 +6,8 @@ class SelectList extends Wrec {
   static properties = {
     name: {type: String, required: true},
     labels: {type: String},
-    values: {type: String},
-    value: {type: String}
+    value: {type: String},
+    values: {type: String}
   };
 
   static html = html`

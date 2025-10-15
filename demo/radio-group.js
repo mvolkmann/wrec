@@ -1,12 +1,25 @@
 import Wrec, {css, html} from '../src/wrec.js';
 
+/**
+ * A group of radio buttons.
+ * @tag radio-group
+ * @csspart none
+ * @cssproperty [--border-color=black] - the fieldset border color
+ * @cssproperty [--direction=row] - the direction of the radio buttons
+ * @cssproperty [--gap=1rem] - the gap between the radio buttons
+ * @cssproperty --legend-color - the color of the legend text
+ * @slot before - optional content to insert before the radio buttons
+ * @slot after - optional content to insert after the radio buttons
+ */
 class RadioGroup extends Wrec {
+  static formAssociated = true;
+
   static properties = {
     labels: {type: String},
     legend: {type: String},
     name: {type: String, required: true},
-    values: {type: String},
-    value: {type: String}
+    value: {type: String},
+    values: {type: String}
   };
 
   static css = css`
@@ -50,6 +63,22 @@ class RadioGroup extends Wrec {
     </fieldset>
   `;
 
+  connectedCallback() {
+    super.connectedCallback();
+    this.#fixValue();
+  }
+
+  // This handles the case when the specified value
+  // is not in the list of values.
+  #fixValue() {
+    requestAnimationFrame(() => {
+      const values = this.values.split(',');
+      if (!this.value || !values.includes(this.value)) this.value = values[0];
+    });
+  }
+
+  // This method cannot be private because it is called when
+  // a change event is dispatched from a radio button.
   handleChange(event) {
     this.value = event.target.value;
   }
@@ -71,6 +100,10 @@ class RadioGroup extends Wrec {
         <label for=${value}>${labelArray[index]}</label>
       </div>
     `);
+  }
+
+  propertyChangedCallback(propName) {
+    if (propName === 'values') this.#fixValue();
   }
 }
 

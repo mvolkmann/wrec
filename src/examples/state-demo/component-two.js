@@ -1,4 +1,4 @@
-import Wrec, {css, html} from '../../wrec';
+import Wrec, {html} from '../../wrec';
 
 class ComponentTwo extends Wrec {
   static properties = {
