@@ -2,6 +2,7 @@ import Wrec, {css, html} from '../wrec';
 
 class NumberInput extends Wrec {
   static formAssociated = true;
+
   static properties = {
     label: {type: String},
     value: {type: Number}

@@ -241,12 +241,6 @@ class Wrec extends HTMLElement implements ChangeListener {
     this.#defineProps();
     this.#buildDOM();
 
-    const propNames = Object.keys(this.#ctor.properties);
-    const map = this.#initialValuesMap;
-    for (const propName of propNames) {
-      map[propName] = this[propName];
-    }
-
     // Wait for the DOM to update.
     requestAnimationFrame(() => {
       if (this.shadowRoot) {
@@ -463,6 +457,34 @@ class Wrec extends HTMLElement implements ChangeListener {
     }
   }
 
+  // This method is called automatically if
+  // the component is nested in form element AND
+  // the static property formAssociated is true.
+  // It does things that are only necessary in that situation.
+  formAssociatedCallback() {
+    // Build mapping from component property names to form field names
+    const formAssoc: Record<string, string> = {};
+    const pairs = (this.getAttribute('form-assoc') || '').split(',');
+    for (const pair of pairs) {
+      const [key, value] = pair.split(':');
+      formAssoc[key.trim()] = value.trim();
+    }
+    this.#formAssoc = formAssoc;
+
+    // Prepare for form submissions.
+    this.#formData = new FormData();
+    this.#internals = this.attachInternals();
+    this.#internals.setFormValue(this.#formData);
+
+    // Build mapping from property names to their initial values
+    // so the containing form can be reset.
+    const propNames = Object.keys(this.#ctor.properties);
+    const map = this.#initialValuesMap;
+    for (const propName of propNames) {
+      map[propName] = this[propName];
+    }
+  }
+
   formResetCallback() {
     const map = this.#initialValuesMap;
     for (const propName of Object.keys(map)) {
@@ -558,27 +580,6 @@ class Wrec extends HTMLElement implements ChangeListener {
     if (!customElements.get(elementName)) {
       customElements.define(elementName, this);
     }
-  }
-
-  #recordFormAssoc() {
-    if (!this.#ctor.formAssociated) {
-      const className = this.#ctor.name;
-      throw new WrecError(
-        `Add "static formAssociated = true;" to class ${className}.`
-      );
-    }
-
-    const formAssoc: Record<string, string> = {};
-    const pairs = (this.getAttribute('form-assoc') || '').split(',');
-    for (const pair of pairs) {
-      const [key, value] = pair.split(':');
-      formAssoc[key.trim()] = value.trim();
-    }
-
-    this.#formAssoc = formAssoc;
-    this.#formData = new FormData();
-    this.#internals = this.attachInternals();
-    this.#internals.setFormValue(this.#formData);
   }
 
   #registerComputedProp(propName: string, config: Record<string, any>) {
@@ -858,12 +859,17 @@ class Wrec extends HTMLElement implements ChangeListener {
     const ctor = this.#ctor;
     const propNames = new Set(Object.keys(ctor.properties));
     for (const attrName of this.getAttributeNames()) {
-      if (attrName === 'form-assoc') {
-        this.#recordFormAssoc();
-        continue;
-      }
       if (attrName === 'id') continue;
       if (attrName.startsWith('on')) continue;
+      if (attrName === 'form-assoc') {
+        if (!this.#ctor.formAssociated) {
+          const className = this.#ctor.name;
+          throw new WrecError(
+            `Add "static formAssociated = true;" to class ${className}.`
+          );
+        }
+        continue;
+      }
       if (!propNames.has(Wrec.getPropName(attrName))) {
         this.#throw(null, attrName, 'is not a supported attribute');
       }
