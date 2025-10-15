@@ -7,7 +7,7 @@ class DataBinding extends Wrec {
   static properties = {
     color: {type: String},
     colors: {type: String, required: true},
-    enableColors: {type: Boolean, value: true},
+    enabled: {type: Boolean, value: true},
     labels: {
       type: String,
       //computed: "this.colors.split(',').map(color => this.capitalize(color)).join(',')",
@@ -52,13 +52,10 @@ class DataBinding extends Wrec {
     </div>
     <div class="row">
       <label for="enableSwitch">Enable:</label>
-      <toggle-switch
-        id="enableSwitch"
-        checked="this.enableColors"
-      ></toggle-switch>
+      <toggle-switch id="enableSwitch" checked="this.enabled"></toggle-switch>
     </div>
     <radio-group
-      disabled="!this.enableColors"
+      disabled="!this.enabled"
       name="color1"
       labels="this.labels"
       legend="Color"
@@ -69,14 +66,14 @@ class DataBinding extends Wrec {
       <div slot="after">Don't choose a color you will regret.</div>
     </radio-group>
     <select-list
-      disabled="!this.enableColors"
+      disabled="!this.enabled"
       name="color2"
       labels="this.labels"
       value="this.color"
       values="this.colors"
     ></select-list>
     <number-slider
-      disabled="!this.enableColors"
+      disabled="!this.enabled"
       label="Size"
       max="48"
       min="12"

@@ -1,5 +1,6 @@
 import {expect, test} from '@playwright/test';
 import {
+  expectAttribute,
   expectProperty,
   getProperty,
   setAttribute,
@@ -99,4 +100,26 @@ test('colors', async ({page}) => {
   await setAttribute(selectList, 'labels', labels);
   await setAttribute(selectList, 'values', values);
   await testColors(values);
+});
+
+test('disabled', async ({page}) => {
+  const dataBinding = page.locator('data-binding');
+  const numberSlider = dataBinding.locator('number-slider');
+  const radioGroup = dataBinding.locator('radio-group');
+  const selectList = dataBinding.locator('select-list');
+  const toggleSwitch = dataBinding.locator('toggle-switch');
+
+  let enabled = await getProperty(dataBinding, 'enabled');
+  expect(enabled).toBe(true);
+  await expectAttribute(radioGroup, 'disabled', !enabled);
+  await expectAttribute(selectList, 'disabled', !enabled);
+  await expectAttribute(numberSlider, 'disabled', !enabled);
+
+  await toggleSwitch.click();
+
+  enabled = await getProperty(dataBinding, 'enabled');
+  await expect(enabled).toBe(false);
+  await expectAttribute(radioGroup, 'disabled', !enabled);
+  await expectAttribute(selectList, 'disabled', !enabled);
+  await expectAttribute(numberSlider, 'disabled', !enabled);
 });

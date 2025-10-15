@@ -1,5 +1,18 @@
 import {expect, Locator, Page} from '@playwright/test';
 
+export async function expectAttribute(
+  locator: Locator,
+  attributeName: string,
+  expectedValue: boolean | number | string
+) {
+  let value = await locator.evaluate(
+    (el: Element, attributeName) => (el as any).getAttribute(attributeName),
+    attributeName
+  );
+  if (typeof expectedValue === 'boolean') value = Boolean(value);
+  return expect(value).toBe(expectedValue);
+}
+
 export async function expectProperty(
   locator: Locator,
   propertyName: string,
