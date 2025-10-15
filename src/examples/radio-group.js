@@ -90,12 +90,12 @@ class RadioGroup extends Wrec {
     return valueArray.map((value, index) => html`
       <div>
         <input
-          type="radio"
+          checked="this.value === '${value}'"
           id=${value}
           name=${this.name}
           onchange="handleChange"
+          type="radio"
           value=${value}
-          checked="this.value === '${value}'"
         />
         <label for=${value}>${labelArray[index]}</label>
       </div>

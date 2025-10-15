@@ -144,11 +144,19 @@ function updateAttribute(
   value: string | number | boolean
 ) {
   // Attributes can only be set to primitive values.
-  if (isPrimitive(value) && typeof value !== 'boolean') {
-    // Set the attribute.
-    const currentValue = element.getAttribute(attrName);
-    if (currentValue !== value) {
-      element.setAttribute(attrName, String(value));
+  if (isPrimitive(value)) {
+    if (typeof value === 'boolean') {
+      if (value) {
+        element.setAttribute(attrName, attrName);
+      } else {
+        element.removeAttribute(attrName);
+      }
+    } else {
+      // Set the attribute.
+      const currentValue = element.getAttribute(attrName);
+      if (currentValue !== value) {
+        element.setAttribute(attrName, String(value));
+      }
     }
   } else {
     // Set the corresponding property.
@@ -212,16 +220,11 @@ class Wrec extends HTMLElement implements ChangeListener {
     oldValue: string,
     newValue: string | number | boolean | undefined
   ) {
-    if (attrName === 'disabled') {
-      // Update all descendant form control elements.
-      const isDisabled = this.hasAttribute('disabled');
-      const elements = getAllDescendants(this.shadowRoot!);
-      for (const element of elements) {
-        if (canDisable(element)) element.disabled = isDisabled;
-      }
-    } else {
+    if (attrName === 'disabled') this.#disableEnable();
+
+    const propName = Wrec.getPropName(attrName);
+    if (this.#ctor.properties[propName]) {
       // Update the corresponding property.
-      const propName = Wrec.getPropName(attrName);
       const value = this.#typedValue(propName, String(newValue));
       this[propName] = value;
       const formKey = this.#formAssoc[propName];
@@ -279,6 +282,8 @@ class Wrec extends HTMLElement implements ChangeListener {
     this.#validateAttributes();
     this.#defineProps();
     this.#buildDOM();
+
+    if (this.hasAttribute('disabled')) this.#disableEnable();
 
     // Wait for the DOM to update.
     requestAnimationFrame(() => {
@@ -366,6 +371,15 @@ class Wrec extends HTMLElement implements ChangeListener {
         if (config.dispatch) this.dispatch('change', {[propName]: value});
       }
     });
+  }
+
+  #disableEnable() {
+    // Update all descendant form control elements.
+    const isDisabled = this.hasAttribute('disabled');
+    const elements = getAllDescendants(this.shadowRoot!);
+    for (const element of elements) {
+      if (canDisable(element)) element.disabled = isDisabled;
+    }
   }
 
   disconnectedCallback() {
@@ -571,7 +585,7 @@ class Wrec extends HTMLElement implements ChangeListener {
 
   static get observedAttributes() {
     const keys = Object.keys(this.properties || {}).map(Wrec.getAttrName);
-    keys.push('disabled');
+    if (!keys.includes('disabled')) keys.push('disabled');
     return keys;
   }
 
@@ -901,6 +915,7 @@ class Wrec extends HTMLElement implements ChangeListener {
     const propNames = new Set(Object.keys(ctor.properties));
     for (const attrName of this.getAttributeNames()) {
       if (attrName === 'id') continue;
+      if (attrName === 'disabled') continue;
       if (attrName.startsWith('on')) continue;
       if (attrName === 'form-assoc') {
         if (!this.#ctor.formAssociated) {

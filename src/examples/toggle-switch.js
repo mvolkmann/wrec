@@ -9,8 +9,8 @@ class ToggleSwitch extends Wrec {
 
   static css = css`
     :host {
-      --padding: 2px;
-      --thumb-size: 22px;
+      --padding: 3px;
+      --thumb-size: 20px;
       --height: calc(var(--thumb-size) + var(--padding) * 2);
       --checked-x: calc(var(--thumb-size) - var(--padding) * 2);
     }
