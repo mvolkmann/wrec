@@ -37,6 +37,12 @@ class DataBinding extends Wrec {
       --gap: 0;
       --legend-color: blue;
     }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
   `;
 
   static html = html`
@@ -44,7 +50,13 @@ class DataBinding extends Wrec {
       <label>Color Options (comma-separated):</label>
       <input value="this.colors" />
     </div>
-    <toggle-switch checked="this.enableColors"></toggle-switch>
+    <div class="row">
+      <label for="enableSwitch">Enable:</label>
+      <toggle-switch
+        id="enableSwitch"
+        checked="this.enableColors"
+      ></toggle-switch>
+    </div>
     <radio-group
       disabled="!this.enableColors"
       name="color1"
@@ -57,12 +69,14 @@ class DataBinding extends Wrec {
       <div slot="after">Don't choose a color you will regret.</div>
     </radio-group>
     <select-list
+      disabled="!this.enableColors"
       name="color2"
       labels="this.labels"
       value="this.color"
       values="this.colors"
     ></select-list>
     <number-slider
+      disabled="!this.enableColors"
       label="Size"
       max="48"
       min="12"
