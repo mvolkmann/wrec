@@ -14,7 +14,7 @@ class ComponentOne extends Wrec {
 
   static html = html`
     <p>Enter your name below.</p>
-    <labeled-input label="Name" value="this.name"></labeled-input>
+    <labeled-input id="name" label="Name" value="this.name"></labeled-input>
   `;
 }
 
