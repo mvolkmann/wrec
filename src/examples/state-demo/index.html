@@ -1,26 +1,27 @@
+<!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Data Binding Demo with State</title>
+    <title>wrec State Demo</title>
     <script src="./component-one.js" type="module"></script>
     <script src="./component-two.js" type="module"></script>
-    <script src="../color-picker.js" type="module"></script>
     <script src="../labeled-input.js" type="module"></script>
-    <script src="../number-slider.js" type="module"></script>
+    <script src="../radio-group.js" type="module"></script>
     <script type="module">
       import {State} from '../../state.js';
-      const state1 = new State();
-      state1.addProperty('color', 'black');
-      const state2 = new State();
-      state2.addProperty('name', 'World');
+      const state = new State();
+      state.addProperty('color', 'red');
+      state.addProperty('name', 'World');
+      state.addProperty('notUsed', 'not used');
 
       window.onload = () => {
         const c1 = document.querySelector('component-one');
-        c1.useState(state1, {color: 'color'});
-        c1.useState(state2, {name: 'name'});
+        c1.useState(state, {color: 'color'});
+        c1.useState(state, {name: 'name'});
 
         const c2 = document.querySelector('component-two');
-        c2.useState(state1, {color: 'color'});
-        c2.useState(state2, {name: 'name'});
+        // When the mapping from state properties to component properties
+        // is not specified, they are assumed to be the same.
+        c2.useState(state);
       };
     </script>
   </head>

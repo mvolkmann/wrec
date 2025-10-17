@@ -54,8 +54,8 @@ class DataBinding2 extends Wrec {
       <label>Color Options (comma-separated):</label>
       <input value="this.colors" />
     </div>
-    <radio-group name="color1"></radio-group>
-    <select-list name="color2"></select-list>
+    <radio-group form-assoc="value:color1"></radio-group>
+    <select-list form-assoc="value:color2"></select-list>
     <number-slider label="Size" max="48" min="12"></number-slider>
     <p>You selected the color <span id="selected-color">this.color</span>.</p>
   `;

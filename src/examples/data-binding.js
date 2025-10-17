@@ -56,7 +56,7 @@ class DataBinding extends Wrec {
     </div>
     <radio-group
       disabled="!this.enabled"
-      name="color1"
+      form-assoc="value:color1"
       labels="this.labels"
       legend="Color"
       value="this.color"
@@ -67,7 +67,7 @@ class DataBinding extends Wrec {
     </radio-group>
     <select-list
       disabled="!this.enabled"
-      name="color2"
+      form-assoc="value:color2"
       labels="this.labels"
       value="this.color"
       values="this.colors"

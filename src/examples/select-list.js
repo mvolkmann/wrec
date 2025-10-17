@@ -4,14 +4,13 @@ class SelectList extends Wrec {
   static formAssociated = true;
 
   static properties = {
-    name: {type: String, required: true},
     labels: {type: String},
     value: {type: String},
     values: {type: String}
   };
 
   static html = html`
-    <select name="${this.name}" value="this.value">
+    <select value="this.value">
       this.makeOptions(this.labels, this.values)
     </select>
   `;

@@ -223,7 +223,7 @@ class Wrec extends HTMLElement implements ChangeListener {
     if (attrName === 'disabled') this.#disableEnable();
 
     const propName = Wrec.getPropName(attrName);
-    if (this.#ctor.properties[propName]) {
+    if (this.#hasProperty(propName)) {
       // Update the corresponding property.
       const value = this.#typedValue(propName, String(newValue));
       this[propName] = value;
@@ -563,6 +563,10 @@ class Wrec extends HTMLElement implements ChangeListener {
     return propName;
   }
 
+  #hasProperty(propName: string) {
+    return Boolean(this.#ctor.properties[propName]);
+  }
+
   #makeReactive(root: ShadowRoot | HTMLElement) {
     const elements = Array.from(root.querySelectorAll('*')) as HTMLElement[];
     for (const element of elements) {
@@ -892,20 +896,29 @@ class Wrec extends HTMLElement implements ChangeListener {
   }
 
   /**
-   * @param stateName - unique name for th2nd parameter State object
    * @param state - State object
    * @param map - object whose keys are state properties and
    * whose values are component properties
    */
-  useState(state: State, map: Record<string, string>) {
+  useState(state: State, map?: Record<string, string>) {
+    if (!map) {
+      // Assume this component has the same properties as the state.
+      map = {};
+      for (const prop of Object.keys(state)) {
+        map[prop] = prop;
+      }
+    }
+
     for (const [stateProp, componentProp] of Object.entries(map)) {
-      const stateKey = `${state.id.toString()}:${stateProp}`;
-      this.#stateToComponentPropertyMap.set(stateKey, componentProp);
-      const value = state[stateProp];
-      if (value !== undefined) this[componentProp] = value;
-      const config = this.#ctor.properties[componentProp];
-      config.state = state;
-      config.stateProp = stateProp;
+      if (this.#hasProperty(componentProp)) {
+        const stateKey = `${state.id.toString()}:${stateProp}`;
+        this.#stateToComponentPropertyMap.set(stateKey, componentProp);
+        const value = state[stateProp];
+        if (value !== undefined) this[componentProp] = value;
+        const config = this.#ctor.properties[componentProp];
+        config.state = state;
+        config.stateProp = stateProp;
+      }
     }
     state.addListener(this, Object.keys(map));
   }
