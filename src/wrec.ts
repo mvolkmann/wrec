@@ -523,10 +523,18 @@ class Wrec extends HTMLElement implements ChangeListener {
     // This matches the behavior for built-in form control elements like input.
     if (!fa) {
       const name = this.getAttribute('name');
-      if (name && this.#hasProperty('value')) fa = `value:${name}`;
+      if (name) {
+        if (this.#hasProperty('value')) {
+          fa = `value:${name}`;
+        } else {
+          throw new WrecError(
+            `can't submit by name because component has no value property`
+          );
+        }
+      } else {
+        return; // nothing to submit
+      }
     }
-
-    if (!fa) return;
 
     // Build mapping from component property names to form field names.
     const formAssoc: Record<string, string> = {};
