@@ -1,6 +1,8 @@
 import Wrec, {css, html} from '../wrec';
 
 class ColorPicker extends Wrec {
+  static formAssociated = true;
+
   static properties = {
     labelWidth: {type: String, value: '3rem'},
     red: {type: Number},

@@ -20,14 +20,22 @@ class ColorDemo extends Wrec {
   `;
 
   static html = html`
-    <color-picker color="this.color"></color-picker>
-    <number-slider
-      label="Size"
-      max="48"
-      min="12"
-      value="this.size"
-    ></number-slider>
-    <p>This is a test.</p>
+    <form action="/process" method="POST">
+      <color-picker
+        color="this.color"
+        form-assoc="red: r, green: g, blue: b"
+      ></color-picker>
+      <number-slider
+        label="Size"
+        max="48"
+        min="12"
+        name="size"
+        value="this.size"
+      ></number-slider>
+      <p>This is a test.</p>
+      <button type="reset">Reset</button>
+      <button type="submit">Submit</button>
+    </form>
   `;
 }
 

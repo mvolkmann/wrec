@@ -1,6 +1,8 @@
 import Wrec, {css, html} from '../wrec';
 
 class NumberSlider extends Wrec {
+  static formAssociated = true;
+
   static properties = {
     label: {type: String},
     labelWidth: {type: String},
