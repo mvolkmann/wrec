@@ -16,20 +16,12 @@
   </head>
   <body>
     <form action="/process" method="POST">
-      <number-input
-        form-assoc="value: rating"
-        label="Rating"
-        value="1"
-      ></number-input>
-      <number-input
-        form-assoc="value: score"
-        label="Score"
-        value="2"
-      ></number-input>
+      <number-input label="Rating" name="rating" value="1"></number-input>
+      <number-input label="Score" name="score" value="2"></number-input>
       <radio-group
-        form-assoc="value: color"
         labels="Red,Green,Blue"
         legend="Color"
+        name="color"
         value="blue"
         values="red,green,blue"
       >

@@ -515,9 +515,19 @@ class Wrec extends HTMLElement implements ChangeListener {
   // the static property formAssociated is true.
   // It does things that are only necessary in that situation.
   formAssociatedCallback() {
+    let fa = this.getAttribute('form-assoc') || '';
+    // If the form-assoc attribute is not set,
+    // but the name attribute is set AND there is a value property,
+    // use those for form association.
+    // This matches the behavior for built-in form control elements like input.
+    if (!fa) {
+      const name = this.getAttribute('name');
+      if (name && this.#hasProperty('value')) fa = `value:${name}`;
+    }
+
     // Build mapping from component property names to form field names
     const formAssoc: Record<string, string> = {};
-    const pairs = (this.getAttribute('form-assoc') || '').split(',');
+    const pairs = fa.split(',');
     for (const pair of pairs) {
       const [key, value] = pair.split(':');
       formAssoc[key.trim()] = value.trim();
@@ -929,6 +939,7 @@ class Wrec extends HTMLElement implements ChangeListener {
     for (const attrName of this.getAttributeNames()) {
       if (attrName === 'id') continue;
       if (attrName === 'disabled') continue;
+      if (attrName === 'name') continue;
       if (attrName.startsWith('on')) continue;
       if (attrName === 'form-assoc') {
         if (!this.#ctor.formAssociated) {
