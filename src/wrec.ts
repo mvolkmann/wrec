@@ -134,7 +134,7 @@ function replace(
 
 function stringToNumber(str: string | null): number {
   const n = Number(str);
-  if (isNaN(n)) throw new WrecError(`Cannot convert "${str}" to a number.`);
+  if (isNaN(n)) throw new WrecError(`can't convert "${str}" to a number`);
   return n;
 }
 
@@ -946,22 +946,27 @@ class Wrec extends HTMLElement implements ChangeListener {
 
   #validateAttributes() {
     const ctor = this.#ctor;
+    const className = this.#ctor.name;
     const propNames = new Set(Object.keys(ctor.properties));
     for (const attrName of this.getAttributeNames()) {
       if (attrName === 'id') continue;
       if (attrName === 'disabled') continue;
-      if (attrName === 'name') continue;
       if (attrName.startsWith('on')) continue;
       if (attrName === 'form-assoc') {
         if (!this.#ctor.formAssociated) {
-          const className = this.#ctor.name;
           throw new WrecError(
-            `Add "static formAssociated = true;" to class ${className}.`
+            `add "static formAssociated = true;" to class ${className}`
           );
         }
         continue;
       }
       if (!propNames.has(Wrec.getPropName(attrName))) {
+        if (attrName === 'name') {
+          if (ctor.formAssociated) continue;
+          throw new WrecError(
+            `name attribute requires "static formAssociated = true;" in class ${className}`
+          );
+        }
         this.#throw(null, attrName, 'is not a supported attribute');
       }
     }
