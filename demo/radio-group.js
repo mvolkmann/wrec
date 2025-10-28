@@ -1,4 +1,4 @@
-import Wrec, {css, html} from '../src/wrec.js';
+import Wrec, {css, html} from '../src/wrec';
 
 /**
  * A group of radio buttons.
@@ -17,6 +17,7 @@ class RadioGroup extends Wrec {
   static properties = {
     labels: {type: String},
     legend: {type: String},
+    name: {type: String},
     value: {type: String},
     values: {type: String}
   };
@@ -55,7 +56,7 @@ class RadioGroup extends Wrec {
   // that can use "this." to refer to the current instance.
   static html = html`
     <fieldset>
-      <legend>this.legend</legend>
+      <legend style="this.displayIfSet(this.legend)">this.legend</legend>
       <slot name="before"></slot>
       <div>this.makeButtons(this.labels, this.values)</div>
       <slot name="after"></slot>
@@ -89,11 +90,12 @@ class RadioGroup extends Wrec {
     return valueArray.map((value, index) => html`
       <div>
         <input
-          checked="this.value === '${value}'"
           id=${value}
+          name=${this.name}
           onchange="handleChange"
           type="radio"
           value=${value}
+          ${value === this.value ? 'checked' : ''}
         />
         <label for=${value}>${labelArray[index]}</label>
       </div>

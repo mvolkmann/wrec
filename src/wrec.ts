@@ -151,6 +151,12 @@ function updateAttribute(
       } else {
         element.removeAttribute(attrName);
       }
+
+      // Set the corresponding property.
+      // This is essential for the "disabled" attribute and
+      // possibly others like "checked".
+      const propName = Wrec.getPropName(attrName);
+      (element as Record<string, any>)[propName] = value;
     } else {
       // Set the attribute.
       const currentValue = element.getAttribute(attrName);
@@ -597,7 +603,7 @@ class Wrec extends HTMLElement implements ChangeListener {
       if (!element.firstElementChild) this.#evaluateText(element);
     }
     /* These lines are useful for debugging.
-    if (this.constructor.name === 'DataBinding') {
+    if (this.constructor.name === 'RadioGroup') {
       console.log('=== this.constructor.name =', this.constructor.name);
       console.log('propToExprsMap =', this.#ctor.propToExprsMap);
       console.log('#exprToRefsMap =', this.#exprToRefsMap);

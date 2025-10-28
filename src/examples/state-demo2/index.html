@@ -8,10 +8,11 @@
     <script src="../radio-group.js" type="module"></script>
     <script type="module">
       import {State} from '../../state.js';
-      const state = new State();
-      state.addProperty('color', 'red');
-      state.addProperty('name', 'World');
-      state.addProperty('notUsed', 'not used');
+      const state = new State({
+        color: 'red',
+        name: 'World',
+        notUsed: 'not used'
+      });
 
       window.onload = () => {
         const c1 = document.querySelector('component-one');
@@ -28,6 +29,6 @@
   <body>
     <component-one></component-one>
     <hr />
-    <component-two></component-two>
+    <component-two color="green"></component-two>
   </body>
 </html>

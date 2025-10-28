@@ -11,6 +11,7 @@ class ComponentTwo extends Wrec {
     <radio-group
       labels="Red,Green,Blue"
       legend="Color"
+      name="color"
       value="this.color"
       values="red,green,blue"
     ></radio-group>

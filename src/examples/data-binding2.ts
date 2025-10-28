@@ -1,15 +1,16 @@
 import {State} from '../state';
 import Wrec, {css, html} from '../wrec';
 
-const capitalize = str =>
+const capitalize = (str: string) =>
   str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
 
-const state = new State();
 const colors = 'red,green,blue';
-state.addProperty('labels', getLabels(colors));
-state.addProperty('colors', colors);
-state.addProperty('color', 'blue');
-state.addProperty('size', 18);
+const state = new State({
+  color: 'red',
+  colors,
+  labels: getLabels(colors),
+  size: 18
+});
 state.addListener(
   {
     changed(
@@ -54,7 +55,11 @@ class DataBinding2 extends Wrec {
       <label>Color Options (comma-separated):</label>
       <input value="this.colors" />
     </div>
-    <radio-group form-assoc="value:color1"></radio-group>
+    <radio-group
+      legend="Color"
+      name="color"
+      form-assoc="value:color1"
+    ></radio-group>
     <select-list form-assoc="value:color2"></select-list>
     <number-slider label="Size" max="48" min="12"></number-slider>
     <p>You selected the color <span id="selected-color">this.color</span>.</p>

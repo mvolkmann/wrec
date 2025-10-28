@@ -1,7 +1,7 @@
 import {expect, Page, test} from '@playwright/test';
 
 test.beforeEach(async ({page}: {page: Page}) => {
-  await page.goto('http://localhost:5173/examples/hello-world-with-state.html');
+  await page.goto('http://localhost:5173/examples/state-demo.html');
 });
 
 test('hello-world', async ({page}: {page: Page}) => {

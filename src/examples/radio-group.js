@@ -17,6 +17,7 @@ class RadioGroup extends Wrec {
   static properties = {
     labels: {type: String},
     legend: {type: String},
+    name: {type: String},
     value: {type: String},
     values: {type: String}
   };
@@ -91,6 +92,7 @@ class RadioGroup extends Wrec {
         <input
           checked="this.value === '${value}'"
           id=${value}
+          name=${this.name}
           onchange="handleChange"
           type="radio"
           value=${value}

@@ -23,7 +23,7 @@ export class State {
   // This tells TypeScript that it's okay to access properties by string keys.
   [key: string]: any;
 
-  constructor() {
+  constructor(initial?: LooseObject) {
     const handler = {
       set: (target: LooseObject, property: string, newValue: unknown) => {
         const oldValue = target[property];
@@ -33,6 +33,12 @@ export class State {
       }
     };
     this.#proxy = new Proxy<LooseObject>({}, handler);
+
+    if (initial) {
+      for (const [key, value] of Object.entries(initial)) {
+        this.addProperty(key, value);
+      }
+    }
   }
 
   /**
