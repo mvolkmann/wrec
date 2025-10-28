@@ -14,6 +14,8 @@ type ListenerData = {
 
 type LooseObject = Record<string, unknown>;
 
+class WrecError extends Error {}
+
 // JavaScript does not allow creating a subclass of the Proxy class.
 export class State {
   static #stateMap: Map<string, State> = new Map();
@@ -33,6 +35,11 @@ export class State {
   [key: string]: any;
 
   constructor(name: string, initial?: LooseObject) {
+    if (!name) throw new WrecError('name cannot be empty');
+    if (State.#stateMap.has(name)) {
+      throw new WrecError(`State with name "${name}" already exists`);
+    }
+
     const handler = {
       set: (target: LooseObject, property: string, newValue: unknown) => {
         const oldValue = target[property];
@@ -82,7 +89,7 @@ export class State {
   // For example: state.log()
   log() {
     for (const [key, value] of Object.entries(this.#proxy)) {
-      console.log(key, '=', value);
+      console.log(key, '=', JSON.stringify(value));
     }
   }
 
