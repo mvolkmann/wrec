@@ -1,6 +1,6 @@
-import {CodeBubble} from 'code-bubble';
-const options = {};
-new CodeBubble(options);
+//import {CodeBubble} from 'code-bubble';
+//const options = {};
+//new CodeBubble(options);
 
 const html = String.raw;
 

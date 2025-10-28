@@ -16,6 +16,15 @@ type LooseObject = Record<string, unknown>;
 
 // JavaScript does not allow creating a subclass of the Proxy class.
 export class State {
+  static #stateMap: Map<string, State> = new Map();
+
+  // This is useful for accessing a specific State object
+  // from the DevTools console.  For example:
+  // state = State.get('vault');
+  static get(name: string) {
+    return State.#stateMap.get(name);
+  }
+
   #id = Symbol('objectId');
   #listeners: ListenerData[] = [];
   #proxy: LooseObject;
@@ -23,7 +32,7 @@ export class State {
   // This tells TypeScript that it's okay to access properties by string keys.
   [key: string]: any;
 
-  constructor(initial?: LooseObject) {
+  constructor(name: string, initial?: LooseObject) {
     const handler = {
       set: (target: LooseObject, property: string, newValue: unknown) => {
         const oldValue = target[property];
@@ -39,6 +48,8 @@ export class State {
         this.addProperty(key, value);
       }
     }
+
+    State.#stateMap.set(name, this);
   }
 
   /**
@@ -67,6 +78,14 @@ export class State {
     return this.#id;
   }
 
+  // This is useful for debugging from the DevTools console.
+  // For example: state.log()
+  log() {
+    for (const [key, value] of Object.entries(this.#proxy)) {
+      console.log(key, '=', value);
+    }
+  }
+
   #notifyListeners(property: string, oldValue: unknown, newValue: unknown) {
     for (const {listener, propertySet} of this.#listeners) {
       if (!propertySet || propertySet.has(property)) {
@@ -78,4 +97,9 @@ export class State {
   removeListener(listener: ChangeListener) {
     this.#listeners = this.#listeners.filter(obj => obj.listener !== listener);
   }
+}
+
+if (process.env.NODE_ENV === 'development') {
+  // This makes the State class available in the DevTools console.
+  (window as any).State = State;
 }

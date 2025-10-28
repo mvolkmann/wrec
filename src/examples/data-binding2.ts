@@ -5,7 +5,7 @@ const capitalize = (str: string) =>
   str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
 
 const colors = 'red,green,blue';
-const state = new State({
+const state = new State('vault', {
   color: 'red',
   colors,
   labels: getLabels(colors),
