@@ -115,6 +115,9 @@ export class State {
       if (listener instanceof HTMLElement) {
         const element = listener as HTMLElement;
         if (!element.isConnected) {
+          // If the element is connected again later,
+          // the State useState method must be called again
+          // to re-add the element as a listener.
           disconnected.push(listener);
           continue;
         }
