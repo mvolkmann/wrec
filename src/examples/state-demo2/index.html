@@ -23,6 +23,11 @@
         // When the mapping from state properties to component properties
         // is not specified, they are assumed to be the same.
         c2.useState(state);
+
+        const removeBtn = document.getElementById('remove-btn');
+        removeBtn.addEventListener('click', () => {
+          c2.remove();
+        });
       };
     </script>
   </head>
@@ -30,5 +35,7 @@
     <component-one></component-one>
     <hr />
     <component-two color="green"></component-two>
+    <hr />
+    <button id="remove-btn">Remove component-two</button>
   </body>
 </html>

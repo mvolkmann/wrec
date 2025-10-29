@@ -7,9 +7,9 @@ export type ChangeListener = {
   ) => void;
 };
 
-type ListenerData = {
+type ListenerHolder = {
   listener: ChangeListener;
-  propertySet?: Set<string>;
+  propertySet: Set<string>;
 };
 
 type LooseObject = Record<string, unknown>;
@@ -28,7 +28,7 @@ export class State {
   }
 
   #id = Symbol('objectId');
-  #listeners: ListenerData[] = [];
+  #listenerHolders: ListenerHolder[] = [];
   #proxy: LooseObject;
 
   // This tells TypeScript that it's okay to access properties by string keys.
@@ -43,8 +43,10 @@ export class State {
     const handler = {
       set: (target: LooseObject, property: string, newValue: unknown) => {
         const oldValue = target[property];
-        target[property] = newValue;
-        this.#notifyListeners(property, oldValue, newValue);
+        if (newValue !== oldValue) {
+          target[property] = newValue;
+          this.#notifyListeners(property, oldValue, newValue);
+        }
         return true;
       }
     };
@@ -64,8 +66,21 @@ export class State {
    * @param properties - array of properties of interest
    */
   addListener(listener: ChangeListener, properties: string[] = []) {
-    const propertySet = new Set(properties);
-    this.#listeners.push({listener, propertySet});
+    // Check if the listener was already added.
+    const listenerHolder = this.#listenerHolders.find(
+      listenerHolder => listenerHolder.listener === listener
+    );
+    if (listenerHolder) {
+      // Just add the properties to the Set.
+      const {propertySet} = listenerHolder;
+      for (const property of properties) {
+        propertySet.add(property);
+      }
+    } else {
+      // Add a new listener.
+      const propertySet = new Set(properties);
+      this.#listenerHolders.push({listener, propertySet});
+    }
   }
 
   addProperty(propName: string, initialValue: unknown) {
@@ -94,15 +109,30 @@ export class State {
   }
 
   #notifyListeners(property: string, oldValue: unknown, newValue: unknown) {
-    for (const {listener, propertySet} of this.#listeners) {
-      if (!propertySet || propertySet.has(property)) {
+    const disconnected: ChangeListener[] = [];
+
+    for (const {listener, propertySet} of this.#listenerHolders) {
+      if (listener instanceof HTMLElement) {
+        const element = listener as HTMLElement;
+        if (!element.isConnected) {
+          disconnected.push(listener);
+          continue;
+        }
+      }
+      if (propertySet.size === 0 || propertySet.has(property)) {
         listener.changed(this.#id, property, oldValue, newValue);
       }
+    }
+
+    for (const listener of disconnected) {
+      this.removeListener(listener);
     }
   }
 
   removeListener(listener: ChangeListener) {
-    this.#listeners = this.#listeners.filter(obj => obj.listener !== listener);
+    this.#listenerHolders = this.#listenerHolders.filter(
+      holder => holder.listener !== listener
+    );
   }
 }
 
