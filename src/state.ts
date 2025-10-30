@@ -28,6 +28,8 @@ export class State {
   }
 
   #id = Symbol('objectId');
+  // This cannot be replaced by a WeakMap<ChangeListener, Set<string>>
+  // because there is no way to iterate over the keys of a WeakMap.
   #listenerHolders: ListenerHolder[] = [];
   #proxy: LooseObject;
 
