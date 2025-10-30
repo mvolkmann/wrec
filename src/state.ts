@@ -8,7 +8,7 @@ export type ChangeListener = {
 };
 
 type ListenerHolder = {
-  listener: ChangeListener;
+  listenerRef: WeakRef<ChangeListener>;
   propertySet: Set<string>;
 };
 
@@ -68,7 +68,7 @@ export class State {
   addListener(listener: ChangeListener, properties: string[] = []) {
     // Check if the listener was already added.
     const listenerHolder = this.#listenerHolders.find(
-      listenerHolder => listenerHolder.listener === listener
+      listenerHolder => listenerHolder.listenerRef.deref() === listener
     );
     if (listenerHolder) {
       // Just add the properties to the Set.
@@ -78,8 +78,10 @@ export class State {
       }
     } else {
       // Add a new listener.
-      const propertySet = new Set(properties);
-      this.#listenerHolders.push({listener, propertySet});
+      this.#listenerHolders.push({
+        listenerRef: new WeakRef(listener),
+        propertySet: new Set(properties)
+      });
     }
   }
 
@@ -109,33 +111,38 @@ export class State {
   }
 
   #notifyListeners(property: string, oldValue: unknown, newValue: unknown) {
-    const disconnected: ChangeListener[] = [];
+    const staleHolders: Set<ListenerHolder> = new Set();
 
-    for (const {listener, propertySet} of this.#listenerHolders) {
+    for (const holder of this.#listenerHolders) {
+      const listener = holder.listenerRef.deref();
       if (listener instanceof HTMLElement) {
         const element = listener as HTMLElement;
-        if (!element.isConnected) {
+        if (element.isConnected) {
+          const {propertySet} = holder;
+          if (propertySet.size === 0 || propertySet.has(property)) {
+            listener.changed(this.#id, property, oldValue, newValue);
+          }
+        } else {
           // If the element is connected again later,
           // the State useState method must be called again
           // to re-add the element as a listener.
-          disconnected.push(listener);
-          continue;
+          staleHolders.add(holder);
         }
-      }
-      if (propertySet.size === 0 || propertySet.has(property)) {
-        listener.changed(this.#id, property, oldValue, newValue);
+      } else {
+        // This is reached if the WeakRef no longer refers to a valid object.
+        staleHolders.add(holder);
       }
     }
 
-    for (const listener of disconnected) {
-      this.removeListener(listener);
-    }
+    this.#listenerHolders = this.#listenerHolders.filter(
+      holder => !staleHolders.has(holder)
+    );
   }
 
   removeListener(listener: ChangeListener) {
-    this.#listenerHolders = this.#listenerHolders.filter(
-      holder => holder.listener !== listener
-    );
+    this.#listenerHolders = this.#listenerHolders.filter(holder => {
+      return holder.listenerRef.deref() !== listener;
+    });
   }
 }
 
