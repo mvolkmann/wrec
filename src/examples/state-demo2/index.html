@@ -10,19 +10,23 @@
       import {State} from '../../state.js';
       const state = new State('vault', {
         color: 'red',
-        name: 'World',
+        //name: 'World',
+        team: {leader: {name: 'World'}},
         notUsed: 'not used'
       });
 
       window.onload = () => {
         const c1 = document.querySelector('component-one');
-        c1.useState(state, {color: 'color'});
-        c1.useState(state, {name: 'name'});
+        // The keys are state property paths
+        // and the values are component property names.
+        //c1.useState(state, {color: 'color', name: 'name'});
+        c1.useState(state, {color: 'color', 'team.leader.name': 'name'});
 
         const c2 = document.querySelector('component-two');
         // When the mapping from state properties to component properties
         // is not specified, they are assumed to be the same.
-        c2.useState(state);
+        //c2.useState(state);
+        c2.useState(state, {color: 'color', 'team.leader.name': 'name'});
 
         const removeBtn = document.getElementById('remove-btn');
         removeBtn.addEventListener('click', () => {

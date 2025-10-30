@@ -1,15 +1,12 @@
+import {getPathValue, setPathValue} from './util.js';
+
 export type ChangeListener = {
-  changed: (
-    stateId: symbol,
-    property: string,
-    oldValue: unknown,
-    newValue: unknown
-  ) => void;
+  changed: (property: string, oldValue: unknown, newValue: unknown) => void;
 };
 
 type ListenerHolder = {
   listenerRef: WeakRef<ChangeListener>;
-  propertySet: Set<string>;
+  propertyMap: Record<string, string>;
 };
 
 type LooseObject = Record<string, unknown>;
@@ -20,9 +17,25 @@ class WrecError extends Error {}
 export class State {
   static #stateMap: Map<string, State> = new Map();
 
-  // This is useful for accessing a specific State object
+  // This static method useful for accessing a specific State object
   // from the DevTools console.  For example:
   // state = State.get('vault');
+  //
+  // The top-level properties of State objects are accessed
+  // via a Proxy object so that changes can be monitored.
+  //
+  // Top-level properties that hold primitive values
+  // can be directly modified as follows:
+  // state.color = 'blue';
+  //
+  // Properties that are not top-level should not be modified directly
+  // because doing so avoids notifying the Proxy object.
+  // For example, the following does not work:
+  // state.team.leader.name = 'Mark';
+  //
+  // Instead, create a new object for the value of the top-level property
+  // as follows:
+  // state.team = {leader: {name: 'Mark'}};
   static get(name: string) {
     return State.#stateMap.get(name);
   }
@@ -43,12 +56,29 @@ export class State {
     }
 
     const handler = {
-      set: (target: LooseObject, property: string, newValue: unknown) => {
-        const oldValue = target[property];
-        if (newValue !== oldValue) {
-          target[property] = newValue;
-          this.#notifyListeners(property, oldValue, newValue);
-        }
+      set: (target: LooseObject, stateProperty: string, newValue: unknown) => {
+        const recurse = (
+          pathPrefix: string,
+          property: string,
+          newValue: unknown
+        ) => {
+          const path = pathPrefix ? `${pathPrefix}.${property}` : property;
+          const oldValue = getPathValue(target, path);
+          if (
+            typeof oldValue === 'object' &&
+            newValue &&
+            typeof newValue === 'object'
+          ) {
+            for (const key of Object.keys(oldValue)) {
+              recurse(path, key, (newValue as LooseObject)[key]);
+            }
+          } else if (newValue !== oldValue) {
+            setPathValue(target, path, newValue);
+            this.#notifyListeners(path, oldValue, newValue);
+          }
+        };
+
+        recurse('', stateProperty, newValue);
         return true;
       }
     };
@@ -65,24 +95,24 @@ export class State {
 
   /**
    * @param listener - object that has a "changed" method
-   * @param properties - array of properties of interest
+   * @param map - map from state property paths to component properties
    */
-  addListener(listener: ChangeListener, properties: string[] = []) {
+  addListener(listener: ChangeListener, map: Record<string, string> = {}) {
     // Check if the listener was already added.
     const listenerHolder = this.#listenerHolders.find(
       listenerHolder => listenerHolder.listenerRef.deref() === listener
     );
     if (listenerHolder) {
-      // Just add the properties to the Set.
-      const {propertySet} = listenerHolder;
-      for (const property of properties) {
-        propertySet.add(property);
+      // Add properties to existing propertyMap.
+      const {propertyMap} = listenerHolder;
+      for (const [key, value] of Object.entries(map)) {
+        propertyMap[key] = value;
       }
     } else {
       // Add a new listener.
       this.#listenerHolders.push({
         listenerRef: new WeakRef(listener),
-        propertySet: new Set(properties)
+        propertyMap: map
       });
     }
   }
@@ -112,7 +142,7 @@ export class State {
     }
   }
 
-  #notifyListeners(property: string, oldValue: unknown, newValue: unknown) {
+  #notifyListeners(statePath: string, oldValue: unknown, newValue: unknown) {
     const staleHolders: Set<ListenerHolder> = new Set();
 
     for (const holder of this.#listenerHolders) {
@@ -120,9 +150,10 @@ export class State {
       if (listener instanceof HTMLElement) {
         const element = listener as HTMLElement;
         if (element.isConnected) {
-          const {propertySet} = holder;
-          if (propertySet.size === 0 || propertySet.has(property)) {
-            listener.changed(this.#id, property, oldValue, newValue);
+          const {propertyMap} = holder;
+          const keys = Object.keys(propertyMap);
+          if (keys.length === 0 || keys.includes(statePath)) {
+            listener.changed(propertyMap[statePath], oldValue, newValue);
           }
         } else {
           // If the element is connected again later,

@@ -1,4 +1,5 @@
 import type {ChangeListener, State} from './state';
+import {getPathValue, setPathValue} from './util.js';
 
 type AnyClass = new (...args: any[]) => any;
 
@@ -205,7 +206,6 @@ class Wrec extends HTMLElement implements ChangeListener {
   // This must be an instance property and cannot be private because
   // child components need to access the property in their parent component.
   #propToParentPropMap = new Map<string, string>();
-  #stateToComponentPropertyMap = new Map<string, string>();
 
   // This tells TypeScript that it's okay to access properties by string keys.
   [key: string]: any;
@@ -273,15 +273,8 @@ class Wrec extends HTMLElement implements ChangeListener {
     this.shadowRoot?.replaceChildren(template.content.cloneNode(true));
   }
 
-  changed(
-    stateId: symbol,
-    stateProp: string,
-    _oldStateValue: unknown,
-    newStateValue: unknown
-  ) {
-    const stateKey = `${stateId.toString()}:${stateProp}`;
-    const componentProp = this.#stateToComponentPropertyMap.get(stateKey);
-    if (componentProp) this[componentProp] = newStateValue;
+  changed(componentProp: string, _oldValue: unknown, newValue: unknown) {
+    this[componentProp] = newValue;
   }
 
   connectedCallback() {
@@ -365,7 +358,7 @@ class Wrec extends HTMLElement implements ChangeListener {
 
         this[privateName] = value;
         const {state, stateProp} = this.#ctor.properties[propName];
-        if (stateProp) state[stateProp] = value;
+        if (stateProp) setPathValue(state, stateProp, value);
 
         this.#updateComputedProperties(propName);
         this.#updateAttribute(propName, type, value, attrName);
@@ -392,7 +385,6 @@ class Wrec extends HTMLElement implements ChangeListener {
     //TODO: Should more cleanup be performed here?
     this.#exprToRefsMap.clear();
     this.#propToParentPropMap.clear();
-    this.#stateToComponentPropertyMap.clear();
   }
 
   dispatch(name: string, detail: any) {
@@ -925,7 +917,7 @@ class Wrec extends HTMLElement implements ChangeListener {
   /**
    * @param state - State object
    * @param map - object whose keys are state properties and
-   * whose values are component properties
+   *   whose values are component properties
    */
   useState(state: State, map?: Record<string, string>) {
     if (!map) {
@@ -938,16 +930,14 @@ class Wrec extends HTMLElement implements ChangeListener {
 
     for (const [stateProp, componentProp] of Object.entries(map)) {
       if (this.#hasProperty(componentProp)) {
-        const stateKey = `${state.id.toString()}:${stateProp}`;
-        this.#stateToComponentPropertyMap.set(stateKey, componentProp);
-        const value = state[stateProp];
+        const value = getPathValue(state, stateProp);
         if (value !== undefined) this[componentProp] = value;
         const config = this.#ctor.properties[componentProp];
         config.state = state;
         config.stateProp = stateProp;
       }
     }
-    state.addListener(this, Object.keys(map));
+    state.addListener(this, map);
   }
 
   #validateAttributes() {
