@@ -1,3 +1,4 @@
+import {getPathValue} from './paths.js';
 import {createDeepProxy} from './proxies.js';
 
 export type ChangeListener = {
@@ -21,21 +22,12 @@ export class State {
   // from the DevTools console.  For example:
   // state = State.get('vault');
   //
-  // The top-level properties of State objects are accessed
-  // via a Proxy object so that changes can be monitored.
+  // State object properties are accessed via nested Proxy objects
+  // so all changes can be monitored.
   //
-  // Top-level properties that hold primitive values
-  // can be directly modified as follows:
+  // Properties can be directly modified as follows:
   // state.color = 'blue';
-  //
-  // Properties that are not top-level should not be modified directly
-  // because doing so avoids notifying the Proxy object.
-  // For example, the following does not work:
   // state.team.leader.name = 'Mark';
-  //
-  // Instead, create a new object for the value of the top-level property
-  // as follows:
-  // state.team = {leader: {name: 'Mark'}};
   static get(name: string) {
     return State.#stateMap.get(name);
   }
@@ -71,6 +63,8 @@ export class State {
    * @param map - map from state property paths to component properties
    */
   addListener(listener: ChangeListener, map: Record<string, string> = {}) {
+    this.validateMap(map);
+
     // Check if the listener was already added.
     const listenerHolder = this.#listenerHolders.find(
       listenerHolder => listenerHolder.listenerRef.deref() === listener
@@ -155,6 +149,15 @@ export class State {
     this.#listenerHolders = this.#listenerHolders.filter(holder => {
       return holder.listenerRef.deref() !== listener;
     });
+  }
+
+  validateMap(map: Record<string, string>) {
+    for (const statePath of Object.keys(map)) {
+      const value = getPathValue(this.#proxy, statePath);
+      if (value === undefined) {
+        throw new WrecError(`state path "${statePath}" does not exist`);
+      }
+    }
   }
 }
 
