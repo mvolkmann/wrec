@@ -26,7 +26,7 @@ const inBrowser =
 export class State {
   static #stateMap: Map<string, State> = new Map();
 
-  // This static method useful for accessing a specific State object
+  // This static method is useful for accessing a specific State object
   // from the DevTools console.  For example:
   // state = State.get('vault');
   //
