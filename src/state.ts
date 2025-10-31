@@ -1,4 +1,4 @@
-import {getPathValue, setPathValue} from './util.js';
+import {createDeepProxy} from './proxies.js';
 
 export type ChangeListener = {
   changed: (property: string, oldValue: unknown, newValue: unknown) => void;
@@ -55,34 +55,7 @@ export class State {
       throw new WrecError(`State with name "${name}" already exists`);
     }
 
-    const handler = {
-      set: (target: LooseObject, stateProperty: string, newValue: unknown) => {
-        const recurse = (
-          pathPrefix: string,
-          property: string,
-          newValue: unknown
-        ) => {
-          const path = pathPrefix ? `${pathPrefix}.${property}` : property;
-          const oldValue = getPathValue(target, path);
-          if (
-            typeof oldValue === 'object' &&
-            newValue &&
-            typeof newValue === 'object'
-          ) {
-            for (const key of Object.keys(oldValue)) {
-              recurse(path, key, (newValue as LooseObject)[key]);
-            }
-          } else if (newValue !== oldValue) {
-            setPathValue(target, path, newValue);
-            this.#notifyListeners(path, oldValue, newValue);
-          }
-        };
-
-        recurse('', stateProperty, newValue);
-        return true;
-      }
-    };
-    this.#proxy = new Proxy<LooseObject>({}, handler);
+    this.#proxy = createDeepProxy({}, this.#notifyListeners.bind(this));
 
     if (initial) {
       for (const [key, value] of Object.entries(initial)) {
@@ -143,6 +116,12 @@ export class State {
   }
 
   #notifyListeners(statePath: string, oldValue: unknown, newValue: unknown) {
+    /*
+    console.log(
+      `state.ts: path ${statePath} changed from`,
+      `${JSON.stringify(oldValue)} to ${JSON.stringify(newValue)}`
+    );
+    */
     const staleHolders: Set<ListenerHolder> = new Set();
 
     for (const holder of this.#listenerHolders) {

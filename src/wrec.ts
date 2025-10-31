@@ -1,5 +1,5 @@
 import type {ChangeListener, State} from './state';
-import {getPathValue, setPathValue} from './util.js';
+import {getPathValue, setPathValue} from './paths.js';
 
 type AnyClass = new (...args: any[]) => any;
 
