@@ -928,6 +928,8 @@ class Wrec extends HTMLElement implements ChangeListener {
       }
     }
 
+    this.#validateStateMap(state, map);
+
     for (const [stateProp, componentProp] of Object.entries(map)) {
       if (this.#hasProperty(componentProp)) {
         const value = getPathValue(state, stateProp);
@@ -984,6 +986,24 @@ class Wrec extends HTMLElement implements ChangeListener {
     });
 
     return matches;
+  }
+
+  #validateStateMap(state: State, map: Record<string, string>) {
+    for (const [statePath, componentProp] of Object.entries(map)) {
+      let value = getPathValue(state, statePath);
+      if (value === undefined) {
+        throw new WrecError(`invalid state path "${statePath}"`);
+      }
+
+      value = this[componentProp];
+      if (!this.#hasProperty(componentProp)) {
+        this.#throw(
+          null,
+          componentProp,
+          'refers to missing property in useState map'
+        );
+      }
+    }
   }
 
   // When type is an array, this can't validate the type of the array elements.

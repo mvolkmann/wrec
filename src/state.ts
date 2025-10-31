@@ -63,8 +63,6 @@ export class State {
    * @param map - map from state property paths to component properties
    */
   addListener(listener: ChangeListener, map: Record<string, string> = {}) {
-    this.validateMap(map);
-
     // Check if the listener was already added.
     const listenerHolder = this.#listenerHolders.find(
       listenerHolder => listenerHolder.listenerRef.deref() === listener
@@ -149,15 +147,6 @@ export class State {
     this.#listenerHolders = this.#listenerHolders.filter(holder => {
       return holder.listenerRef.deref() !== listener;
     });
-  }
-
-  validateMap(map: Record<string, string>) {
-    for (const statePath of Object.keys(map)) {
-      const value = getPathValue(this.#proxy, statePath);
-      if (value === undefined) {
-        throw new WrecError(`state path "${statePath}" does not exist`);
-      }
-    }
   }
 }
 
