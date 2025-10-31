@@ -1,8 +1,13 @@
-import {getPathValue} from './paths.js';
 import {createDeepProxy} from './proxies.js';
 
 export type ChangeListener = {
-  changed: (property: string, oldValue: unknown, newValue: unknown) => void;
+  changed: (
+    statePath: string,
+    componentProperty: string,
+    newValue: unknown,
+    oldValue: unknown,
+    state: State
+  ) => void;
 };
 
 type ListenerHolder = {
@@ -13,6 +18,9 @@ type ListenerHolder = {
 type LooseObject = Record<string, unknown>;
 
 class WrecError extends Error {}
+
+const inBrowser =
+  typeof window !== 'undefined' && typeof window.document !== 'undefined';
 
 // JavaScript does not allow creating a subclass of the Proxy class.
 export class State {
@@ -118,26 +126,36 @@ export class State {
 
     for (const holder of this.#listenerHolders) {
       const listener = holder.listenerRef.deref();
-      if (listener instanceof HTMLElement) {
-        const element = listener as HTMLElement;
-        if (element.isConnected) {
-          const {propertyMap} = holder;
-          const keys = Object.keys(propertyMap);
-          if (keys.length === 0 || keys.includes(statePath)) {
-            listener.changed(propertyMap[statePath], oldValue, newValue);
-          }
-        } else {
-          // If the element is connected again later,
-          // the State useState method must be called again
-          // to re-add the element as a listener.
-          staleHolders.add(holder);
-        }
-      } else {
-        // This is reached if the WeakRef no longer refers to a valid object.
+
+      // If the WeakRef no longer refers to a valid object ...
+      if (!listener) {
         staleHolders.add(holder);
+        // If the listener is an HTMLElement
+        // that is disconnected from the DOM ...
+      } else if (
+        inBrowser &&
+        listener instanceof HTMLElement &&
+        !listener.isConnected
+      ) {
+        staleHolders.add(holder);
+      } else {
+        const {propertyMap} = holder;
+        const keys = Object.keys(propertyMap);
+        if (keys.length === 0 || keys.includes(statePath)) {
+          listener.changed(
+            statePath,
+            propertyMap[statePath],
+            newValue,
+            oldValue,
+            this
+          );
+        }
       }
     }
 
+    // WARNING: If the element is connected again later,
+    // the State useState method must be called again
+    // to re-add the element as a listener.
     this.#listenerHolders = this.#listenerHolders.filter(
       holder => !staleHolders.has(holder)
     );
@@ -150,7 +168,10 @@ export class State {
   }
 }
 
-if (process.env.NODE_ENV === 'development') {
-  // This makes the State class available in the DevTools console.
-  (window as any).State = State;
+if (inBrowser) {
+  const inDevelopment = process.env.NODE_ENV === 'development';
+  if (inDevelopment) {
+    // This makes the State class available in the DevTools console.
+    (window as any).State = State;
+  }
 }

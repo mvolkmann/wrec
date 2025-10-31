@@ -273,7 +273,7 @@ class Wrec extends HTMLElement implements ChangeListener {
     this.shadowRoot?.replaceChildren(template.content.cloneNode(true));
   }
 
-  changed(componentProp: string, _oldValue: unknown, newValue: unknown) {
+  changed(statePath: string, componentProp: string, newValue: unknown) {
     this[componentProp] = newValue;
   }
 
