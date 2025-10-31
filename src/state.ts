@@ -47,7 +47,7 @@ export class State {
   #proxy: LooseObject;
 
   // This tells TypeScript that it's okay to access properties by string keys.
-  [key: string]: any;
+  [key: string]: unknown;
 
   constructor(name: string, initial?: LooseObject) {
     if (!name) throw new WrecError('name cannot be empty');
