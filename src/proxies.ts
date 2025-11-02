@@ -1,3 +1,5 @@
+type LooseObject = Record<string, unknown>;
+
 export type ProxyCallback = (
   keyPath: string,
   oldValue: unknown,
@@ -13,10 +15,10 @@ export type ProxyCallback = (
  * @returns {Proxy} deep proxy
  */
 export function createDeepProxy(
-  target: Record<string, any>,
+  target: LooseObject,
   callback: ProxyCallback,
   path = ''
-) {
+): LooseObject {
   // Use a WeakMap to cache proxies and
   // avoid infinite recursion or memory leaks.
   const proxyCache = new WeakMap();
@@ -54,4 +56,14 @@ export function createDeepProxy(
   };
 
   return new Proxy(target, deepHandler);
+}
+
+// This converts a deep proxy to a plain object.
+export function proxyToPlainObject(obj: LooseObject): LooseObject {
+  const clone: LooseObject = {};
+  for (const [key, value] of Object.entries(obj)) {
+    const isObject = typeof value === 'object' && value !== null;
+    clone[key] = isObject ? proxyToPlainObject(value as LooseObject) : value;
+  }
+  return clone;
 }

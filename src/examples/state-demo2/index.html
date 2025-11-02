@@ -8,13 +8,16 @@
     <script src="../radio-group.js" type="module"></script>
     <script type="module">
       import {State} from '../../state.js';
-      const state = new State('vault', {
-        color: 'red',
-        team: {leader: {name: 'World'}},
-        notUsed: 'not used'
-      });
 
       window.onload = () => {
+        // State objects must be created inside the onload handler
+        // so they are recreated if the user refreshes the page.
+        const state = new State('vault', {
+          color: 'red',
+          team: {leader: {name: 'World'}},
+          notUsed: 'not used'
+        });
+
         const c1 = document.querySelector('component-one');
         // The keys are state property paths
         // and the values are component property names.
