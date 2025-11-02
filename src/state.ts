@@ -75,9 +75,11 @@ export class State {
 
     // If there is existing state data in sessionStorage,
     // use that instead of the supplied initial data.
-    const json = sessionStorage.getItem('wrec-state-' + name);
-    const existingState = json ? JSON.parse(json) : undefined;
-    if (existingState) initial = existingState;
+    if (inBrowser) {
+      const json = sessionStorage.getItem('wrec-state-' + name);
+      const existingState = json ? JSON.parse(json) : undefined;
+      if (existingState) initial = existingState;
+    }
 
     if (initial) {
       for (const [key, value] of Object.entries(initial)) {
