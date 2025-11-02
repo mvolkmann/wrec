@@ -1,4 +1,4 @@
-import Wrec, {css, html} from '../wrec';
+import {css, html, Wrec} from '../wrec';
 
 // This demonstrates how wrec can implement
 // some features I saw in a demo of data-star.

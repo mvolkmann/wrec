@@ -1,4 +1,4 @@
-import Wrec, {css, html} from '../src/wrec.js';
+import {css, html, Wrec} from '../src/wrec.js';
 
 class GoogleButton extends Wrec {
   static css = css`

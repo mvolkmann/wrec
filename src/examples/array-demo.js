@@ -1,4 +1,4 @@
-import Wrec, {html} from '../wrec';
+import {html, Wrec} from '../wrec';
 
 class ArrayDemo extends Wrec {
   static properties = {

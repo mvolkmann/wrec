@@ -184,7 +184,7 @@ function updateValue(
   }
 }
 
-class Wrec extends HTMLElement implements ChangeListener {
+export class Wrec extends HTMLElement implements ChangeListener {
   static #attrToPropMap = new Map<string, string>();
   static #idToPropertiesMap = new Map<string, any>();
   static #propToAttrMap = new Map<string, string>();
@@ -1068,8 +1068,6 @@ class Wrec extends HTMLElement implements ChangeListener {
     }
   }
 }
-
-export default Wrec;
 
 export function css(strings: TemplateStringsArray, ...values: unknown[]) {
   let result = interpolate(strings, values);

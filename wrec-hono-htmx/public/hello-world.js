@@ -1,4 +1,4 @@
-import {css, html, Wrec} from '../src/wrec.js';
+import {css, html, Wrec} from './wrec.min.js';
 
 class HelloWorld extends Wrec {
   static properties = {
@@ -6,12 +6,12 @@ class HelloWorld extends Wrec {
   };
 
   static css = css`
-    :host {
-      font-family: fantasy;
+    p {
+      color: purple;
     }
   `;
 
-  static html = html`<p>Hello, <span>this.name</span>!</p>`;
+  static html = html` <p>Hello, <span>this.name</span>!</p> `;
 }
 
 HelloWorld.register();

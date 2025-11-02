@@ -1,4 +1,4 @@
-import Wrec, {css, html} from '../wrec';
+import {css, html, Wrec} from '../wrec';
 
 /**
  * A group of radio buttons.

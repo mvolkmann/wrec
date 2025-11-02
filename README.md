@@ -35,7 +35,7 @@ Here are the steps:
    "Prettier" to add syntax highlighting and format the CSS and HTML strings.
 
    ```js
-   import Wrec, {css, html} from 'wrec';
+   import {css, html, Wrec} from 'wrec';
 
    class MyCounter extends Wrec {
      static properties = {
