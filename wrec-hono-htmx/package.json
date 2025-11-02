@@ -1,0 +1,16 @@
+{
+  "name": "wrec-hono-htmx",
+  "module": "index.tsx",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "hono": "^4.10.4",
+    "wrec": "^0.14.10"
+  }
+}

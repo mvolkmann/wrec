@@ -11,9 +11,9 @@
     <script src="labeled-input.js" type="module"></script>
     <script type="module">
       import {State} from '../state.js';
-      const state = new State('vault', {name: 'World'});
 
       window.onload = () => {
+        const state = new State('demo', {name: 'World'});
         const li = document.querySelector('labeled-input');
         li.useState(state, {name: 'value'});
         const hw = document.querySelector('hello-world');

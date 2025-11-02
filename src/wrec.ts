@@ -947,6 +947,7 @@ class Wrec extends HTMLElement implements ChangeListener {
     const className = this.#ctor.name;
     const propNames = new Set(Object.keys(ctor.properties));
     for (const attrName of this.getAttributeNames()) {
+      if (attrName === 'class') continue;
       if (attrName === 'id') continue;
       if (attrName === 'disabled') continue;
       if (attrName.startsWith('on')) continue;
