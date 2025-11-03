@@ -1,5 +1,8 @@
 import {createDeepProxy, proxyToPlainObject} from './proxies.js';
 
+const inBrowser =
+  typeof window !== 'undefined' && typeof window.document !== 'undefined';
+
 export type ChangeListener = {
   changed: (
     statePath: string,
@@ -19,9 +22,6 @@ type LooseObject = Record<string, unknown>;
 
 class WrecError extends Error {}
 
-const inBrowser =
-  typeof window !== 'undefined' && typeof window.document !== 'undefined';
-
 // JavaScript does not allow creating a subclass of the Proxy class.
 export class State {
   static #stateMap: Map<string, State> = new Map();
@@ -30,11 +30,14 @@ export class State {
     if (inBrowser) {
       window.addEventListener('beforeunload', () => {
         // This persists the data in all State objects
-        // to sessionStorage as JSON strings
-        // so it can be restored after the user refreshes the page.
+        // created with the "persist" option set to true
+        // to sessionStorage as JSON strings so they can be
+        // restored after the user refreshes the page.
         for (const [name, state] of State.#stateMap.entries()) {
-          const obj = proxyToPlainObject(state);
-          sessionStorage.setItem('wrec-state-' + name, JSON.stringify(obj));
+          if (state.#persist) {
+            const obj = proxyToPlainObject(state);
+            sessionStorage.setItem('wrec-state-' + name, JSON.stringify(obj));
+          }
         }
       });
     }
@@ -59,23 +62,25 @@ export class State {
   // because there is no way to iterate over the keys of a WeakMap.
   #listenerHolders: ListenerHolder[] = [];
   #name: string;
+  #persist: boolean;
   #proxy: LooseObject;
 
   // This tells TypeScript that it's okay to access properties by string keys.
   [key: string]: unknown;
 
-  constructor(name: string, initial?: LooseObject) {
+  constructor(name: string, persist: boolean, initial?: LooseObject) {
     if (!name) throw new WrecError('name cannot be empty');
     if (State.#stateMap.has(name)) {
       throw new WrecError(`State with name "${name}" already exists`);
     }
 
     this.#name = name;
+    this.#persist = persist;
     this.#proxy = createDeepProxy({}, this.#notifyListeners.bind(this));
 
     // If there is existing state data in sessionStorage,
     // use that instead of the supplied initial data.
-    if (inBrowser) {
+    if (persist && inBrowser) {
       const json = sessionStorage.getItem('wrec-state-' + name);
       const existingState = json ? JSON.parse(json) : undefined;
       if (existingState) initial = existingState;
