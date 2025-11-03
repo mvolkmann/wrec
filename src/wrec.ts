@@ -1,4 +1,4 @@
-import type {ChangeListener, State} from './state';
+import type {ChangeListener, WrecState} from './wrec-state';
 import {getPathValue, setPathValue} from './paths.js';
 
 type AnyClass = new (...args: any[]) => any;
@@ -915,11 +915,11 @@ export class Wrec extends HTMLElement implements ChangeListener {
   }
 
   /**
-   * @param state - State object
+   * @param state - WrecState object
    * @param map - object whose keys are state properties and
    *   whose values are component properties
    */
-  useState(state: State, map?: Record<string, string>) {
+  useState(state: WrecState, map?: Record<string, string>) {
     if (!map) {
       // Assume this component has the same properties as the state.
       map = {};
@@ -989,7 +989,7 @@ export class Wrec extends HTMLElement implements ChangeListener {
     return matches;
   }
 
-  #validateStateMap(state: State, map: Record<string, string>) {
+  #validateStateMap(state: WrecState, map: Record<string, string>) {
     for (const [statePath, componentProp] of Object.entries(map)) {
       let value = getPathValue(state, statePath);
       if (value === undefined) {

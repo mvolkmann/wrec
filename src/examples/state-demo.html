@@ -10,10 +10,10 @@
     <script src="hello-world.js" type="module"></script>
     <script src="labeled-input.js" type="module"></script>
     <script type="module">
-      import {State} from '../state.js';
+      import {WrecState} from '../wrec-state.js';
 
       window.onload = () => {
-        const state = new State('demo', {name: 'World'});
+        const state = new WrecState('demo', false, {name: 'World'});
         const li = document.querySelector('labeled-input');
         li.useState(state, {name: 'value'});
         const hw = document.querySelector('hello-world');

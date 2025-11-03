@@ -7,12 +7,12 @@
     <script src="../labeled-input.js" type="module"></script>
     <script src="../radio-group.js" type="module"></script>
     <script type="module">
-      import {State} from '../../state.js';
+      import {WrecState} from '../../wrec-state.js';
 
       window.onload = () => {
         // State objects must be created inside the onload handler
         // so they are recreated if the user refreshes the page.
-        const state = new State('vault', {
+        const state = new WrecState('vault', true, {
           color: 'red',
           team: {leader: {name: 'World'}},
           notUsed: 'not used'

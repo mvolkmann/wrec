@@ -1,11 +1,11 @@
-import {State} from '../state';
+import {WrecState} from '../wrec-state';
 import {css, html, Wrec} from '../wrec';
 
 const capitalize = (str: string) =>
   str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
 
 const colors = 'red,green,blue';
-const state = new State('vault', {
+const state = new WrecState('vault', false, {
   color: 'red',
   colors,
   labels: getLabels(colors),
@@ -13,16 +13,13 @@ const state = new State('vault', {
 });
 state.addListener(
   {
-    changed(
-      _stateId: symbol,
-      property: string,
-      _oldValue: unknown,
-      newValue: unknown
-    ) {
-      if (property === 'colors') state.labels = getLabels(newValue as string);
+    changed(statePath: string, componentProperty: string, newValue: unknown) {
+      if (componentProperty === 'colors') {
+        state.labels = getLabels(newValue as string);
+      }
     }
   },
-  ['colors']
+  {colors}
 );
 
 function getLabels(colors: string): string {

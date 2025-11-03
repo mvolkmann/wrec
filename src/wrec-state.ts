@@ -9,7 +9,7 @@ export type ChangeListener = {
     componentProperty: string,
     newValue: unknown,
     oldValue: unknown,
-    state: State
+    state: WrecState
   ) => void;
 };
 
@@ -23,17 +23,17 @@ type LooseObject = Record<string, unknown>;
 class WrecError extends Error {}
 
 // JavaScript does not allow creating a subclass of the Proxy class.
-export class State {
-  static #stateMap: Map<string, State> = new Map();
+export class WrecState {
+  static #stateMap: Map<string, WrecState> = new Map();
 
   static {
     if (inBrowser) {
       window.addEventListener('beforeunload', () => {
-        // This persists the data in all State objects
+        // This persists the data in all WrecState objects
         // created with the "persist" option set to true
         // to sessionStorage as JSON strings so they can be
         // restored after the user refreshes the page.
-        for (const [name, state] of State.#stateMap.entries()) {
+        for (const [name, state] of this.#stateMap.entries()) {
           if (state.#persist) {
             const obj = proxyToPlainObject(state);
             sessionStorage.setItem('wrec-state-' + name, JSON.stringify(obj));
@@ -43,18 +43,18 @@ export class State {
     }
   }
 
-  // This static method is useful for accessing a specific State object
+  // This static method is useful for accessing a specific WrecState object
   // from the DevTools console.  For example:
-  // state = State.get('vault');
+  // state = WrecState.get('vault');
   //
-  // State object properties are accessed via nested Proxy objects
+  // WrecState object properties are accessed via nested Proxy objects
   // so all changes can be monitored.
   //
   // Properties can be directly modified as follows:
   // state.color = 'blue';
   // state.team.leader.name = 'Mark';
   static get(name: string) {
-    return State.#stateMap.get(name);
+    return this.#stateMap.get(name);
   }
 
   #id = Symbol('objectId');
@@ -70,8 +70,8 @@ export class State {
 
   constructor(name: string, persist: boolean, initial?: LooseObject) {
     if (!name) throw new WrecError('name cannot be empty');
-    if (State.#stateMap.has(name)) {
-      throw new WrecError(`State with name "${name}" already exists`);
+    if (WrecState.#stateMap.has(name)) {
+      throw new WrecError(`WrecState with name "${name}" already exists`);
     }
 
     this.#name = name;
@@ -92,7 +92,7 @@ export class State {
       }
     }
 
-    State.#stateMap.set(name, this);
+    WrecState.#stateMap.set(name, this);
   }
 
   /**
@@ -139,7 +139,7 @@ export class State {
   // This is useful for debugging from the DevTools console.
   // For example: state.log()
   log() {
-    console.log('State:', this.#name);
+    console.log('WrecState:', this.#name);
     for (const [key, value] of Object.entries(this.#proxy)) {
       console.log(`  ${key} = ${JSON.stringify(value)}`);
     }
@@ -184,7 +184,7 @@ export class State {
     }
 
     // WARNING: If the element is connected again later,
-    // the State useState method must be called again
+    // the WrecState useState method must be called again
     // to re-add the element as a listener.
     this.#listenerHolders = this.#listenerHolders.filter(
       holder => !staleHolders.has(holder)
@@ -201,7 +201,7 @@ export class State {
 if (inBrowser) {
   const inDevelopment = process.env.NODE_ENV === 'development';
   if (inDevelopment) {
-    // This makes the State class available in the DevTools console.
-    (window as any).State = State;
+    // This makes the WrecState class available in the DevTools console.
+    (window as any).WrecState = WrecState;
   }
 }

@@ -1,9 +1,9 @@
 import {expect, test} from 'vitest';
-import {State} from './state.js';
+import {WrecState} from './wrec-state.js';
 
 const oldColor = 'red';
 const oldName = 'World';
-const myState = new State('vault', {
+const myState = new WrecState('vault', false, {
   color: oldColor,
   team: {leader: {name: oldName}},
   notUsed: 'not used'
@@ -17,7 +17,7 @@ test('listen top-level', () => {
       componentProperty: string,
       newValue: unknown,
       oldValue: unknown,
-      state: State
+      state: WrecState
     ) {
       expect(statePath).toBe('color');
       expect(componentProperty).toBe('color');
@@ -39,7 +39,7 @@ test('listen nested', () => {
       componentProperty: string,
       newValue: unknown,
       oldValue: unknown,
-      state: State
+      state: WrecState
     ) {
       expect(statePath).toBe('team.leader.name');
       expect(componentProperty).toBe('name');
