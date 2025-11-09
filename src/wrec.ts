@@ -215,12 +215,6 @@ export class Wrec extends HTMLElement implements ChangeListener {
 
     this.attachShadow({mode: 'open'});
 
-    // Add a CSS rule that respects the "hidden" attribute.
-    // This is a web.dev custom element best practice.
-    const style = document.createElement('style');
-    style.textContent = ':host([hidden]) { display: none; }';
-    this.shadowRoot?.appendChild(style);
-
     const ctor = this.#ctor;
     if (!ctor.properties) ctor.properties = {};
     if (!ctor.propToComputedMap) ctor.propToComputedMap = new Map();
@@ -272,7 +266,11 @@ export class Wrec extends HTMLElement implements ChangeListener {
     let template = ctor.template;
     if (!template) {
       template = ctor.template = document.createElement('template');
-      let text = ctor.css ? `<style>${ctor.css}</style>` : '';
+      // Include a CSS rule that respects the "hidden" attribute.
+      // This is a web.dev custom element best practice.
+      let text = '<style> :host([hidden]) { display: none; } ';
+      if (ctor.css) text += ctor.css;
+      text += '</style>';
       text += ctor.html;
       template.innerHTML = text;
     }
