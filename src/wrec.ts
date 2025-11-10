@@ -332,9 +332,18 @@ export class Wrec extends HTMLElement implements ChangeListener {
       this.#throw(this, propName, 'is a required attribute');
     }
 
+    // This follows the best practice
+    // "Consider checking for properties that may
+    // have been set before the element upgraded."
+    let value = config.value;
+    if (this.hasOwnProperty(propName)) {
+      value = this[propName];
+      delete this[propName];
+    }
+
     // Copy the property value to a private property.
     // The property is replaced below with Object.defineProperty.
-    const {type, value} = config;
+    const {type} = config;
     const typedValue =
       type === Boolean
         ? value || has
