@@ -226,7 +226,7 @@ export class Wrec extends HTMLElement implements ChangeListener {
     oldValue: string,
     newValue: string | number | boolean | undefined
   ) {
-    if (attrName === 'disabled') this.#disableEnable();
+    if (attrName === 'disabled') this.#disableOrEnable();
 
     const propName = Wrec.getPropName(attrName);
     if (this.#hasProperty(propName)) {
@@ -286,7 +286,7 @@ export class Wrec extends HTMLElement implements ChangeListener {
     this.#defineProps();
     this.#buildDOM();
 
-    if (this.hasAttribute('disabled')) this.#disableEnable();
+    if (this.hasAttribute('disabled')) this.#disableOrEnable();
 
     // Wait for the DOM to update.
     requestAnimationFrame(() => {
@@ -376,7 +376,7 @@ export class Wrec extends HTMLElement implements ChangeListener {
     });
   }
 
-  #disableEnable() {
+  #disableOrEnable() {
     // Update all descendant form control elements.
     const isDisabled = this.hasAttribute('disabled');
     const elements = getAllDescendants(this.shadowRoot!);
