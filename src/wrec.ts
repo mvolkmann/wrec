@@ -764,6 +764,12 @@ export class Wrec extends HTMLElement implements ChangeListener {
     }
   }
 
+  // This follows the best practice
+  // "Do not override author-set, global attributes."
+  setAttributeSafe(name: string, value: string) {
+    if (!this.hasAttribute(name)) this.setAttribute(name, value);
+  }
+
   setFormValue(propName: string, value: string) {
     if (!this.#formData || !isPrimitive(value)) return;
     this.#formData.set(propName, value);
