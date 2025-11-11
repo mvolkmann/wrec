@@ -24,6 +24,8 @@ const HTML_ELEMENT_TEXT_RE = /<(\w+)(?:\s[^>]*)?>((?:[^<]|<(?!\w))*?)<\/\1>/g;
 const REF_RE = new RegExp(`^this\\.${IDENTIFIER}$`);
 const REFS_RE = new RegExp(`this\\.${IDENTIFIER}(\\.${IDENTIFIER})*`, 'g');
 const REFS_TEST_RE = new RegExp(`this\\.${IDENTIFIER}(\\.${IDENTIFIER})*`);
+// Don't add 'disabled', 'id', or 'name' here!
+const RESERVED_ATTRS = new Set(['class', 'style']);
 const SKIP = 'this.'.length;
 
 function canDisable(element: Element) {
@@ -963,15 +965,26 @@ export class Wrec extends HTMLElement implements ChangeListener {
 
   #validateAttributes() {
     const ctor = this.#ctor;
-    const className = this.#ctor.name;
     const propNames = new Set(Object.keys(ctor.properties));
+    for (const propName of propNames) {
+      if (RESERVED_ATTRS.has(propName)) {
+        this.#throw(
+          null,
+          '',
+          `property "${propName}" is not allowed because it is a reserved attribute`
+        );
+      }
+    }
+
+    const className = this.#ctor.name;
+
     for (const attrName of this.getAttributeNames()) {
       if (attrName === 'class') continue;
       if (attrName === 'id') continue;
       if (attrName === 'disabled') continue;
       if (attrName.startsWith('on')) continue;
       if (attrName === 'form-assoc') {
-        if (!this.#ctor.formAssociated) {
+        if (!ctor.formAssociated) {
           throw new WrecError(
             `add "static formAssociated = true;" to class ${className}`
           );
