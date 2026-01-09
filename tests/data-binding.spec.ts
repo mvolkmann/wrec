@@ -29,6 +29,7 @@ test('colors', async ({page}) => {
   // Click the "green" radio button.
   color = 'green';
   await radioGroup.locator(`input[value="${color}"]`).click();
+  await waitForNextFrame(page);
   await expectProperty(radioGroup, 'value', color);
   await expectProperty(selectList, 'value', color);
   await expect(span).toHaveText(color);
@@ -43,7 +44,8 @@ test('colors', async ({page}) => {
   await expect(span).toHaveText(color);
 
   async function testColors(values: string) {
-    await waitForNextFrame(page);
+    //await waitForNextFrame(page); // not reliable in this case
+    await page.waitForTimeout(300);
 
     // The first option should be selected.
     const color = values.split(',')[0];
@@ -81,7 +83,6 @@ test('colors', async ({page}) => {
   // Change the list of values in the binding-demo element.
   values = 'pink,yellow';
   await setAttribute(dataBinding, 'colors', values);
-  await page.waitForTimeout(100);
   await testColors(values);
 
   const capitalize = (str: string) =>
@@ -116,6 +117,8 @@ test('disabled', async ({page}) => {
   await expectAttribute(numberSlider, 'disabled', !enabled);
 
   await toggleSwitch.click();
+  //await waitForNextFrame(page); // not reliable in this case
+  await page.waitForTimeout(200);
 
   enabled = await getProperty(dataBinding, 'enabled');
   await expect(enabled).toBe(false);

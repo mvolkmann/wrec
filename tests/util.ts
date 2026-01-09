@@ -59,7 +59,5 @@ export function setInputRangeValue(locator: Locator, value: number) {
 }
 
 export function waitForNextFrame(page: Page) {
-  return page.evaluate(
-    () => new Promise(resolve => requestAnimationFrame(resolve))
-  );
+  return page.evaluate(() => new Promise(requestAnimationFrame));
 }

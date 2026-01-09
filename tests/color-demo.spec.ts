@@ -32,6 +32,8 @@ test('sliders', async ({page}: {page: Page}) => {
 
   async function testColor(slider: Locator, value: number) {
     await setInputRangeValue(slider, value);
+    //await waitForNextFrame(page); // not reliable in this case
+    await page.waitForTimeout(200);
     return expect(p).toHaveCSS('color', `rgb(${red}, ${green}, ${blue})`);
   }
 
