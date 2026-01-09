@@ -3,7 +3,7 @@ import {css, html, Wrec} from '../wrec';
 class BasicWrec extends Wrec {
   static css = css`
     span {
-      font-family: fantasy;
+      color: blue;
     }
   `;
   static html = html`<span>Hello, World!</span>`;

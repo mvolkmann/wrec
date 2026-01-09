@@ -548,9 +548,11 @@ export class Wrec extends HTMLElement implements ChangeListener {
         if (this.#hasProperty('value')) {
           fa = `value:${name}`;
         } else {
-          throw new WrecError(
-            `can't submit by name because component has no value property`
-          );
+          //TODO: Should this be considered an error?
+          //throw new WrecError(
+          //  `can't submit by name because component has no value property`
+          //);
+          return; // nothing to submit
         }
       } else {
         return; // nothing to submit

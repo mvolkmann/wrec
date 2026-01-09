@@ -18,8 +18,8 @@ class NumberSlider extends Wrec {
       gap: 0.5rem;
     }
 
-    input[type='number'] {
-      width: 6rem;
+    input[type='range'] {
+      width: 7rem;
     }
 
     label {
