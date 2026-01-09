@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Binding Demo</title>
+    <script src="binding-demo.js" type="module"></script>
+  </head>
+  <body>
+    <form method="GET" action="/missing">
+      <binding-demo
+        name="Mark"
+        power
+        speed="5"
+        story="Once upon a time..."
+      ></binding-demo>
+      <button type="reset">Reset</button>
+      <button type="submit">Submit</button>
+    </form>
+  </body>
+</html>

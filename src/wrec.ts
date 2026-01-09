@@ -123,6 +123,15 @@ function isPrimitive(value: unknown) {
   return t === 'string' || t === 'number' || t === 'boolean';
 }
 
+function isTextArea(element: Element) {
+  return element.localName === 'textarea';
+}
+
+function isValueElement(element: Element) {
+  const {localName} = element;
+  return localName === 'input' || localName === 'select';
+}
+
 const removeHtmlComments = (str: string) => str.replace(/<!--[\s\S]*?-->/g, '');
 
 // This returns a new string where a specified substring is replaced.
@@ -146,25 +155,31 @@ function updateAttribute(
   attrName: string,
   value: string | number | boolean
 ) {
+  const [realAttrName, _eventName] = attrName.split(':');
+
   // Attributes can only be set to primitive values.
   if (isPrimitive(value)) {
     if (typeof value === 'boolean') {
       if (value) {
-        element.setAttribute(attrName, attrName);
+        element.setAttribute(realAttrName, realAttrName);
       } else {
-        element.removeAttribute(attrName);
+        element.removeAttribute(realAttrName);
       }
 
       // Set the corresponding property.
       // This is essential for the "disabled" attribute and
       // possibly others like "checked".
-      const propName = Wrec.getPropName(attrName);
+      const propName = Wrec.getPropName(realAttrName);
       (element as Record<string, any>)[propName] = value;
     } else {
       // Set the attribute.
       const currentValue = element.getAttribute(attrName);
-      if (currentValue !== value) {
-        element.setAttribute(attrName, String(value));
+      const newValue = String(value);
+      if (currentValue !== newValue) {
+        element.setAttribute(realAttrName, newValue);
+        if (realAttrName === 'value' && isValueElement(element)) {
+          (element as HTMLValueElement).value = newValue;
+        }
       }
     }
   } else {
@@ -179,10 +194,15 @@ function updateValue(
   attrName: string,
   value: string
 ) {
+  const [realAttrName, _eventName] = attrName.split(':');
+
   if (element instanceof CSSRule) {
-    element.style.setProperty(attrName, value); // CSS variable
+    element.style.setProperty(realAttrName, value); // CSS variable
   } else {
-    updateAttribute(element, attrName, value);
+    updateAttribute(element, realAttrName, value);
+    if (realAttrName === 'value' && isValueElement(element)) {
+      (element as HTMLValueElement).value = value;
+    }
   }
 }
 
@@ -204,7 +224,7 @@ export class Wrec extends HTMLElement implements ChangeListener {
   #formData: FormData | undefined;
   #initialValuesMap: Record<string, any> = {};
   #internals: ElementInternals | null = null;
-  #propToBindingsMap = new Map<string, Ref[]>();
+
   // This must be an instance property and cannot be private because
   // child components need to access the property in their parent component.
   #propToParentPropMap = new Map<string, string>();
@@ -239,28 +259,6 @@ export class Wrec extends HTMLElement implements ChangeListener {
       if (formKey) this.setFormValue(formKey, String(value));
       this.propertyChangedCallback(propName, oldValue, newValue);
     }
-  }
-
-  // attrName must be "value" OR undefined!
-  #bind(
-    element: HTMLElement,
-    propName: string,
-    attrName: string | null,
-    eventName: string
-  ) {
-    element.addEventListener(eventName, (event: Event) => {
-      const target = event.target as HTMLValueElement;
-      const {value} = target;
-      const {type} = this.#ctor.properties[propName];
-      this[propName] = type === Number ? stringToNumber(value) : value;
-    });
-
-    let bindings = this.#propToBindingsMap.get(propName);
-    if (!bindings) {
-      bindings = [];
-      this.#propToBindingsMap.set(propName, bindings);
-    }
-    bindings.push(attrName ? {element, attrName} : element);
   }
 
   #buildDOM() {
@@ -451,7 +449,6 @@ export class Wrec extends HTMLElement implements ChangeListener {
           } else {
             eventName = 'change';
           }
-          this.#bind(element, propName, realAttrName, eventName);
         }
 
         // If the element is a wrec web component,
@@ -496,7 +493,9 @@ export class Wrec extends HTMLElement implements ChangeListener {
     } else {
       let commentText = '';
 
-      if (localName === 'textarea') {
+      if (isTextArea(element)) {
+        this.#registerPlaceholders(element.textContent, element);
+
         // When an HTML comment appears in a textarea element,
         // a text node is created rather than a comment element.
         const match = element.textContent?.match(HTML_COMMENT_TEXT_RE);
@@ -512,9 +511,7 @@ export class Wrec extends HTMLElement implements ChangeListener {
         // Only add a binding if the element is a "textarea" and
         // its text content is a single property reference.
         const propName = this.#propRefName(element, commentText);
-        if (localName === 'textarea' && propName) {
-          // Configure data binding.
-          this.#bind(element, propName, null, 'change');
+        if (propName && isTextArea(element)) {
           element.textContent = this[propName];
         } else {
           this.#registerPlaceholders(commentText, element);
@@ -575,7 +572,9 @@ export class Wrec extends HTMLElement implements ChangeListener {
   formResetCallback() {
     const map = this.#initialValuesMap;
     for (const propName of Object.keys(map)) {
-      this[propName] = map[propName];
+      let value = map[propName];
+      if (REF_RE.test(value)) value = this.#evaluateInContext(value);
+      this[propName] = value;
     }
   }
 
@@ -597,6 +596,59 @@ export class Wrec extends HTMLElement implements ChangeListener {
     return propName;
   }
 
+  // This returns the value of the property in the nearest ancestor,
+  // or undefined if not found.
+  #getAncestorProperty(propName: string) {
+    const parentProp = this.#propToParentPropMap.get(propName) || propName;
+    let object = this as Record<string, any>;
+    while (true) {
+      const root = object.getRootNode();
+      if (!(root instanceof ShadowRoot)) return;
+      const {host} = root;
+      if (!host) return;
+
+      const parent = host.parentElement as Record<string, any>;
+      const value = parent[parentProp];
+      if (value !== undefined) return value;
+      object = parent;
+    }
+  }
+
+  #handleEvents(
+    element: HTMLElement,
+    attrName: string | undefined,
+    matches: string[]
+  ) {
+    if (matches.length !== 1) return;
+    const [match] = matches;
+    if (!REF_RE.test(match)) return;
+
+    const isFormControl = isValueElement(element) || isTextArea(element);
+    let [realAttrName, eventName] = (attrName ?? '').split(':');
+    const shouldListen =
+      (isFormControl && realAttrName === 'value') || isTextArea(element);
+    if (!shouldListen) return;
+
+    if (eventName) {
+      if ((element as any)['on' + eventName] === undefined) {
+        const msg = 'refers to an unsupported event name';
+        this.#throw(element, attrName, msg);
+      }
+    } else {
+      eventName = 'change';
+    }
+
+    const propName = getPropName(match);
+    element.addEventListener(eventName, (event: Event) => {
+      const {target} = event;
+      if (!target) return;
+      const value = (target as HTMLValueElement).value;
+      const {type} = this.#ctor.properties[propName];
+      this[propName] = type === Number ? stringToNumber(value) : value;
+      this.#react(propName);
+    });
+  }
+
   #hasProperty(propName: string) {
     return Boolean(this.#ctor.properties[propName]);
   }
@@ -610,7 +662,7 @@ export class Wrec extends HTMLElement implements ChangeListener {
       if (!element.firstElementChild) this.#evaluateText(element);
     }
     /* These lines are useful for debugging.
-    if (this.constructor.name === 'RadioGroup') {
+    if (this.constructor.name === 'ColorPicker') {
       console.log('=== this.constructor.name =', this.constructor.name);
       console.log('propToExprsMap =', this.#ctor.propToExprsMap);
       console.log('#exprToRefsMap =', this.#exprToRefsMap);
@@ -649,23 +701,33 @@ export class Wrec extends HTMLElement implements ChangeListener {
     const map = ctor.propToExprsMap;
     const exprs = map!.get(propName) || [];
     for (const expr of exprs) {
-      const value = this.#evaluateInContext(expr);
+      let value = this.#evaluateInContext(expr);
       const refs: Ref[] = this.#exprToRefsMap.get(expr) ?? [];
       for (const ref of refs) {
         if (ref instanceof HTMLElement) {
           this.#updateElementContent(ref, value);
         } else if (ref instanceof CSSStyleRule) {
-          //TODO: Does something need to be done here?
+          //TODO: Is this code ever reached?
+          debugger;
+          ref.style.setProperty(propName, value);
         } else {
-          updateValue(ref.element, ref.attrName, value);
+          const {element, attrName} = ref;
+          if (element instanceof CSSStyleRule) {
+            if (REFS_TEST_RE.test(String(value))) {
+              value = this.#getAncestorProperty(propName);
+              //TODO: THIS IS NOT GETTING THE CORRECT VALUE!
+              if (value === undefined) {
+                const {type} = this.#ctor.properties[propName];
+                value = defaultForType(type);
+              }
+            }
+            element.style.setProperty(attrName, value);
+          } else {
+            updateValue(element, attrName, value);
+          }
         }
       }
     }
-
-    // Wait for the DOM to update.
-    requestAnimationFrame(() => {
-      this.#updateBindings(propName);
-    });
   }
 
   static register() {
@@ -767,6 +829,10 @@ export class Wrec extends HTMLElement implements ChangeListener {
     }
     refs.push(attrName ? {element, attrName} : element);
 
+    if (element instanceof HTMLElement) {
+      this.#handleEvents(element, attrName, matches);
+    }
+
     const value = this.#evaluateInContext(text);
     if (attrName) {
       updateValue(element, attrName, value);
@@ -851,6 +917,7 @@ export class Wrec extends HTMLElement implements ChangeListener {
   }
 
   // Updates the matching attribute for a property if there is one.
+  // VS Code thinks this is never called, but it is called by #defineProp.
   #updateAttribute(propName: string, type: any, value: any, attrName: string) {
     if (isPrimitive(value) && this.hasAttribute(attrName)) {
       const oldValue =
@@ -861,31 +928,8 @@ export class Wrec extends HTMLElement implements ChangeListener {
     }
   }
 
-  #updateBindings(propName: string) {
-    const value = this[propName];
-    const bindings = this.#propToBindingsMap.get(propName) || [];
-    for (const binding of bindings) {
-      if (binding instanceof HTMLElement) {
-        if (binding.localName === 'textarea') {
-          (binding as HTMLTextAreaElement).value = value;
-        } else {
-          binding.textContent = value;
-        }
-      } else if (binding instanceof CSSStyleRule) {
-        //TODO: Does something need to be done here?
-      } else {
-        const {element, attrName} = binding;
-        if (element instanceof HTMLElement) {
-          const propName = Wrec.getPropName(attrName);
-          (element as any)[propName] = value;
-        } else if (element instanceof CSSStyleRule) {
-          element.style.setProperty(attrName, value);
-        }
-      }
-    }
-  }
-
   // Updates all computed properties that reference this property.
+  // VS Code thinks this is never called, but it is called by #defineProp.
   #updateComputedProperties(propName: string) {
     const map = this.#ctor.propToComputedMap!;
     const computes = map.get(propName) || [];
@@ -898,7 +942,6 @@ export class Wrec extends HTMLElement implements ChangeListener {
     if (value === undefined) return;
 
     const isHTML = element instanceof HTMLElement;
-    const localName = isHTML ? element.localName : '';
     const t = typeof value;
     if (t !== 'string' && t !== 'number') {
       this.#throw(
@@ -908,7 +951,7 @@ export class Wrec extends HTMLElement implements ChangeListener {
       );
     }
 
-    if (localName === 'textarea') {
+    if (element instanceof HTMLElement && isTextArea(element)) {
       (element as HTMLTextAreaElement).value = value;
     } else if (isHTML && t === 'string' && value.trim().startsWith('<')) {
       //TODO: Consider sanitizing this HTML.
@@ -922,6 +965,7 @@ export class Wrec extends HTMLElement implements ChangeListener {
   }
 
   // Update corresponding parent web component property if bound to one.
+  // VS Code thinks this is never called, but it is called by #defineProp.
   #updateParentProperty(propName: string, value: any) {
     const parentProp = this.#propToParentPropMap.get(propName);
     if (!parentProp) return;
