@@ -104,3 +104,48 @@ To run the examples in the `src/examples` directory:
 1. Enter `npm run dev`.
 1. Browse `localhost:5173/examples/{name}.html` where `name`
    is the name of one of the `.html` files in that directory.
+
+`hello-world.html` demonstrates a basic Wrec component.
+Try modifying the `name` attribute in DevTools
+by changing the attribute and then the property.
+This uses the `hello-world` component.
+
+`counter-4.html` demonstrates a counter component that cannot go negative
+and displays whether the count is a single or multi-digit number.
+This uses the `counter-wrec` component.
+
+`number-bind.html` demonstrates
+This uses the `number-bind`, `number-input`, and `number-slider` components.
+Changing the value in the `number-input` or `number-slider` component
+updates the other component and also the number after "Your score is".
+
+`rectangle-area.html` demonstrates using a computed property
+with and without the `uses` property.
+This uses the `rectangle-area` and `number-slider` components.
+
+`reactive.css.html` demonstrates reactive CSS.
+Drag the slider to change the size of the text.
+This uses the `reactive-css` component.
+
+`css-demo.html` demonstrates more reactive CSS.
+The color name entered in the input is used in three places,
+the color of the `p` element,
+the background color of the `#swatch` element,
+and the text inside the `#swatch` element.
+This uses the `css-demo` component.
+
+`color-demo.html` demonstrates more reactive CSS. Try dragging the slider.
+Examine the generated CSS which adds a CSS variable.
+This uses the `color-demo`, `color-picker`, and `number-slider` components.
+
+`data-binding.html` demonstrates some extreme data binding where
+a comma-separated list of colors is used to generate radio buttons and a select list.
+Select a radio button or select list option updates the other.
+It also updates the color and content of the text at the bottom.
+The "Enable" toggle enables and disables all the form controls.
+Try changing the list of colors and the selected values in DevTools
+by modifying attribute values or property values.
+This uses the `data-binding`, `number-slider`, `radio-group`,
+`select-list`, and `toggle-switch` components.
+
+`speedometer-demo.html` demonstrates fancy graphics.

@@ -25,7 +25,7 @@ class CounterWrec extends Wrec {
     </button>
     <span>this.count</span>
     <button onClick="this.count++" type="button">+</button>
-    <span>this.count < 10 ? "single" : "double"</span> digit
+    <span>this.count < 10 ? "single" : "multi"</span>-digit
   `;
 }
 
