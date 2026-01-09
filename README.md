@@ -10,7 +10,31 @@ Also, see my series of
 <a href="https://www.youtube.com/playlist?list=PLGhglgQb4jVk3-_wc8srORlGalSRFMEpR"
 target="_blank">YouTube videos</a> on web components and the wrec library.
 
+Wrec components achieve reactivity through two maps,
+`propToExprsMap` and `#exprToRefsMap`.
+
+`propToExprsMap` maps component property names
+to the expressions where they appear.
+This is a static map because only one is needed per wrec component.
+The same mapping is used for each instance of the component.
+
+`#exprToRefsMap` maps expressions to where they are referenced.
+References can include the text content of elements,
+attribute values, and CSS property values.
+Each wrec component instance has one of these maps
+because it contains instance-specific references.
+
+When the value of a component property changes,
+wrec uses `propToExprsMap` to find the expressions that must be re-evaluated.
+For each expression, a new value is computed.
+Then wrec uses `#exprToRefsMap` to find all the references to that expression
+and updates them.
+
 ## Getting Started
+
+A wrec component is defined by a class that extends the `Wrec` class.
+It typically defines the static properties `properties`, `css`, and `html`.
+Only the `html` property is required.
 
 Let's use wrec to implement a counter component.
 Here are the steps:
