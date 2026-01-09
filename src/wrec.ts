@@ -607,24 +607,6 @@ export class Wrec extends HTMLElement implements ChangeListener {
     return propName;
   }
 
-  // This returns the value of the property in the nearest ancestor,
-  // or undefined if not found.
-  #getAncestorProperty(propName: string) {
-    const parentProp = this.#propToParentPropMap.get(propName) || propName;
-    let object = this as Record<string, any>;
-    while (true) {
-      const root = object.getRootNode();
-      if (!(root instanceof ShadowRoot)) return;
-      const {host} = root;
-      if (!host) return;
-
-      const parent = host.parentElement as Record<string, any>;
-      const value = parent[parentProp];
-      if (value !== undefined) return value;
-      object = parent;
-    }
-  }
-
   #handleEvents(
     element: HTMLElement,
     attrName: string | undefined,
@@ -728,16 +710,6 @@ export class Wrec extends HTMLElement implements ChangeListener {
         } else {
           const {element, attrName} = ref;
           if (element instanceof CSSStyleRule) {
-            if (REFS_TEST_RE.test(String(value))) {
-              console.log('wrec.ts #react: propName =', propName);
-              value = this.#getAncestorProperty(propName);
-              console.log('wrec.ts #react: value =', value);
-              //TODO: THIS IS NOT GETTING THE CORRECT VALUE!
-              if (value === undefined) {
-                const {type} = this.#ctor.properties[propName];
-                value = defaultForType(type);
-              }
-            }
             element.style.setProperty(attrName, value);
           } else {
             updateValue(element, attrName, value);

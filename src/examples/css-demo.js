@@ -4,7 +4,7 @@ class CssDemo extends Wrec {
   static formAssociated = true;
   static properties = {
     name: {type: String},
-    value: {type: String, value: 'yellow'}
+    value: {type: String, value: 'blue'}
   };
 
   static css = css`
@@ -13,6 +13,11 @@ class CssDemo extends Wrec {
       flex-direction: column;
       gap: 0.5rem;
       font-family: sans-serif;
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      color: this.value;
     }
 
     .row {
@@ -22,6 +27,7 @@ class CssDemo extends Wrec {
 
     #swatch {
       background-color: this.value;
+      color: white;
       display: inline-block;
       padding: 1rem;
       width: 10rem;
@@ -33,6 +39,7 @@ class CssDemo extends Wrec {
       <label for="color-input">Color:</label>
       <input id="color-input" type="text" value="this.value" />
     </div>
+    <p>Sample text</p>
     <div id="swatch">The color is <span>this.value</span>.</div>
   `;
 }
