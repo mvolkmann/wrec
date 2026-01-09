@@ -483,6 +483,17 @@ export class Wrec extends HTMLElement implements ChangeListener {
         if (rule.constructor === CSSStyleRule) {
           const props = Array.from((rule as CSSStyleRule).style);
           for (const prop of props) {
+            /* WARNING:
+             * `style` elements in the static html value should be avoided.
+             * In `style` elements that appear in the static html value,
+             * property references like `this.value` are not supported.
+             * They are only supported in the static css value.
+             * The following does work inside `style` elements:
+             * .someClass {
+             *   --color: this.value;
+             *   color: var(--color);
+             * }
+             */
             if (prop.startsWith('--')) {
               const value = rule.style.getPropertyValue(prop);
               this.#registerPlaceholders(value, rule, prop);
@@ -707,14 +718,20 @@ export class Wrec extends HTMLElement implements ChangeListener {
         if (ref instanceof HTMLElement) {
           this.#updateElementContent(ref, value);
         } else if (ref instanceof CSSStyleRule) {
-          //TODO: Is this code ever reached?
-          debugger;
-          ref.style.setProperty(propName, value);
+          // We need to handle this case for completeness,
+          // but a ref is never just a CSSStyleRule.
+          // It can be an object with element and attrName properties
+          // where the element is a CSSStyleRule.
+          // The call to the #registerPlaceholders method
+          // in the #evaluateText method creates those.
+          // That case is is handled by the else block below.
         } else {
           const {element, attrName} = ref;
           if (element instanceof CSSStyleRule) {
             if (REFS_TEST_RE.test(String(value))) {
+              console.log('wrec.ts #react: propName =', propName);
               value = this.#getAncestorProperty(propName);
+              console.log('wrec.ts #react: value =', value);
               //TODO: THIS IS NOT GETTING THE CORRECT VALUE!
               if (value === undefined) {
                 const {type} = this.#ctor.properties[propName];
@@ -1175,7 +1192,8 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]) {
   // with an HTML comment containing the expression.
   while (true) {
     const match = HTML_ELEMENT_TEXT_RE.exec(result);
-    if (!match) break;
+    // Don't do this in style elements.
+    if (!match || match[1] === 'style') break;
     const textContent = removeHtmlComments(match[2]);
     if (REFS_TEST_RE.test(textContent)) {
       const comment = `<!-- ${textContent.trim()} -->`;
