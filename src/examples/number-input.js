@@ -28,6 +28,7 @@ class NumberInput extends Wrec {
 
     label {
       font-weight: bold;
+      margin-right: 0.5rem;
     }
   `;
 
