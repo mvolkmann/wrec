@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+    </style>
     <script src="counter-wrec.js" type="module"></script>
     <script>
       window.onload = () => {
@@ -13,7 +20,6 @@
   </head>
   <body>
     <counter-wrec label="Level" count="1"></counter-wrec>
-    <br />
     <counter-wrec label="Score" count="0"></counter-wrec>
   </body>
 </html>
