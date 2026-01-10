@@ -217,11 +217,13 @@ export class Wrec extends HTMLElement implements ChangeListener {
   static css = '';
   static formAssociated = false;
   static html = '';
-  static properties: Record<string, any> = {};
 
+  // There is one instance of `properties`, `propToComputedMap`,
+  // and `propToExprsMap` per Wrec subclass,
+  // not one for only the Wrec class.
+  static properties: Record<string, any> = {};
   // This map cannot be private.
   static propToComputedMap: Map<string, string[][]> | null = null;
-
   // This map cannot be private.
   static propToExprsMap: Map<string, string[]> | null = null;
 
@@ -243,9 +245,10 @@ export class Wrec extends HTMLElement implements ChangeListener {
 
   constructor() {
     super();
-
     this.attachShadow({mode: 'open'});
 
+    // Create one instance of `properties`, `propToComputedMap`,
+    // and `propToExprsMap` for each Wrec subclass.
     const ctor = this.#ctor;
     if (!ctor.properties) ctor.properties = {};
     if (!ctor.propToComputedMap) ctor.propToComputedMap = new Map();
