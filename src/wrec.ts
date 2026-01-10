@@ -214,23 +214,50 @@ export class Wrec extends HTMLElement implements ChangeListener {
   // This is used to lookup the kebab-case attribute name
   // that corresponds to a camelCase property name.
   static #propToAttrMap = new Map<string, string>();
+
+  // This can be set in each Wrec subclass.
+  // It describes CSS rules that a web component uses.
   static css = '';
+
+  // Set this to true in Wrec subclasses that need
+  // the ability to contribute data to form submissions.
   static formAssociated = false;
+
+  // This must be set in each Wrec subclass.
+  // It describes HTML that a web component renders.
   static html = '';
 
   // There is one instance of `properties`, `propToComputedMap`,
   // and `propToExprsMap` per Wrec subclass,
   // not one for only the Wrec class.
+
+  // This must be set in each Wrec subclass.
+  // It describes all the properties that a web component supports.
   static properties: Record<string, any> = {};
+
+  // This is a map from properties to arrays of
+  // computed property expressions that use the property.
+  // It is used to update computed properties
+  // when the properties on which they depend are modified.
+  // See the method #updateComputedProperties.
   // This map cannot be private.
   static propToComputedMap: Map<string, string[][]> | null = null;
+
+  // This is a map from properties to expressions that refer to them.
+  // It is the sma for all instances of a component.
   // This map cannot be private.
   static propToExprsMap: Map<string, string[]> | null = null;
 
   static template: HTMLTemplateElement | null = null;
 
   #ctor: typeof Wrec = this.constructor as typeof Wrec;
+
+  // This is a map from expressions to references to them
+  // which can be found in element text content,
+  // attribute values, and CSS property values.
+  // Each component instance needs its own map.
   #exprToRefsMap = new Map<string, Ref[]>();
+
   #formAssoc: Record<string, string> = {};
   #formData: FormData | undefined;
   #initialValuesMap: Record<string, any> = {};
