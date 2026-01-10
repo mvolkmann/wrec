@@ -260,7 +260,13 @@ export class Wrec extends HTMLElement implements ChangeListener {
 
   #formAssoc: Record<string, string> = {};
   #formData: FormData | undefined;
+
+  // For components that set `formAssociated` to true,
+  // this stores in the initial value of each property
+  // in the formAssociatedCallback method
+  // so they can be restored in the formResetCallback method.
   #initialValuesMap: Record<string, any> = {};
+
   #internals: ElementInternals | null = null;
 
   // This must be an instance property and cannot be private because
