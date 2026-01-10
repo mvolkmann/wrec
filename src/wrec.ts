@@ -269,8 +269,13 @@ export class Wrec extends HTMLElement implements ChangeListener {
 
   #internals: ElementInternals | null = null;
 
-  // This must be an instance property and cannot be private because
-  // child components need to access the property in their parent component.
+  // This is a map from properties in this web component
+  // to corresponding properties in a parent web component.
+  // This must be an instance property because
+  // each component instance can have its properties mapped
+  // to the properties of different parent components.
+  // This is used to update a parent property
+  // when the corresponding child property value changes.
   #propToParentPropMap = new Map<string, string>();
 
   // This tells TypeScript that it's okay to access properties by string keys.
@@ -435,6 +440,7 @@ export class Wrec extends HTMLElement implements ChangeListener {
   disconnectedCallback() {
     //TODO: Should more cleanup be performed here?
     this.#exprToRefsMap.clear();
+    this.#initialValuesMap.clear();
     this.#propToParentPropMap.clear();
   }
 
@@ -489,9 +495,9 @@ export class Wrec extends HTMLElement implements ChangeListener {
           }
         }
 
-        // If the element is a wrec web component,
+        // If the element is a wrec web component instance,
         // save a mapping from the attribute name in this web component
-        // to the property name in the parent web component.
+        // to the property name in that web component.
         if (isWC) {
           (element as Wrec).#propToParentPropMap.set(
             Wrec.getPropName(realAttrName),
