@@ -207,15 +207,24 @@ function updateValue(
 }
 
 export class Wrec extends HTMLElement implements ChangeListener {
+  // This is used to lookup the camelCase property name
+  // that corresponds to a kebab-case attribute name.
   static #attrToPropMap = new Map<string, string>();
-  static #idToPropertiesMap = new Map<string, any>();
+
+  // This is used to lookup the kebab-case attribute name
+  // that corresponds to a camelCase property name.
   static #propToAttrMap = new Map<string, string>();
   static css = '';
   static formAssociated = false;
   static html = '';
   static properties: Record<string, any> = {};
+
+  // This map cannot be private.
   static propToComputedMap: Map<string, string[][]> | null = null;
+
+  // This map cannot be private.
   static propToExprsMap: Map<string, string[]> | null = null;
+
   static template: HTMLTemplateElement | null = null;
 
   #ctor: typeof Wrec = this.constructor as typeof Wrec;
@@ -293,7 +302,6 @@ export class Wrec extends HTMLElement implements ChangeListener {
       if (this.shadowRoot) {
         this.#wireEvents(this.shadowRoot);
         this.#makeReactive(this.shadowRoot);
-        Wrec.#setProperties();
       }
       this.#computeProps();
     });
@@ -305,12 +313,6 @@ export class Wrec extends HTMLElement implements ChangeListener {
     for (const [propName, {computed}] of Object.entries(properties)) {
       if (computed) this[propName] = this.#evaluateInContext(computed);
     }
-  }
-
-  static dataForId(data: Record<string, any>): string {
-    const id = crypto.randomUUID();
-    Wrec.#idToPropertiesMap.set(id, data);
-    return id;
   }
 
   #defineProps() {
@@ -842,17 +844,6 @@ export class Wrec extends HTMLElement implements ChangeListener {
     if (!this.#formData || !isPrimitive(value)) return;
     this.#formData.set(propName, value);
     this.#internals?.setFormValue(this.#formData);
-  }
-
-  static #setProperties() {
-    for (const [id, properties] of Wrec.#idToPropertiesMap.entries()) {
-      const element = getElementById(document.body, id) as Record<string, any>;
-      if (element) {
-        for (const [propName, value] of Object.entries(properties)) {
-          element[propName] = value;
-        }
-      }
-    }
   }
 
   #throw(
