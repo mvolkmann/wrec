@@ -233,7 +233,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
   // This must be set in each Wrec subclass.
   // It describes all the properties that a web component supports.
-  static properties: Record<string, any> = {};
+  static properties: Record<string, any>;
 
   // This is a map from properties to arrays of
   // computed property expressions that use the property.
@@ -241,12 +241,13 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   // when the properties on which they depend are modified.
   // See the method #updateComputedProperties.
   // This map cannot be private.
-  static propToComputedMap: Map<string, string[][]> | null = null;
+  static propToComputedMap: Map<string, string[][]>;
 
   // This is a map from properties to expressions that refer to them.
   // It is the sma for all instances of a component.
   // This map cannot be private.
-  static propToExprsMap: Map<string, string[]> | null = null;
+  //static propToExprsMap: Map<string, string[]> | null = null;
+  static propToExprsMap: Map<string, string[]>;
 
   static template: HTMLTemplateElement | null = null;
 
@@ -768,7 +769,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   static register() {
     const elementName = this.elementName();
     if (!customElements.get(elementName)) {
-      customElements.define(elementName, this);
+      customElements.define(elementName, this as any);
     }
   }
 

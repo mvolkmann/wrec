@@ -15,7 +15,7 @@ class m extends Error {
 }
 const k = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g, P = "a-zA-Z_$", F = P + "0-9", b = `[${P}][${F}]*`, j = /<!--\s*(.*?)\s*-->/, _ = /<(\w+)(?:\s[^>]*)?>((?:[^<]|<(?!\w))*?)<\/\1>/g, A = new RegExp(`^this\\.${b}$`), y = new RegExp(`this\\.${b}(\\.${b})*`, "g"), N = new RegExp(`this\\.${b}(\\.${b})*`), V = /* @__PURE__ */ new Set(["class", "style"]), $ = 5;
 function I(r) {
-  return r instanceof HTMLButtonElement || r instanceof HTMLFieldSetElement || r instanceof HTMLInputElement || r instanceof HTMLSelectElement || r instanceof HTMLTextAreaElement || r instanceof u;
+  return r instanceof HTMLButtonElement || r instanceof HTMLFieldSetElement || r instanceof HTMLInputElement || r instanceof HTMLSelectElement || r instanceof HTMLTextAreaElement || r instanceof l;
 }
 function q(r, t, e) {
   const s = document.createElement(r);
@@ -64,14 +64,14 @@ function H(r, t, e) {
   if (S(e))
     if (typeof e == "boolean") {
       e ? r.setAttribute(s, s) : r.removeAttribute(s);
-      const i = u.getPropName(s);
+      const i = l.getPropName(s);
       r[i] = e;
     } else {
       const i = r.getAttribute(t), n = String(e);
       i !== n && (r.setAttribute(s, n), s === "value" && v(r) && (r.value = n));
     }
   else {
-    const i = u.getPropName(t);
+    const i = l.getPropName(t);
     r[i] = e;
   }
 }
@@ -79,7 +79,7 @@ function T(r, t, e) {
   const [s, o] = t.split(":");
   r instanceof CSSRule ? r.style.setProperty(s, e) : (H(r, s, e), s === "value" && v(r) && (r.value = e));
 }
-class u extends HTMLElement {
+class l extends HTMLElement {
   // This is used to lookup the camelCase property name
   // that corresponds to a kebab-case attribute name.
   static #p = /* @__PURE__ */ new Map();
@@ -100,18 +100,19 @@ class u extends HTMLElement {
   // not one for only the Wrec class.
   // This must be set in each Wrec subclass.
   // It describes all the properties that a web component supports.
-  static properties = {};
+  static properties;
   // This is a map from properties to arrays of
   // computed property expressions that use the property.
   // It is used to update computed properties
   // when the properties on which they depend are modified.
   // See the method #updateComputedProperties.
   // This map cannot be private.
-  static propToComputedMap = null;
+  static propToComputedMap;
   // This is a map from properties to expressions that refer to them.
   // It is the sma for all instances of a component.
   // This map cannot be private.
-  static propToExprsMap = null;
+  //static propToExprsMap: Map<string, string[]> | null = null;
+  static propToExprsMap;
   static template = null;
   #t = this.constructor;
   // This is a map from expressions to references to them
@@ -134,7 +135,7 @@ class u extends HTMLElement {
   // to the properties of different parent components.
   // This is used to update a parent property
   // when the corresponding child property value changes.
-  #l = /* @__PURE__ */ new Map();
+  #u = /* @__PURE__ */ new Map();
   constructor() {
     super(), this.attachShadow({ mode: "open" });
     const t = this.#t;
@@ -142,7 +143,7 @@ class u extends HTMLElement {
   }
   attributeChangedCallback(t, e, s) {
     t === "disabled" && this.#m();
-    const o = u.getPropName(t);
+    const o = l.getPropName(t);
     if (this.#n(o)) {
       const i = this.#y(o, String(s));
       this[o] = i;
@@ -179,7 +180,7 @@ class u extends HTMLElement {
       this.#M(o, i, e);
   }
   #M(t, e, s) {
-    const o = u.getAttrName(t), i = this.hasAttribute(o);
+    const o = l.getAttrName(t), i = this.hasAttribute(o);
     e.required && !i && this.#e(this, t, "is a required attribute");
     let n = e.value;
     this.hasOwnProperty(t) && (n = this[t], delete this[t]);
@@ -191,13 +192,13 @@ class u extends HTMLElement {
       },
       set(a) {
         h === Number && typeof a == "string" && (a = C(a));
-        const l = this[f];
-        if (a === l) return;
+        const u = this[f];
+        if (a === u) return;
         this.#F(t, h, a), this[f] = a;
         const { state: p, stateProp: g } = this.#t.properties[t];
         g && O(p, g, a), this.#L(t), this.#x(t, h, a, o), this.#E(t), this.#H(t, a);
         const M = this.#a[t];
-        M && this.setFormValue(M, String(a)), this.propertyChangedCallback(t, l, a), e.dispatch && this.dispatch("change", { [t]: a });
+        M && this.setFormValue(M, String(a)), this.propertyChangedCallback(t, u, a), e.dispatch && this.dispatch("change", { [t]: a });
       }
     });
   }
@@ -207,7 +208,7 @@ class u extends HTMLElement {
       I(s) && (s.disabled = t);
   }
   disconnectedCallback() {
-    this.#s.clear(), this.#f.clear(), this.#l.clear();
+    this.#s.clear(), this.#f.clear(), this.#u.clear();
   }
   dispatch(t, e) {
     this.dispatchEvent(
@@ -229,15 +230,15 @@ class u extends HTMLElement {
     return this.name.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
   }
   #R(t) {
-    const e = t instanceof u;
+    const e = t instanceof l;
     for (const s of t.getAttributeNames()) {
       const o = t.getAttribute(s), i = this.#g(t, o);
       if (i) {
         const n = this[i];
         n === void 0 && this.#c(t, s, i), t[i] = n;
         let [h, c] = s.split(":");
-        h === "value" && (c ? (t["on" + c] === void 0 && this.#e(t, s, "refers to an unsupported event name"), t.setAttribute(h, this[i])) : c = "change"), e && t.#l.set(
-          u.getPropName(h),
+        h === "value" && (c ? (t["on" + c] === void 0 && this.#e(t, s, "refers to an unsupported event name"), t.setAttribute(h, this[i])) : c = "change"), e && t.#u.set(
+          l.getPropName(h),
           i
         );
       }
@@ -313,12 +314,12 @@ class u extends HTMLElement {
     }
   }
   static getAttrName(t) {
-    let e = u.#d.get(t);
-    return e || (e = t.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), u.#d.set(t, e)), e;
+    let e = l.#d.get(t);
+    return e || (e = t.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), l.#d.set(t, e)), e;
   }
   static getPropName(t) {
-    let e = u.#p.get(t);
-    return e || (e = t.replace(/-([a-z])/g, (s, o) => o.toUpperCase()), u.#p.set(t, e)), e;
+    let e = l.#p.get(t);
+    return e || (e = t.replace(/-([a-z])/g, (s, o) => o.toUpperCase()), l.#p.set(t, e)), e;
   }
   #N(t, e, s) {
     if (s.length !== 1) return;
@@ -330,9 +331,9 @@ class u extends HTMLElement {
     h ? t["on" + h] === void 0 && this.#e(t, e, "refers to an unsupported event name") : h = "change";
     const f = E(o);
     t.addEventListener(h, (a) => {
-      const { target: l } = a;
-      if (!l) return;
-      const p = l.value, { type: g } = this.#t.properties[f];
+      const { target: u } = a;
+      if (!u) return;
+      const p = u.value, { type: g } = this.#t.properties[f];
       this[f] = g === Number ? C(p) : p, this.#E(f);
     });
   }
@@ -345,7 +346,7 @@ class u extends HTMLElement {
       this.#R(s), s.firstElementChild || this.#P(s);
   }
   static get observedAttributes() {
-    const t = Object.keys(this.properties || {}).map(u.getAttrName);
+    const t = Object.keys(this.properties || {}).map(l.getAttrName);
     return t.includes("disabled") || t.push("disabled"), t;
   }
   // Subclasses can override this to add functionality.
@@ -393,7 +394,7 @@ class u extends HTMLElement {
   // in attribute values or the text content of elements!
   #r(t, e, s = void 0) {
     if (!t) return;
-    const o = this.#u(e, s, t);
+    const o = this.#l(e, s, t);
     if (!o) {
       const c = t.replaceAll("this..", "this.");
       s ? T(e, s, c) : "textContent" in e && (e.textContent = c);
@@ -404,13 +405,13 @@ class u extends HTMLElement {
       const f = E(c);
       if (typeof this[f] == "function") return;
       const a = i.propToExprsMap;
-      let l = a.get(f);
-      l || (l = [], a.set(f, l)), l.includes(t) || l.push(t);
+      let u = a.get(f);
+      u || (u = [], a.set(f, u)), u.includes(t) || u.push(t);
     });
     for (const [c, f] of this.#s.entries())
       for (const a of f) {
-        const l = a instanceof HTMLElement || a instanceof CSSStyleRule ? a : a.element;
-        l instanceof CSSStyleRule || l.isConnected || this.#s.set(
+        const u = a instanceof HTMLElement || a instanceof CSSStyleRule ? a : a.element;
+        u instanceof CSSStyleRule || u.isConnected || this.#s.set(
           c,
           f.filter((p) => p !== a)
         );
@@ -479,7 +480,7 @@ class u extends HTMLElement {
   // Update corresponding parent web component property if bound to one.
   // VS Code thinks this is never called, but it is called by #defineProp.
   #H(t, e) {
-    const s = this.#l.get(t);
+    const s = this.#u.get(t);
     if (!s) return;
     const o = this.getRootNode();
     if (!(o instanceof ShadowRoot)) return;
@@ -527,7 +528,7 @@ class u extends HTMLElement {
             );
           continue;
         }
-        if (!e.has(u.getPropName(o))) {
+        if (!e.has(l.getPropName(o))) {
           if (o === "name") {
             if (t.formAssociated) continue;
             throw new m(
@@ -538,7 +539,7 @@ class u extends HTMLElement {
         }
       }
   }
-  #u(t, e, s) {
+  #l(t, e, s) {
     const o = s.match(y);
     if (o)
       return o.forEach((i) => {
@@ -586,9 +587,9 @@ class u extends HTMLElement {
           let h = n.slice(2);
           h = h[0].toLowerCase() + h.slice(1).toLowerCase();
           const c = i.value;
-          this.#u(s, n, c);
+          this.#l(s, n, c);
           let f;
-          typeof this[c] == "function" ? f = (a) => this[c](a) : (this.#u(s, n, c), f = () => this.#o(c)), s.addEventListener(h, f), o.push(n);
+          typeof this[c] == "function" ? f = (a) => this[c](a) : (this.#l(s, n, c), f = () => this.#o(c)), s.addEventListener(h, f), o.push(n);
         }
       }
       for (const i of o)
@@ -627,7 +628,7 @@ function Z(r, ...t) {
   return e;
 }
 export {
-  u as Wrec,
+  l as Wrec,
   q as createElement,
   z as css,
   Z as html
