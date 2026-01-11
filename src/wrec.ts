@@ -206,7 +206,7 @@ function updateValue(
   }
 }
 
-export class Wrec extends HTMLElement implements ChangeListener {
+export abstract class Wrec extends HTMLElement implements ChangeListener {
   // This is used to lookup the camelCase property name
   // that corresponds to a kebab-case attribute name.
   static #attrToPropMap = new Map<string, string>();
