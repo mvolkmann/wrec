@@ -173,3 +173,28 @@ This uses the `data-binding`, `number-slider`, `radio-group`,
 `select-list`, and `toggle-switch` components.
 
 `speedometer-demo.html` demonstrates fancy graphics.
+
+`state-demo.html` demonstrates using the `WrecState` class
+to share state across multiple wrec components.
+
+- This creates a `WrecState` object with the name "demo"
+  and with a "name" property set to "World".
+- The "value" property of the `labeled-input` component
+  is mapped to the state "name" property.
+- The "name" property of the `hello-world` component
+  is mapped to the state "name" property because
+  when no mapping is specified, identical property names are mapped.
+- Changing the input value in the `label-input` component and
+  moving focus to commit the change updates the state `name` property.
+- The `hello-world` component uses that same state property.
+- Clicking the "Reset" button sets the state "name" property
+  back to "World".
+- The state object can be retrieved and modified
+  in the DevTools console as follows:
+
+  ```js
+  state = WrecState.get('demo');
+  state; // to examine the entire object
+  state.name; // to see current value of "name" property
+  state.name = 'Earth'; // to modify "name" property
+  ```
