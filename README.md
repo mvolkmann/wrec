@@ -41,12 +41,12 @@ Here are the steps:
 
 1. Create a new directory for the project and `cd` to it.
 
-1. Create a `package.json` file entering `npm init`.
+1. Enter `npm init -y` to create a `package.json` file.
 
-1. Install wrec by entering `npm i wrec`.
+1. Enter `npm i wrec` to install the wrec library.
 
-1. Install vite by entering `npm i -D vite`.
-   This is only used to run a local HTTP server.
+1. Enter `npm i -D vite` to install vite.
+   This is used to run a local HTTP server.
 
 1. Add the following script in `package.json`:
 
@@ -91,7 +91,7 @@ Here are the steps:
          </button>
          <span>this.count</span>
          <button onClick="this.count++" type="button">+</button>
-         <span>(this.count < 10 ? "single" : "double") + " digit"</span>
+         <span>(this.count < 10 ? "single" : "multi") + "-digit"</span>
        </div>
      `;
    }
@@ -113,7 +113,7 @@ Here are the steps:
    </html>
    ```
 
-1. Start a local server by entering `npm run dev`.
+1. Enter `npm run dev` to start a local server.
 
 1. Browse localhost:5173.
 
