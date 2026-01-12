@@ -769,6 +769,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   static register() {
     const elementName = this.elementName();
     if (!customElements.get(elementName)) {
+      // "as any" is needed here because Wrec is an abstract class.
       customElements.define(elementName, this as any);
     }
   }
