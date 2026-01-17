@@ -3,7 +3,7 @@ import {
   expectAttribute,
   expectProperty,
   getProperty,
-  setAttribute,
+  setProperty,
   waitForNextFrame
 } from './util';
 
@@ -21,6 +21,7 @@ test('colors', async ({page}) => {
   const selectList = dataBinding.locator('select-list');
   const span = dataBinding.locator('#selected-color');
 
+  await waitForNextFrame(page); // unclear why this is needed
   let color = await getProperty(dataBinding, 'color');
   await expectProperty(radioGroup, 'value', color);
   await expectProperty(selectList, 'value', color);
@@ -44,8 +45,7 @@ test('colors', async ({page}) => {
   await expect(span).toHaveText(color);
 
   async function testColors(values: string) {
-    //await waitForNextFrame(page); // not reliable in this case
-    await page.waitForTimeout(300);
+    await waitForNextFrame(page);
 
     // The first option should be selected.
     const color = values.split(',')[0];
@@ -80,9 +80,9 @@ test('colors', async ({page}) => {
 
   let values = '';
 
-  // Change the list of values in the binding-demo element.
+  // Change the list of values in the data-binding element.
   values = 'pink,yellow';
-  await setAttribute(dataBinding, 'colors', values);
+  await setProperty(dataBinding, 'colors', values);
   await testColors(values);
 
   const capitalize = (str: string) =>
@@ -91,15 +91,15 @@ test('colors', async ({page}) => {
   // Change the list of values in the radio-group element.
   values = 'white,gray,black';
   let labels = values.split(',').map(capitalize).join(',');
-  await setAttribute(radioGroup, 'labels', labels);
-  await setAttribute(radioGroup, 'values', values);
+  await setProperty(radioGroup, 'labels', labels);
+  await setProperty(radioGroup, 'values', values);
   await testColors(values);
 
   // Change the list of values in the select-list element.
   values = 'purple,orange,cyan,brown';
   labels = values.split(',').map(capitalize).join(',');
-  await setAttribute(selectList, 'labels', labels);
-  await setAttribute(selectList, 'values', values);
+  await setProperty(selectList, 'labels', labels);
+  await setProperty(selectList, 'values', values);
   await testColors(values);
 });
 
@@ -110,19 +110,17 @@ test('disabled', async ({page}) => {
   const selectList = dataBinding.locator('select-list');
   const toggleSwitch = dataBinding.locator('toggle-switch');
 
-  let enabled = await getProperty(dataBinding, 'enabled');
+  const enabled = await getProperty(dataBinding, 'enabled');
   expect(enabled).toBe(true);
-  await expectAttribute(radioGroup, 'disabled', !enabled);
-  await expectAttribute(selectList, 'disabled', !enabled);
-  await expectAttribute(numberSlider, 'disabled', !enabled);
+  await expectAttribute(radioGroup, 'disabled', false);
+  await expectAttribute(selectList, 'disabled', false);
+  await expectAttribute(numberSlider, 'disabled', false);
 
   await toggleSwitch.click();
-  //await waitForNextFrame(page); // not reliable in this case
-  await page.waitForTimeout(200);
-
-  enabled = await getProperty(dataBinding, 'enabled');
-  await expect(enabled).toBe(false);
-  await expectAttribute(radioGroup, 'disabled', !enabled);
-  await expectAttribute(selectList, 'disabled', !enabled);
-  await expectAttribute(numberSlider, 'disabled', !enabled);
+  // Wait for the enabled property of the data-binding element
+  // to be set to false.
+  await expect(dataBinding).toHaveJSProperty('enabled', false);
+  await expectAttribute(radioGroup, 'disabled', true);
+  await expectAttribute(selectList, 'disabled', true);
+  await expectAttribute(numberSlider, 'disabled', true);
 });

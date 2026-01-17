@@ -3,14 +3,21 @@ import {expect, Locator, Page} from '@playwright/test';
 export async function expectAttribute(
   locator: Locator,
   attributeName: string,
-  expectedValue: boolean | number | string
+  expectedValue: boolean | number | string | null
 ) {
-  let value = await locator.evaluate(
-    (el: Element, attributeName) => (el as any).getAttribute(attributeName),
-    attributeName
-  );
-  if (typeof expectedValue === 'boolean') value = Boolean(value);
-  return expect(value).toBe(expectedValue);
+  if (typeof expectedValue === 'boolean') {
+    if (expectedValue) {
+      return await expect(locator).toHaveAttribute(attributeName);
+    } else {
+      return await expect(locator).not.toHaveAttribute(attributeName);
+    }
+  } else {
+    const value = await locator.evaluate(
+      (el: Element, attributeName) => (el as any).getAttribute(attributeName),
+      attributeName
+    );
+    return expect(value).toBe(expectedValue);
+  }
 }
 
 export async function expectProperty(
