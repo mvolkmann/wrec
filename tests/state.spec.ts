@@ -1,9 +1,9 @@
 import {expect, Page, test} from '@playwright/test';
 import {WrecState} from '../src/wrec-state';
-import {showBrowserConsole} from './util';
+//import {showBrowserConsole} from './util';
 
 test.beforeEach(async ({page}: {page: Page}) => {
-  showBrowserConsole(page);
+  //showBrowserConsole(page);
   await page.goto('http://localhost:5173/examples/state-demo.html');
 });
 
@@ -12,14 +12,12 @@ test('hello-world', async ({page}: {page: Page}) => {
   const input = liLocator.locator('input');
   const hwLocator = page.locator('hello-world');
 
-  await page.waitForFunction(() => typeof WrecState !== 'undefined');
-  const state = await page.evaluate(() => {
-    return WrecState.get('demo');
-  });
-  console.log('state.spec.ts: state =', state);
-
   async function assertName(name: string) {
-    //await expect(state?.name).toBe(name);
+    const stateValue = await page.evaluate(() => {
+      const state = WrecState.get('demo');
+      return state?.name;
+    });
+    await expect(stateValue).toBe(name);
     await expect(input).toHaveValue(name);
     await expect(hwLocator).toHaveText(`Hello, ${name}!`);
   }
