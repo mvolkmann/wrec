@@ -102,7 +102,7 @@ Here are the steps:
 1. Create the file `index.html` containing the following.
 
    ```html
-   <!DOCTYPE html>
+   <!doctype html>
    <html lang="en">
      <head>
        <script src="my-counter.js" type="module"></script>

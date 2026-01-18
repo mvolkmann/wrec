@@ -20,7 +20,7 @@ class ColorDemo extends Wrec {
   `;
 
   static html = html`
-    <form action="/process" method="POST">
+    <form action="/process" method="post">
       <color-picker
         color="this.color"
         form-assoc="red: r, green: g, blue: b"

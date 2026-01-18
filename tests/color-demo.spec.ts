@@ -1,5 +1,5 @@
 import {expect, Locator, Page, test} from '@playwright/test';
-import {setInputRangeValue} from './util';
+import {setInputRangeValue, waitForNextFrame} from './util';
 
 test.beforeEach(async ({page}: {page: Page}) => {
   await page.goto('http://localhost:5173/examples/color-demo.html');
@@ -32,6 +32,12 @@ test('sliders', async ({page}: {page: Page}) => {
 
   async function testColor(slider: Locator, value: number) {
     await setInputRangeValue(slider, value);
+
+    // It is unclear why this must be called twice.
+    // Is it because the setInputRangeValue function dispatches two events?
+    await waitForNextFrame(page);
+    await waitForNextFrame(page);
+
     const expected = `rgb(${red}, ${green}, ${blue})`;
     return expect(p).toHaveCSS('color', expected);
   }
