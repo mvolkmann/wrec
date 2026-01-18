@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <style>
@@ -12,18 +12,17 @@
     <script type="module">
       import {WrecState} from '../wrec-state.js';
 
-      window.onload = () => {
-        const state = new WrecState('demo', false, {name: 'World'});
-        const li = document.querySelector('labeled-input');
-        li.useState(state, {name: 'value'});
-        const hw = document.querySelector('hello-world');
-        hw.useState(state);
+      const state = new WrecState('demo', false, {name: 'World'});
+      const li = document.querySelector('labeled-input');
+      li.useState(state, {name: 'value'});
+      const hw = document.querySelector('hello-world');
+      hw.useState(state);
 
-        const button = document.querySelector('button');
-        button.addEventListener('click', () => {
-          state.name = 'World';
-        });
-      };
+      const button = document.querySelector('button');
+      button.addEventListener('click', () => {
+        const newState = WrecState.get('demo');
+        state.name = 'World';
+      });
     </script>
   </head>
   <body>

@@ -65,6 +65,10 @@ export function setInputRangeValue(locator: Locator, value: number) {
   }, value);
 }
 
+export function showBrowserConsole(page: Page) {
+  page.on('console', msg => console.log('Browser: ' + msg.text()));
+}
+
 export function waitForNextFrame(page: Page) {
   return page.evaluate(() => new Promise(requestAnimationFrame));
 }
