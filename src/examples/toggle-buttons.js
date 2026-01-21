@@ -1,6 +1,7 @@
 import {css, html, Wrec} from '../wrec';
 
 //TODO: Compare this to the vanilla version.
+// It is a great example of how much wrec simplifies the code.
 class ToggleButtons extends Wrec {
   static properties = {
     labels: {type: String},
