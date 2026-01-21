@@ -9,24 +9,31 @@ class ToggleButtons extends Wrec {
   };
 
   static css = css`
-    /*TODO: Can you remove the span wrapper and use :host here? */
-    span {
+    :host > * {
       display: flex;
-      gap: 0.25rem;
     }
 
     button {
-      background-color: var(--button-bg-color, lightgreen);
-      border: none;
-      border-radius: 0.5rem;
+      --radius: var(--border-radius, 0.5rem);
+      --border: var(--border-width, 1px) solid var(--border-color, gray);
+      background-color: var(--button-bg-color, lightgray);
+      border: var(--border);
+      border-right: none;
       color: var(--button-color, black);
       font-weight: bold;
-      padding: 0.5rem;
+      padding: var(--radius);
+      &:first-of-type {
+        border-radius: var(--radius) 0 0 var(--radius);
+      }
+      &:last-of-type {
+        border-radius: 0 var(--radius) var(--radius) 0;
+        border-right: var(--border);
+      }
     }
 
     button.selected {
-      background-color: var(--button-selected-bg-color, green);
-      color: var(--button-selected-color, white);
+      background-color: var(--button-selected-bg-color, lightgreen);
+      color: var(--button-selected-color, black);
     }
   `;
 
@@ -37,18 +44,13 @@ class ToggleButtons extends Wrec {
   }
 
   makeButtons(labels) {
-    return labels
-      .split(',')
-      .map(
-        label => html`
-          <button
-            class="this.value === '${label}' ? 'selected' : ''"
-            onClick="handleClick"
-          >
-            ${label}
-          </button>
-        `
-      );
+    const labelArray = labels.split(',');
+    return labelArray.map(label => {
+      const classExpr = `this.value === '${label}' ? 'selected' : ''`;
+      return html`
+        <button class="${classExpr}" onClick="handleClick">${label}</button>
+      `;
+    });
   }
 }
 
