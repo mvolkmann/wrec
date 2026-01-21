@@ -228,7 +228,6 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   //static propToExprsMap: Map<string, string[]> | null = null;
   static propToExprsMap: Map<string, string[]>;
 
-  static stylesheet: CSSStyleSheet | null = null;
   static template: HTMLTemplateElement | null = null;
 
   #ctor: typeof Wrec = this.constructor as typeof Wrec;
@@ -298,14 +297,11 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     const ctor = this.#ctor;
 
     if (ctor.css) {
-      let stylesheet = ctor.stylesheet;
-      if (!stylesheet) {
-        stylesheet = ctor.stylesheet = new CSSStyleSheet();
-        // Include a CSS rule that respects the "hidden" attribute.
-        // This is a web.dev custom element best practice.
-        const css = `:host([hidden]) { display: none; } ${ctor.css}`;
-        stylesheet.replaceSync(css);
-      }
+      const stylesheet = new CSSStyleSheet();
+      // Include a CSS rule that respects the "hidden" attribute.
+      // This is a web.dev custom element best practice.
+      const css = `:host([hidden]) { display: none; } ${ctor.css}`;
+      stylesheet.replaceSync(css);
       this.shadowRoot.adoptedStyleSheets = [stylesheet];
     }
 

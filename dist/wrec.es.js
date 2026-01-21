@@ -13,7 +13,7 @@ function H(r, t, e) {
 }
 class m extends Error {
 }
-const O = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g, P = "a-zA-Z_$", F = P + "0-9", b = `[${P}][${F}]*`, j = /<!--\s*(.*?)\s*-->/, V = /<(\w+)(?:\s[^>]*)?>((?:[^<]|<(?!\w))*?)<\/\1>/g, A = new RegExp(`^this\\.${b}$`), E = new RegExp(`this\\.${b}(\\.${b})*`, "g"), N = new RegExp(`this\\.${b}(\\.${b})*`), _ = /* @__PURE__ */ new Set(["class", "style"]), $ = 5;
+const O = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g, P = "a-zA-Z_$", F = P + "0-9", b = `[${P}][${F}]*`, j = /<!--\s*(.*?)\s*-->/, V = /<(\w+)(?:\s[^>]*)?>((?:[^<]|<(?!\w))*?)<\/\1>/g, A = new RegExp(`^this\\.${b}$`), E = new RegExp(`this\\.${b}(\\.${b})*`, "g"), $ = new RegExp(`this\\.${b}(\\.${b})*`), _ = /* @__PURE__ */ new Set(["class", "style"]), N = 5;
 function I(r) {
   return r instanceof HTMLButtonElement || r instanceof HTMLFieldSetElement || r instanceof HTMLInputElement || r instanceof HTMLSelectElement || r instanceof HTMLTextAreaElement || r instanceof u;
 }
@@ -32,7 +32,7 @@ function w(r) {
     t.push(e), e.shadowRoot && t.push(...w(e.shadowRoot)), e.firstElementChild && t.push(...w(e)), e = e.nextElementSibling;
   return t;
 }
-const g = (r) => r.substring($).split(".")[0];
+const g = (r) => r.substring(N).split(".")[0];
 function x(r, t) {
   let e = r[0];
   return t.forEach((s, o) => {
@@ -113,7 +113,6 @@ class u extends HTMLElement {
   // This map cannot be private.
   //static propToExprsMap: Map<string, string[]> | null = null;
   static propToExprsMap;
-  static stylesheet = null;
   static template = null;
   #t = this.constructor;
   // This is a map from expressions to references to them
@@ -156,16 +155,16 @@ class u extends HTMLElement {
     if (!this.shadowRoot) return;
     const t = this.#t;
     if (t.css) {
-      let s = t.stylesheet;
-      if (!s) {
-        s = t.stylesheet = new CSSStyleSheet();
-        const o = `:host([hidden]) { display: none; } ${t.css}`;
-        s.replaceSync(o);
-      }
-      this.shadowRoot.adoptedStyleSheets = [s];
+      const s = new CSSStyleSheet(), o = `:host([hidden]) { display: none; } ${t.css}`;
+      s.replaceSync(o), this.shadowRoot.adoptedStyleSheets = [s];
     }
     let e = t.template;
-    e || (e = t.template = document.createElement("template"), e.innerHTML = t.html), this.shadowRoot.replaceChildren(e.content.cloneNode(!0));
+    if (!e) {
+      e = t.template = document.createElement("template");
+      const s = t.html.trim();
+      e.innerHTML = s.startsWith("<") ? s : `<span><!--${s}--></span>`;
+    }
+    this.shadowRoot.replaceChildren(e.content.cloneNode(!0));
   }
   changed(t, e, s) {
     this[e] = s;
@@ -175,7 +174,7 @@ class u extends HTMLElement {
       if (this.shadowRoot) {
         this.#C(this.shadowRoot), this.#b(this.shadowRoot);
         for (const t of this.shadowRoot.adoptedStyleSheets)
-          this.#$(t);
+          this.#N(t);
       }
       this.#T();
     });
@@ -332,7 +331,7 @@ class u extends HTMLElement {
     let e = u.#p.get(t);
     return e || (e = t.replace(/-([a-z])/g, (s, o) => o.toUpperCase()), u.#p.set(t, e)), e;
   }
-  #N(t, e, s) {
+  #$(t, e, s) {
     if (s.length !== 1) return;
     const [o] = s;
     if (!A.test(o)) return;
@@ -356,7 +355,7 @@ class u extends HTMLElement {
     for (const s of e)
       this.#M(s), s.firstElementChild || this.#P(s);
   }
-  #$(t) {
+  #N(t) {
     const e = t.cssRules || t.rules;
     for (const s of Array.from(e))
       if (s instanceof CSSStyleRule) {
@@ -405,7 +404,7 @@ class u extends HTMLElement {
     }
     const h = s.match(E) || [];
     for (const a of h) {
-      const f = a.substring($);
+      const f = a.substring(N);
       this[f] === void 0 && this.#a(null, t, f), typeof this[f] != "function" && n(f, s);
     }
     if (o)
@@ -439,7 +438,7 @@ class u extends HTMLElement {
         );
       }
     let n = this.#s.get(t);
-    n || (n = [], this.#s.set(t, n)), n.push(s ? { element: e, attrName: s } : e), e instanceof HTMLElement && this.#N(e, s, o);
+    n || (n = [], this.#s.set(t, n)), n.push(s ? { element: e, attrName: s } : e), e instanceof HTMLElement && this.#$(e, s, o);
     const h = this.#o(t);
     s ? C(e, s, h) : this.#S(e, h);
   }
@@ -625,7 +624,7 @@ function z(r, ...t) {
     const s = O.exec(e);
     if (!s) break;
     const o = s[2];
-    if (N.test(o)) {
+    if ($.test(o)) {
       const i = s[1];
       if (!i.startsWith("--")) {
         const n = `--${i}: ${o};
@@ -642,7 +641,7 @@ function Z(r, ...t) {
     const s = V.exec(e);
     if (!s || s[1] === "style") break;
     const o = B(s[2]);
-    if (N.test(o)) {
+    if ($.test(o)) {
       const i = `<!-- ${o.trim()} -->`, n = s.index + s[0].indexOf(">") + 1;
       e = L(e, n, o.length, i);
     }
