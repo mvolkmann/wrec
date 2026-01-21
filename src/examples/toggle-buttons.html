@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <script src="toggle-buttons.js" type="module"></script>
+    <style>
+      body {
+        font-family: sans-serif;
+      }
+    </style>
+    <script type="module">
+      const span = document.querySelector('#value');
+      const toggleButtons = document.querySelector('toggle-buttons');
+      span.textContent = toggleButtons.value;
+      document.body.addEventListener('change', e => {
+        if (e.target.localName === 'toggle-buttons') {
+          span.textContent = e.detail.value;
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <toggle-buttons
+      labels="Baseball,Basketball,Football,Hockey"
+      value="Football"
+    ></toggle-buttons>
+    <p>You selected <span id="value"></span>.</p>
+  </body>
+</html>
