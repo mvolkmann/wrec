@@ -30,7 +30,7 @@ class ToggleButtons extends Wrec {
     }
   `;
 
-  static html = html`<span>this.makeButtons(this.labels)</span>`;
+  static html = 'this.makeButtons(this.labels)';
 
   handleClick(event) {
     this.value = event.target.textContent.trim();

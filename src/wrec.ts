@@ -86,27 +86,6 @@ function getAllDescendants(root: Element | ShadowRoot): Element[] {
   return elements;
 }
 
-// This differs from document.getElementById
-// in that it searches across open shadow DOMs.
-function getElementById(root: Element, id: string): Element | null {
-  if (root.id === id) return root;
-
-  const {shadowRoot} = root;
-  if (shadowRoot) {
-    for (const child of Array.from(shadowRoot.children)) {
-      const el = getElementById(child, id);
-      if (el) return el;
-    }
-  }
-
-  for (const child of Array.from(root.children)) {
-    const el = getElementById(child, id);
-    if (el) return el;
-  }
-
-  return null;
-}
-
 // This takes a string like "this.foo.bar" and returns "foo".
 const getPropName = (str: string) => str.substring(SKIP).split('.')[0];
 
@@ -333,7 +312,12 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     let template = ctor.template;
     if (!template) {
       template = ctor.template = document.createElement('template');
-      template.innerHTML = ctor.html;
+      const html = ctor.html.trim();
+      // If the HTML string does not start with <,
+      // assume it is a JavaScript expression.
+      template.innerHTML = html.startsWith('<')
+        ? html
+        : `<span><!--${html}--></span>`;
     }
     this.shadowRoot.replaceChildren(template.content.cloneNode(true));
   }
@@ -715,7 +699,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       if (!element.firstElementChild) this.#evaluateText(element);
     }
     /* These lines are useful for debugging.
-    if (this.constructor.name === 'ColorPicker') {
+    if (this.constructor.name === 'ToggleButtons') {
       console.log('=== this.constructor.name =', this.constructor.name);
       console.log('propToExprsMap =', this.#ctor.propToExprsMap);
       console.log('#exprToRefsMap =', this.#exprToRefsMap);
