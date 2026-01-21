@@ -58,14 +58,14 @@ const defaultForType = (type: AnyClass) =>
   type === String
     ? ''
     : type === Number
-    ? 0
-    : type === Boolean
-    ? false
-    : type === Array
-    ? []
-    : type === Object
-    ? {}
-    : undefined;
+      ? 0
+      : type === Boolean
+        ? false
+        : type === Array
+          ? []
+          : type === Object
+            ? {}
+            : undefined;
 
 // This returns an array of all descendant elements of a given element,
 // including those in nested shadow DOMs.
@@ -249,6 +249,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   //static propToExprsMap: Map<string, string[]> | null = null;
   static propToExprsMap: Map<string, string[]>;
 
+  static stylesheet: CSSStyleSheet | null = null;
   static template: HTMLTemplateElement | null = null;
 
   #ctor: typeof Wrec = this.constructor as typeof Wrec;
@@ -313,19 +314,28 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   }
 
   #buildDOM() {
+    if (!this.shadowRoot) return;
+
     const ctor = this.#ctor;
+
+    if (ctor.css) {
+      let stylesheet = ctor.stylesheet;
+      if (!stylesheet) {
+        stylesheet = ctor.stylesheet = new CSSStyleSheet();
+        // Include a CSS rule that respects the "hidden" attribute.
+        // This is a web.dev custom element best practice.
+        const css = `:host([hidden]) { display: none; } ${ctor.css}`;
+        stylesheet.replaceSync(css);
+      }
+      this.shadowRoot.adoptedStyleSheets = [stylesheet];
+    }
+
     let template = ctor.template;
     if (!template) {
       template = ctor.template = document.createElement('template');
-      // Include a CSS rule that respects the "hidden" attribute.
-      // This is a web.dev custom element best practice.
-      let text = '<style> :host([hidden]) { display: none; } ';
-      if (ctor.css) text += ctor.css;
-      text += '</style>';
-      text += ctor.html;
-      template.innerHTML = text;
+      template.innerHTML = ctor.html;
     }
-    this.shadowRoot?.replaceChildren(template.content.cloneNode(true));
+    this.shadowRoot.replaceChildren(template.content.cloneNode(true));
   }
 
   changed(statePath: string, componentProp: string, newValue: unknown) {
@@ -344,6 +354,9 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       if (this.shadowRoot) {
         this.#wireEvents(this.shadowRoot);
         this.#makeReactive(this.shadowRoot);
+        for (const styleSheet of this.shadowRoot.adoptedStyleSheets) {
+          this.#makeReactiveStyleSheet(styleSheet);
+        }
       }
       this.#computeProps();
     });
@@ -392,8 +405,8 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       type === Boolean
         ? value || has
         : observedAttributes.includes(attrName) && has
-        ? this.#typedAttribute(propName, attrName)
-        : value || defaultForType(type);
+          ? this.#typedAttribute(propName, attrName)
+          : value || defaultForType(type);
     const privateName = '#' + propName;
     this[privateName] = typedValue;
 
@@ -711,6 +724,20 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       console.log('\n');
     }
     */
+  }
+
+  #makeReactiveStyleSheet(styleSheet: CSSStyleSheet) {
+    const rules = styleSheet.cssRules || styleSheet.rules;
+    for (const rule of Array.from(rules)) {
+      if (rule instanceof CSSStyleRule) {
+        for (const prop of Array.from(rule.style)) {
+          if (prop.startsWith('--')) {
+            const value = rule.style.getPropertyValue(prop);
+            this.#registerPlaceholders(value, rule, prop);
+          }
+        }
+      }
+    }
   }
 
   static get observedAttributes() {
