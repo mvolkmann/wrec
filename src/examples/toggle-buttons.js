@@ -33,27 +33,25 @@ class ToggleButtons extends Wrec {
 
   connectedCallback() {
     super.connectedCallback();
-    requestAnimationFrame(this.updateSelected.bind(this));
   }
 
   handleClick(event) {
-    this.value = event.target.textContent;
-    this.updateSelected();
+    this.value = event.target.textContent.trim();
   }
 
   makeButtons(labels) {
     return labels
       .split(',')
-      .map(label => html`<button onClick="handleClick">${label}</button>`);
-  }
-
-  updateSelected() {
-    const {value} = this;
-    for (const button of this.shadowRoot.querySelectorAll('button')) {
-      const match = button.textContent === value;
-      button.classList.toggle('selected', match);
-      if (!match) button.removeAttribute('class');
-    }
+      .map(
+        label => html`
+          <button
+            class="this.value === '${label}' ? 'selected' : ''"
+            onClick="handleClick"
+          >
+            ${label}
+          </button>
+        `
+      );
   }
 }
 
