@@ -39,6 +39,14 @@ function canDisable(element: Element) {
   );
 }
 
+function cloneStylesheet(original: CSSStyleSheet) {
+  const clone = new CSSStyleSheet();
+  for (const rule of Array.from(original.cssRules)) {
+    clone.insertRule(rule.cssText);
+  }
+  return clone;
+}
+
 export function createElement(
   name: string,
   attributes: Record<string, string>,
@@ -175,7 +183,7 @@ function updateValue(
 ) {
   const [realAttrName, _eventName] = attrName.split(':');
 
-  if (element instanceof CSSRule) {
+  if (element instanceof CSSStyleRule) {
     element.style.setProperty(realAttrName, value); // CSS variable
   } else {
     updateAttribute(element, realAttrName, value);
@@ -228,6 +236,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   //static propToExprsMap: Map<string, string[]> | null = null;
   static propToExprsMap: Map<string, string[]>;
 
+  static stylesheet: CSSStyleSheet | null = null;
   static template: HTMLTemplateElement | null = null;
 
   #ctor: typeof Wrec = this.constructor as typeof Wrec;
@@ -297,12 +306,15 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     const ctor = this.#ctor;
 
     if (ctor.css) {
-      const stylesheet = new CSSStyleSheet();
-      // Include a CSS rule that respects the "hidden" attribute.
-      // This is a web.dev custom element best practice.
-      const css = `:host([hidden]) { display: none; } ${ctor.css}`;
-      stylesheet.replaceSync(css);
-      this.shadowRoot.adoptedStyleSheets = [stylesheet];
+      let {stylesheet} = ctor;
+      if (!stylesheet) {
+        stylesheet = ctor.stylesheet = new CSSStyleSheet();
+        // Include a CSS rule that respects the "hidden" attribute.
+        // This is a web.dev custom element best practice.
+        const css = `:host([hidden]) { display: none; } ${ctor.css}`;
+        stylesheet.replaceSync(css);
+      }
+      this.shadowRoot.adoptedStyleSheets = [cloneStylesheet(stylesheet)];
     }
 
     let template = ctor.template;
@@ -695,7 +707,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       if (!element.firstElementChild) this.#evaluateText(element);
     }
     /* These lines are useful for debugging.
-    if (this.constructor.name === 'ToggleButtons') {
+    if (this.constructor.name === 'ColorDemo') {
       console.log('=== this.constructor.name =', this.constructor.name);
       console.log('propToExprsMap =', this.#ctor.propToExprsMap);
       console.log('#exprToRefsMap =', this.#exprToRefsMap);
@@ -707,7 +719,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   }
 
   #makeReactiveStyleSheet(styleSheet: CSSStyleSheet) {
-    const rules = styleSheet.cssRules || styleSheet.rules;
+    const rules = styleSheet.cssRules;
     for (const rule of Array.from(rules)) {
       if (rule instanceof CSSStyleRule) {
         for (const prop of Array.from(rule.style)) {
@@ -1192,7 +1204,7 @@ export function css(strings: TemplateStringsArray, ...values: unknown[]) {
       const propName = match[1];
       if (!propName.startsWith('--')) {
         const replacement = `--${propName}: ${propValue};
-        ${propName}: var(--${propName});`;
+      ${propName}: var(--${propName})`;
         result = replace(result, match.index, match[0].length, replacement);
       }
     }
