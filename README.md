@@ -172,6 +172,11 @@ by modifying attribute values or property values.
 This uses the `data-binding`, `number-slider`, `radio-group`,
 `select-list`, and `toggle-switch` components.
 
+`toggle-buttons.html` demonstrates a web component that
+allows the user to select one option from a set of options,
+like an HTML select element, but with a different UI.
+This uses the `toggle-buttons` component.
+
 `speedometer-demo.html` demonstrates fancy graphics.
 
 `state-demo.html` demonstrates using the `WrecState` class
