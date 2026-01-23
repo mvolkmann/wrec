@@ -39,14 +39,6 @@ function canDisable(element: Element) {
   );
 }
 
-function cloneStylesheet(original: CSSStyleSheet) {
-  const clone = new CSSStyleSheet();
-  for (const rule of Array.from(original.cssRules)) {
-    clone.insertRule(rule.cssText);
-  }
-  return clone;
-}
-
 export function createElement(
   name: string,
   attributes: Record<string, string>,
@@ -233,10 +225,8 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   // This is a map from properties to expressions that refer to them.
   // It is the sma for all instances of a component.
   // This map cannot be private.
-  //static propToExprsMap: Map<string, string[]> | null = null;
   static propToExprsMap: Map<string, string[]>;
 
-  static stylesheet: CSSStyleSheet | null = null;
   static template: HTMLTemplateElement | null = null;
 
   #ctor: typeof Wrec = this.constructor as typeof Wrec;
@@ -304,29 +294,24 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     if (!this.shadowRoot) return;
 
     const ctor = this.#ctor;
-
-    if (ctor.css) {
-      let {stylesheet} = ctor;
-      if (!stylesheet) {
-        stylesheet = ctor.stylesheet = new CSSStyleSheet();
-        // Include a CSS rule that respects the "hidden" attribute.
-        // This is a web.dev custom element best practice.
-        const css = `:host([hidden]) { display: none; } ${ctor.css}`;
-        stylesheet.replaceSync(css);
-      }
-      this.shadowRoot.adoptedStyleSheets = [cloneStylesheet(stylesheet)];
-    }
-
-    let template = ctor.template;
+    let {template} = ctor;
     if (!template) {
       template = ctor.template = document.createElement('template');
-      const html = ctor.html.trim();
+
+      // Include a CSS rule that respects the "hidden" attribute.
+      // This is a web.dev custom element best practice.
+      let style = `<style>\n    :host([hidden]) { display: none; }`;
+      if (ctor.css) style += ctor.css;
+      style += '</style>\n';
+
+      let html = ctor.html.trim();
       // If the HTML string does not start with <,
       // assume it is a JavaScript expression.
-      template.innerHTML = html.startsWith('<')
-        ? html
-        : `<span><!--${html}--></span>`;
+      if (!html.startsWith('<')) html = `<span><!--${html}--></span>`;
+
+      template.innerHTML = style + html;
     }
+
     this.shadowRoot.replaceChildren(template.content.cloneNode(true));
   }
 
@@ -346,9 +331,6 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       if (this.shadowRoot) {
         this.#wireEvents(this.shadowRoot);
         this.#makeReactive(this.shadowRoot);
-        for (const styleSheet of this.shadowRoot.adoptedStyleSheets) {
-          this.#makeReactiveStyleSheet(styleSheet);
-        }
       }
       this.#computeProps();
     });
@@ -716,20 +698,6 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       console.log('\n');
     }
     */
-  }
-
-  #makeReactiveStyleSheet(styleSheet: CSSStyleSheet) {
-    const rules = styleSheet.cssRules;
-    for (const rule of Array.from(rules)) {
-      if (rule instanceof CSSStyleRule) {
-        for (const prop of Array.from(rule.style)) {
-          if (prop.startsWith('--')) {
-            const value = rule.style.getPropertyValue(prop);
-            this.#registerPlaceholders(value, rule, prop);
-          }
-        }
-      }
-    }
   }
 
   static get observedAttributes() {
