@@ -1,5 +1,26 @@
+import DOMPurify from 'dompurify';
 import type {ChangeListener, WrecState} from './wrec-state';
 import {getPathValue, setPathValue} from './paths.js';
+
+// Prevent DOMPurify from removing certain attributes whose names
+// begin with "on" because wrec uses those wire up event listeners.
+// Do not allow "onerror" because that can be used for XSS attacks.
+//TODO: More may need to be added later.
+const safeOnAttrNames = new Set([
+  'onblur',
+  'onchange',
+  'onclick',
+  'onfocus',
+  'oninput',
+  'onkeydown',
+  'onreset',
+  'onsubmit'
+]);
+DOMPurify.addHook('uponSanitizeAttribute', (_node, data) => {
+  const {attrName} = data;
+  const lower = attrName.toLowerCase();
+  if (safeOnAttrNames.has(lower)) data.forceKeepAttr = true;
+});
 
 type AnyClass = new (...args: any[]) => any;
 
@@ -39,6 +60,8 @@ function canDisable(element: Element) {
   );
 }
 
+// This function is not used in this file,
+// but web components created with wrec can use it.
 export function createElement(
   name: string,
   attributes: Record<string, string>,
@@ -121,6 +144,46 @@ function replace(
   replacement: string
 ): string {
   return full.slice(0, index) + replacement + full.slice(index + length);
+}
+
+// DOMPurify uses the browser HTML parser which removes elements
+// that are not nested in the required parent element.
+// For example, tr elements are stripped when not inside a table element.
+// wrec needs to insert elements from HTML strings that violate this.
+// This function wraps HTML strings in the required parent element
+// only for the purpose of sanitizing the HTML.
+// It then extracts the required portion of the sanitized result.
+function sanitize(html: string): NodeListOf<ChildNode> {
+  let h = html.trim();
+  let extract = null;
+  // tr elements must be wrapped in table/tbody.
+  if (/^\s*<tr[\s>]/i.test(h)) {
+    h = `<table><tbody>${h}</tbody></table>`;
+    extract = 'tbody';
+    // td or th elements must be wrapped in table/tbody/tr.
+  } else if (/^\s*<(td|th)[\s>]/i.test(h)) {
+    h = `<table><tbody><tr>${h}</tr></tbody></table>`;
+    extract = 'tr';
+    // option elements must be wrapped in select.
+  } else if (/^\s*<option[\s>]/i.test(h)) {
+    h = `<select>${h}</select>`;
+    extract = 'select';
+    // col elements must be wrapped in colgroup.
+  } else if (/^\s*<col[\s>]/i.test(h)) {
+    h = `<table><colgroup>${h}</colgroup></table>`;
+    extract = 'colgroup';
+  }
+
+  const fragment = DOMPurify.sanitize(h, {
+    ADD_TAGS: ['#comment'],
+    ALLOW_UNKNOWN_PROTOCOLS: true,
+    RETURN_DOM_FRAGMENT: true
+  });
+  if (extract) {
+    const container = fragment.querySelector(extract);
+    if (container) return container.childNodes;
+  }
+  return fragment.childNodes;
 }
 
 function stringToNumber(str: string | null): number {
@@ -967,8 +1030,10 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     if (element instanceof HTMLElement && isTextArea(element)) {
       (element as HTMLTextAreaElement).value = value;
     } else if (isHTML && t === 'string' && value.trim().startsWith('<')) {
-      //TODO: Consider sanitizing this HTML.
-      element.innerHTML = value;
+      //element.innerHTML = value; // This approach allows XSS attacks!
+      const safeValue = sanitize(value);
+      element.replaceChildren(...safeValue);
+
       this.#wireEvents(element);
       // This is necessary in case the new HTML contains JavaScript expressions.
       this.#makeReactive(element);

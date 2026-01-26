@@ -33,8 +33,9 @@ test('sliders', async ({page}: {page: Page}) => {
   async function testColor(slider: Locator, value: number) {
     await setInputRangeValue(slider, value);
 
-    // It is unclear why this must be called twice.
+    // It is unclear why this must be called three times.
     // Is it because the setInputRangeValue function dispatches two events?
+    await waitForNextFrame(page);
     await waitForNextFrame(page);
     await waitForNextFrame(page);
 
