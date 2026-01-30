@@ -9,7 +9,7 @@ class ToggleButtons extends Wrec {
   };
 
   static css = css`
-    :host > * {
+    :host > span {
       display: flex;
     }
 
