@@ -763,6 +763,15 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     */
   }
 
+  // formAssociated is only needed when the component is inside a form.
+  #verifyFormAssociated() {
+    if (this.#ctor.formAssociated || this.closest('form') === null) return;
+    const className = this.#ctor.name;
+    throw new WrecError(
+      `inside form, class ${className} requires "static formAssociated = true;"`
+    );
+  }
+
   static get observedAttributes() {
     const keys = Object.keys(this.properties || {}).map(Wrec.getAttrName);
     if (!keys.includes('disabled')) keys.push('disabled');
@@ -1106,19 +1115,13 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       if (attrName === 'disabled') continue;
       if (attrName.startsWith('on')) continue;
       if (attrName === 'form-assoc') {
-        if (!ctor.formAssociated) {
-          throw new WrecError(
-            `add "static formAssociated = true;" to class ${className}`
-          );
-        }
+        this.#verifyFormAssociated();
         continue;
       }
       if (!propNames.has(Wrec.getPropName(attrName))) {
         if (attrName === 'name') {
-          if (ctor.formAssociated) continue;
-          throw new WrecError(
-            `name attribute requires "static formAssociated = true;" in class ${className}`
-          );
+          this.#verifyFormAssociated();
+          continue;
         }
         this.#throw(null, attrName, 'is not a supported attribute');
       }
