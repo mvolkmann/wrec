@@ -1107,8 +1107,6 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       }
     }
 
-    const className = this.#ctor.name;
-
     for (const attrName of this.getAttributeNames()) {
       if (attrName === 'class') continue;
       if (attrName === 'id') continue;
