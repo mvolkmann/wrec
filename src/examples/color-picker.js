@@ -1,5 +1,4 @@
 import {css, html, Wrec} from '../wrec';
-
 import './number-slider';
 
 class ColorPicker extends Wrec {
