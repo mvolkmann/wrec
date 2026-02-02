@@ -746,8 +746,10 @@ class D extends HTMLElement {
     this[e] = o;
   }
   connectedCallback() {
-    this.#v(), this.#N(), this.#R(), this.hasAttribute("disabled") && this.#d(), requestAnimationFrame(() => {
-      this.shadowRoot && (this.#y(this.shadowRoot), this.#T(this.shadowRoot)), this.#C();
+    this.#v(), this.#N(), requestAnimationFrame(() => {
+      this.#R(), this.hasAttribute("disabled") && this.#d(), requestAnimationFrame(() => {
+        this.shadowRoot && (this.#y(this.shadowRoot), this.#T(this.shadowRoot)), this.#C();
+      });
     });
   }
   #C() {
@@ -1112,7 +1114,6 @@ class D extends HTMLElement {
         "",
         `property "${o}" is not allowed because it is a reserved attribute`
       );
-    this.#t.name;
     for (const o of this.getAttributeNames())
       if (o !== "class" && o !== "id" && o !== "disabled" && !o.startsWith("on")) {
         if (o === "form-assoc") {

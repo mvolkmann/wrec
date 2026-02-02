@@ -378,24 +378,28 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     this.shadowRoot.replaceChildren(template.content.cloneNode(true));
   }
 
-  changed(statePath: string, componentProp: string, newValue: unknown) {
+  changed(_statePath: string, componentProp: string, newValue: unknown) {
     this[componentProp] = newValue;
   }
 
   connectedCallback() {
     this.#validateAttributes();
     this.#defineProps();
-    this.#buildDOM();
 
-    if (this.hasAttribute('disabled')) this.#disableOrEnable();
-
-    // Wait for the DOM to update.
+    // Wait for imported web components to load.
     requestAnimationFrame(() => {
-      if (this.shadowRoot) {
-        this.#wireEvents(this.shadowRoot);
-        this.#makeReactive(this.shadowRoot);
-      }
-      this.#computeProps();
+      this.#buildDOM();
+
+      if (this.hasAttribute('disabled')) this.#disableOrEnable();
+
+      // Wait for the DOM to update.
+      requestAnimationFrame(() => {
+        if (this.shadowRoot) {
+          this.#wireEvents(this.shadowRoot);
+          this.#makeReactive(this.shadowRoot);
+        }
+        this.#computeProps();
+      });
     });
   }
 
@@ -752,7 +756,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       if (!element.firstElementChild) this.#evaluateText(element);
     }
     /* These lines are useful for debugging.
-    if (this.constructor.name === 'ColorDemo') {
+    if (this.constructor.name === 'NumberSlider') {
       console.log('=== this.constructor.name =', this.constructor.name);
       console.log('propToExprsMap =', this.#ctor.propToExprsMap);
       console.log('#exprToRefsMap =', this.#exprToRefsMap);

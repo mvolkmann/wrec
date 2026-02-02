@@ -1,6 +1,6 @@
 import {css, html, Wrec} from '../wrec';
-// See connectedCallback below.
-//import './number-slider';
+
+import './number-slider';
 
 class ColorPicker extends Wrec {
   static formAssociated = true;
@@ -55,15 +55,6 @@ class ColorPicker extends Wrec {
       ></number-slider>
     `;
   }
-
-  /*
-  // If number-slider is included with an import statement,
-  // the following is required to ensure it is defined before use.
-  async connectedCallback() {
-    await customElements.whenDefined('number-slider');
-    super.connectedCallback();
-  }
-  */
 }
 
 ColorPicker.register();
