@@ -248,7 +248,7 @@ function updateValue(
   }
 }
 
-function waitForUpgrades(
+function waitForDefines(
   template: HTMLTemplateElement
 ): Promise<CustomElementConstructor[]> {
   // Find all the custom elements used in the template.
@@ -388,7 +388,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       template.innerHTML = style + html;
     }
 
-    await waitForUpgrades(template);
+    await waitForDefines(template);
     this.shadowRoot!.replaceChildren(template.content.cloneNode(true));
   }
 
