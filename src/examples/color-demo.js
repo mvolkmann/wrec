@@ -1,6 +1,6 @@
 import {css, html, Wrec} from '../wrec';
-import './color-picker';
-import './number-slider';
+//import './color-picker';
+//import './number-slider';
 
 class ColorDemo extends Wrec {
   static properties = {

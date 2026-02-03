@@ -1,5 +1,5 @@
 import {css, html, Wrec} from '../wrec';
-import './number-slider';
+//import './number-slider';
 
 class ColorPicker extends Wrec {
   static formAssociated = true;
@@ -12,8 +12,16 @@ class ColorPicker extends Wrec {
     color: {
       type: String,
       computed: '`rgb(${this.red}, ${this.green}, ${this.blue})`'
+      //computed: 'this.getColor()',
+      //uses: 'red,green,blue'
     }
   };
+
+  /*
+  getColor() {
+    return `rgb(${this.red},${this.green},${this.blue})`;
+  }
+  */
 
   static css = css`
     :host {

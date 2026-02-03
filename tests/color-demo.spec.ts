@@ -33,11 +33,12 @@ test('sliders', async ({page}: {page: Page}) => {
   async function testColor(slider: Locator, value: number) {
     await setInputRangeValue(slider, value);
 
-    // It is unclear why this must be called three times.
+    // It is unclear why this must be called multiple times.
     // Is it because the setInputRangeValue function dispatches two events?
     await waitForNextFrame(page);
     await waitForNextFrame(page);
-    await waitForNextFrame(page);
+    //await waitForNextFrame(page);
+    //await page.waitForTimeout(1000);
 
     const expected = `rgb(${red}, ${green}, ${blue})`;
     return expect(p).toHaveCSS('color', expected);

@@ -387,20 +387,22 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     this.#defineProps();
 
     // Wait for imported web components to load.
+    //TODO: THIS BREAKS example data-binding.html, but is needed to
+    //      support component imports instead of script elements.
+    //requestAnimationFrame(() => {
+    this.#buildDOM();
+
+    if (this.hasAttribute('disabled')) this.#disableOrEnable();
+
+    // Wait for the DOM to update.
     requestAnimationFrame(() => {
-      this.#buildDOM();
-
-      if (this.hasAttribute('disabled')) this.#disableOrEnable();
-
-      // Wait for the DOM to update.
-      requestAnimationFrame(() => {
-        if (this.shadowRoot) {
-          this.#wireEvents(this.shadowRoot);
-          this.#makeReactive(this.shadowRoot);
-        }
-        this.#computeProps();
-      });
+      if (this.shadowRoot) {
+        this.#wireEvents(this.shadowRoot);
+        this.#makeReactive(this.shadowRoot);
+      }
+      this.#computeProps();
     });
+    //});
   }
 
   #computeProps() {
@@ -478,7 +480,14 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
         const formKey = this.#formAssoc[propName];
         if (formKey) this.setFormValue(formKey, String(value));
         this.propertyChangedCallback(propName, oldValue, value);
-        if (config.dispatch) this.dispatch('change', {[propName]: value});
+        if (config.dispatch) {
+          this.dispatch('change', {
+            element: this.localName,
+            property: propName,
+            oldValue,
+            value
+          });
+        }
       }
     });
   }
