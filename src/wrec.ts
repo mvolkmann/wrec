@@ -248,6 +248,21 @@ function updateValue(
   }
 }
 
+function waitForUpgrades(
+  template: HTMLTemplateElement
+): Promise<CustomElementConstructor[]> {
+  // Find all the custom elements used in the template.
+  const customSet = new Set<string>();
+  for (const element of getAllDescendants(template)) {
+    const {localName} = element;
+    if (localName.includes('-')) customSet.add(localName);
+  }
+
+  // Wait for all the custom elements to be defined.
+  const promises = [...customSet].map(name => customElements.whenDefined(name));
+  return Promise.all(promises);
+}
+
 export abstract class Wrec extends HTMLElement implements ChangeListener {
   // This is used to lookup the camelCase property name
   // that corresponds to a kebab-case attribute name.
@@ -353,9 +368,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     }
   }
 
-  #buildDOM() {
-    if (!this.shadowRoot) return;
-
+  async #buildDOM() {
     const ctor = this.#ctor;
     let {template} = ctor;
     if (!template) {
@@ -375,7 +388,8 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       template.innerHTML = style + html;
     }
 
-    this.shadowRoot.replaceChildren(template.content.cloneNode(true));
+    await waitForUpgrades(template);
+    this.shadowRoot!.replaceChildren(template.content.cloneNode(true));
   }
 
   changed(_statePath: string, componentProp: string, newValue: unknown) {
@@ -390,19 +404,17 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     //TODO: THIS BREAKS example data-binding.html, but is needed to
     //      support component imports instead of script elements.
     //requestAnimationFrame(() => {
-    this.#buildDOM();
+    this.#buildDOM().then(() => {
+      if (this.hasAttribute('disabled')) this.#disableOrEnable();
 
-    if (this.hasAttribute('disabled')) this.#disableOrEnable();
+      // Wait for the DOM to update.
+      requestAnimationFrame(() => {
+        this.#wireEvents(this.shadowRoot!);
+        this.#makeReactive(this.shadowRoot!);
 
-    // Wait for the DOM to update.
-    requestAnimationFrame(() => {
-      if (this.shadowRoot) {
-        this.#wireEvents(this.shadowRoot);
-        this.#makeReactive(this.shadowRoot);
-      }
-      this.#computeProps();
+        this.#computeProps();
+      });
     });
-    //});
   }
 
   #computeProps() {
@@ -482,7 +494,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
         this.propertyChangedCallback(propName, oldValue, value);
         if (config.dispatch) {
           this.dispatch('change', {
-            element: this.localName,
+            tagName: this.localName,
             property: propName,
             oldValue,
             value
@@ -765,7 +777,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       if (!element.firstElementChild) this.#evaluateText(element);
     }
     /* These lines are useful for debugging.
-    if (this.constructor.name === 'NumberSlider') {
+    if (this.constructor.name === 'ColorPicker') {
       console.log('=== this.constructor.name =', this.constructor.name);
       console.log('propToExprsMap =', this.#ctor.propToExprsMap);
       console.log('#exprToRefsMap =', this.#exprToRefsMap);
@@ -1176,6 +1188,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   }
 
   // When type is an array, this can't validate the type of the array elements.
+  // This is called by #defineProp.
   #validateType(propName: string, type: AnyClass, value: any) {
     if (value instanceof type) return;
 

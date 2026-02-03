@@ -1,5 +1,5 @@
 import {css, html, Wrec} from '../wrec';
-//import './number-slider';
+import './number-slider';
 
 class ColorPicker extends Wrec {
   static formAssociated = true;

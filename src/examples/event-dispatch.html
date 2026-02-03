@@ -5,8 +5,8 @@
     <script type="module">
       const tb = document.querySelector('toggle-buttons');
       tb.addEventListener('change', e => {
-        const {element, property, oldValue, value} = e.detail;
-        alert(`${element} ${property} changed from ${oldValue} to ${value}.`);
+        const {tagName, property, oldValue, value} = e.detail;
+        alert(`${tagName} ${property} changed from ${oldValue} to ${value}.`);
       });
     </script>
   </head>
