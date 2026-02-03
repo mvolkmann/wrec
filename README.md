@@ -30,6 +30,19 @@ For each expression, a new value is computed.
 Then wrec uses `#exprToRefsMap` to find all the references to that expression
 and updates them.
 
+## Releasing New Versions
+
+To release a new version of the wrec library:
+
+- Verify that all the tests pass by running `npm run test`.
+- Update the version in `package.json`.
+- Enter `npm run build`.
+- Enter `npm run minify`.
+- Commit all the changes to the local git repository.
+- Push all the changes to the remote git repository.
+- Enter `npm login`.
+- Enter `npm publish`.
+
 ## Getting Started
 
 A wrec component is defined by a class that extends the `Wrec` class.

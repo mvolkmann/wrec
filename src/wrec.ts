@@ -1,5 +1,5 @@
 import DOMPurify from 'dompurify';
-import type {ChangeListener, WrecState} from './wrec-state';
+import {ChangeListener, WrecState} from './wrec-state';
 import {getPathValue, setPathValue} from './paths.js';
 
 // Prevent DOMPurify from removing certain attributes whose names
@@ -1288,3 +1288,5 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]) {
 
   return result;
 }
+
+export {WrecState} from './wrec-state';
