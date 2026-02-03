@@ -31,7 +31,6 @@ class ColorDemo extends Wrec {
         label="Size"
         max="48"
         min="12"
-        name="size"
         value="this.size"
       ></number-slider>
       <p>This is a test.</p>
