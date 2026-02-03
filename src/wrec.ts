@@ -400,10 +400,6 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     this.#validateAttributes();
     this.#defineProps();
 
-    // Wait for imported web components to load.
-    //TODO: THIS BREAKS example data-binding.html, but is needed to
-    //      support component imports instead of script elements.
-    //requestAnimationFrame(() => {
     this.#buildDOM().then(() => {
       if (this.hasAttribute('disabled')) this.#disableOrEnable();
 
