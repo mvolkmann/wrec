@@ -7,10 +7,10 @@
         padding: 1rem;
       }
     </style>
-    <script src="hello-world.js" type="module"></script>
-    <script src="labeled-input.js" type="module"></script>
     <script type="module">
       import {WrecState} from '../wrec-state.js';
+      import './hello-world.js';
+      import './labeled-input.js';
 
       const state = new WrecState('demo', false, {name: 'World'});
       const li = document.querySelector('labeled-input');
