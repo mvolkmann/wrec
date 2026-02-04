@@ -92,7 +92,9 @@ const defaultForType = (type: AnyClass) =>
 
 // This returns an array of all descendant elements of a given element,
 // including those in nested shadow DOMs.
-function getAllDescendants(root: Element | ShadowRoot): Element[] {
+function getAllDescendants(
+  root: DocumentFragment | Element | ShadowRoot
+): Element[] {
   const elements = [];
   let element = root.firstElementChild;
   while (element) {
@@ -248,19 +250,32 @@ function updateValue(
   }
 }
 
-function waitForDefines(
+// Waits for all custom elements used in a template to be defined.
+async function waitForDefines(
   template: HTMLTemplateElement
-): Promise<CustomElementConstructor[]> {
+): Promise<unknown[]> {
   // Find all the custom elements used in the template.
   const customSet = new Set<string>();
-  for (const element of getAllDescendants(template)) {
+  for (const element of getAllDescendants(template.content)) {
     const {localName} = element;
     if (localName.includes('-')) customSet.add(localName);
   }
 
+  function getTimeout(tagName: string) {
+    return new Promise((_, reject) => {
+      setTimeout(() => {
+        const message = `custom element <${tagName}> not defined`;
+        reject(new Error(message));
+      }, 1000);
+    });
+  }
+
   // Wait for all the custom elements to be defined.
-  const promises = [...customSet].map(name => customElements.whenDefined(name));
-  return Promise.all(promises);
+  return Promise.all(
+    [...customSet].map(async tagName =>
+      Promise.race([customElements.whenDefined(tagName), getTimeout(tagName)])
+    )
+  );
 }
 
 export abstract class Wrec extends HTMLElement implements ChangeListener {
@@ -403,13 +418,10 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     this.#buildDOM().then(() => {
       if (this.hasAttribute('disabled')) this.#disableOrEnable();
 
-      // Wait for the DOM to update.
-      requestAnimationFrame(() => {
-        this.#wireEvents(this.shadowRoot!);
-        this.#makeReactive(this.shadowRoot!);
+      this.#wireEvents(this.shadowRoot!);
+      this.#makeReactive(this.shadowRoot!);
 
-        this.#computeProps();
-      });
+      this.#computeProps();
     });
   }
 
