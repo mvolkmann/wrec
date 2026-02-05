@@ -2,37 +2,35 @@
 <html lang="en">
   <head>
     <title>Table Demo</title>
-    <script src="table-manual.js" type="module"></script>
-    <script src="table-wired.js" type="module"></script>
-    <script>
-      window.onload = () => {
-        const propNames = ['name', 'age', 'occupation'];
-        const headings = ['Name', 'Age', 'Occupation'];
-        const data = [
-          {name: 'Alice', age: 30, occupation: 'Engineer'},
-          {name: 'Bob', age: 25, occupation: 'Designer'},
-          {name: 'Charlie', age: 35, occupation: 'Teacher'}
-        ];
-
-        const tableManual = document.querySelector('table-manual');
-        // The property "properties" must be set before the property "headings"
-        // because changing "headings" triggers the "buildTh" method
-        // which uses properties to determine the data to sort.
-        tableManual.propNames = propNames;
-        tableManual.headings = headings;
-        tableManual.data = data;
-
-        const tableWired = document.querySelector('table-wired');
-        tableWired.propNames = propNames;
-        tableWired.headings = headings;
-        tableWired.data = data;
-      };
-    </script>
     <style>
       body {
         font-family: sans-serif;
       }
     </style>
+    <script src="table-manual.js" type="module"></script>
+    <script src="table-wired.js" type="module"></script>
+    <script type="module">
+      const propNames = ['name', 'age', 'occupation'];
+      const headings = ['Name', 'Age', 'Occupation'];
+      const data = [
+        {name: 'Alice', age: 30, occupation: 'Engineer'},
+        {name: 'Bob', age: 25, occupation: 'Designer'},
+        {name: 'Charlie', age: 35, occupation: 'Teacher'}
+      ];
+
+      const tableManual = document.querySelector('table-manual');
+      // The property "properties" must be set before the property "headings"
+      // because changing "headings" triggers the "buildTh" method
+      // which uses properties to determine the data to sort.
+      tableManual.propNames = propNames;
+      tableManual.headings = headings;
+      tableManual.data = data;
+
+      const tableWired = document.querySelector('table-wired');
+      tableWired.propNames = propNames;
+      tableWired.headings = headings;
+      tableWired.data = data;
+    </script>
   </head>
   <body>
     <table-manual></table-manual>
