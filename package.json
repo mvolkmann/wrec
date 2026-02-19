@@ -2,7 +2,7 @@
   "name": "wrec",
   "description": "a small library that greatly simplifies building web components",
   "author": "R. Mark Volkmann",
-  "version": "0.19.3",
+  "version": "0.19.4",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -13,8 +13,15 @@
     "component"
   ],
   "type": "module",
-  "module": "dist/wrec.es.js",
+  "browser": "dist/wrec.min.js",
   "main": "dist/wrec.umd.js",
+  "module": "dist/wrec.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/wrec.es.js",
+      "require": "./dist/wrec.umd.js"
+    }
+  },
   "files": [
     "dist",
     "README.md"
