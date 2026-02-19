@@ -49,4 +49,4 @@ class BindingDemo extends Wrec {
   `;
 }
 
-BindingDemo.register();
+BindingDemo.define('binding-demo');

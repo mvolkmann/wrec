@@ -24,4 +24,4 @@ class NumberBind extends Wrec {
   `;
 }
 
-NumberBind.register();
+NumberBind.define('number-bind');

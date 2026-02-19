@@ -18,4 +18,4 @@ class ComponentOne extends Wrec {
   `;
 }
 
-ComponentOne.register();
+ComponentOne.define('component-one');

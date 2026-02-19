@@ -16,4 +16,4 @@ class BulletedList extends Wrec {
   }
 }
 
-BulletedList.register();
+BulletedList.define('bulleted-list');

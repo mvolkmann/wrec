@@ -109,7 +109,7 @@ Here are the steps:
      `;
    }
 
-   MyCounter.register();
+   MyCounter.define('my-counter');
    ```
 
 1. Create the file `index.html` containing the following.

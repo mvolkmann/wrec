@@ -21,4 +21,4 @@ class DataStar extends Wrec {
   `;
 }
 
-DataStar.register();
+DataStar.define('data-star');

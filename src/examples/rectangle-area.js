@@ -43,4 +43,4 @@ class RectangleArea extends Wrec {
   }
 }
 
-RectangleArea.register();
+RectangleArea.define('rectangle-area');

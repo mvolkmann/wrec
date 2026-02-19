@@ -279,17 +279,25 @@ async function waitForDefines(
 }
 
 export abstract class Wrec extends HTMLElement implements ChangeListener {
+  // There is one instance of `attrToPropMap`, `properties`, `propToAttrMap`,
+  // `propToComputedMap`, and `propToExprsMap` per Wrec subclass,
+  // not one for only the Wrec class.
+  // The instances created here are not used.
+  // Subclass-specific instances are created in the constructor.
+
   // This is used to lookup the camelCase property name
   // that corresponds to a kebab-case attribute name.
-  static #attrToPropMap = new Map<string, string>();
+  static attrToPropMap = new Map<string, string>();
 
   // This is used to lookup the kebab-case attribute name
   // that corresponds to a camelCase property name.
-  static #propToAttrMap = new Map<string, string>();
+  static propToAttrMap = new Map<string, string>();
 
   // This can be set in each Wrec subclass.
   // It describes CSS rules that a web component uses.
   static css = '';
+
+  static elementName = '';
 
   // Set this to true in Wrec subclasses that need
   // the ability to contribute data to form submissions.
@@ -298,10 +306,6 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   // This must be set in each Wrec subclass.
   // It describes HTML that a web component renders.
   static html = '';
-
-  // There is one instance of `properties`, `propToComputedMap`,
-  // and `propToExprsMap` per Wrec subclass,
-  // not one for only the Wrec class.
 
   // This must be set in each Wrec subclass.
   // It describes all the properties that a web component supports.
@@ -353,6 +357,11 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   // This tells TypeScript that it's okay to access properties by string keys.
   [key: string]: any;
 
+  static define(elementName: string) {
+    this.elementName = elementName;
+    customElements.define(elementName, this as any);
+  }
+
   constructor() {
     super();
     this.attachShadow({mode: 'open'});
@@ -360,7 +369,9 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     // Create one instance of `properties`, `propToComputedMap`,
     // and `propToExprsMap` for each Wrec subclass.
     const ctor = this.#ctor;
+    if (!ctor.attrToPropMap) ctor.attrToPropMap = new Map();
     if (!ctor.properties) ctor.properties = {};
+    if (!ctor.propToAttrMap) ctor.propToExprsMap = new Map();
     if (!ctor.propToComputedMap) ctor.propToComputedMap = new Map();
     if (!ctor.propToExprsMap) ctor.propToExprsMap = new Map();
   }
@@ -542,12 +553,6 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     return `display: ${value ? display : 'none'}`;
   }
 
-  // This inserts a dash before each uppercase letter
-  // that is preceded by a lowercase letter or digit.
-  static elementName() {
-    return this.name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
-  }
-
   #evaluateAttributes(element: HTMLElement) {
     //const isWC = element.localName.includes('-');
     const isWC = element instanceof Wrec;
@@ -720,19 +725,19 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   }
 
   static getAttrName(propName: string) {
-    let attrName = Wrec.#propToAttrMap.get(propName);
+    let attrName = this.propToAttrMap.get(propName);
     if (!attrName) {
       attrName = propName.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
-      Wrec.#propToAttrMap.set(propName, attrName);
+      this.propToAttrMap.set(propName, attrName);
     }
     return attrName;
   }
 
   static getPropName(attrName: string) {
-    let propName = Wrec.#attrToPropMap.get(attrName);
+    let propName = this.attrToPropMap.get(attrName);
     if (!propName) {
       propName = attrName.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
-      Wrec.#attrToPropMap.set(attrName, propName);
+      this.attrToPropMap.set(attrName, propName);
     }
     return propName;
   }
@@ -806,7 +811,9 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   }
 
   static get observedAttributes() {
-    const keys = Object.keys(this.properties || {}).map(Wrec.getAttrName);
+    const keys = Object.keys(this.properties || {}).map(key =>
+      Wrec.getAttrName(key)
+    );
     if (!keys.includes('disabled')) keys.push('disabled');
     return keys;
   }
@@ -855,14 +862,6 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
           }
         }
       }
-    }
-  }
-
-  static register() {
-    const elementName = this.elementName();
-    if (!customElements.get(elementName)) {
-      // "as any" is needed here because Wrec is an abstract class.
-      customElements.define(elementName, this as any);
     }
   }
 
@@ -987,11 +986,10 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     attrName: string | undefined,
     message: string
   ) {
-    const ctor = this.#ctor;
     const name =
       element instanceof HTMLElement ? element.localName : 'CSS rule';
     throw new WrecError(
-      `component ${ctor.elementName()}` +
+      `component ${this.#ctor.elementName}` +
         (element ? `, element "${name}"` : '') +
         (attrName ? `, attribute "${attrName}"` : '') +
         ` ${message}`

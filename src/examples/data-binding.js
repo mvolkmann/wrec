@@ -87,4 +87,4 @@ class DataBinding extends Wrec {
   }
 }
 
-DataBinding.register();
+DataBinding.define('data-binding');

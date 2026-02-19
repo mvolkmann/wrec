@@ -18,4 +18,4 @@ class ComponentTwo extends Wrec {
   `;
 }
 
-ComponentTwo.register();
+ComponentTwo.define('component-two');

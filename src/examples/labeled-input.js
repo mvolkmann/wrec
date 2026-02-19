@@ -24,4 +24,4 @@ class LabeledInput extends Wrec {
   `;
 }
 
-LabeledInput.register();
+LabeledInput.define('labeled-input');

@@ -44,4 +44,4 @@ class CssDemo extends Wrec {
   `;
 }
 
-CssDemo.register();
+CssDemo.define('css-demo');

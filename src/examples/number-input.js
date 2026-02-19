@@ -42,4 +42,4 @@ class NumberInput extends Wrec {
   `;
 }
 
-NumberInput.register();
+NumberInput.define('number-input');

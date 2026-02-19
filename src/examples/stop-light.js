@@ -23,4 +23,4 @@ class StopLight extends Wrec {
   static html = html`<div class="this.go ? 'go' : 'stop'"></div>`;
 }
 
-StopLight.register();
+StopLight.define('stop-light');

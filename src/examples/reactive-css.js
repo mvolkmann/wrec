@@ -17,4 +17,4 @@ class ReactiveCSS extends Wrec {
   `;
 }
 
-ReactiveCSS.register();
+ReactiveCSS.define('reactive-css');

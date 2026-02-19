@@ -39,7 +39,7 @@ declare class Wrec extends HTMLElement implements ChangeListener {
     _oldValue: unknown,
     _newValue: unknown
   ): void;
-  static register(): void;
+  static define(elementName: string): void;
   /**
    * @param stateName - unique name for th2nd parameter State object
    * @param state - State object

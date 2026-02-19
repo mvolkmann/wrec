@@ -84,4 +84,4 @@ class DataBinding2 extends Wrec {
   }
 }
 
-DataBinding2.register();
+DataBinding2.define('data-binding2');

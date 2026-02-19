@@ -9,4 +9,4 @@ class BasicWrec extends Wrec {
   static html = html`<span>Hello, World!</span>`;
 }
 
-BasicWrec.register();
+BasicWrec.define('basic-wrec');

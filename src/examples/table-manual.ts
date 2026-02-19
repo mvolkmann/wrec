@@ -108,8 +108,8 @@ class TableManual extends Wrec {
           typeof aValue === 'string'
             ? aValue.localeCompare(bValue as string)
             : typeof aValue === 'number'
-            ? aValue - (bValue as number)
-            : 0;
+              ? aValue - (bValue as number)
+              : 0;
         return this.sortAscending ? compare : -compare;
       });
 
@@ -143,4 +143,4 @@ class TableManual extends Wrec {
   }
 }
 
-TableManual.register();
+TableManual.define('table-manual');

@@ -10,4 +10,4 @@ class TemperatureEval extends Wrec {
   `;
 }
 
-TemperatureEval.register();
+TemperatureEval.define('temperature-eval');

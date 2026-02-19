@@ -81,4 +81,4 @@ class ToggleSwitch extends Wrec {
   }
 }
 
-ToggleSwitch.register();
+ToggleSwitch.define('toggle-switch');

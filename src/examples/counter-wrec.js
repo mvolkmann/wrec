@@ -29,4 +29,4 @@ class CounterWrec extends Wrec {
   `;
 }
 
-CounterWrec.register();
+CounterWrec.define('counter-wrec');

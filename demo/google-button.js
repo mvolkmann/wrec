@@ -19,4 +19,4 @@ class GoogleButton extends Wrec {
   }
 }
 
-GoogleButton.register();
+GoogleButton.define('google-button');

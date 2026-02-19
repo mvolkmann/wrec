@@ -39,4 +39,4 @@ class SelectList extends Wrec {
   }
 }
 
-SelectList.register();
+SelectList.define('select-list');

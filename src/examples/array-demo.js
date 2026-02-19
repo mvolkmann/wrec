@@ -16,4 +16,4 @@ class ArrayDemo extends Wrec {
   }
 }
 
-ArrayDemo.register();
+ArrayDemo.define('array-demo');

@@ -108,4 +108,4 @@ class RadioGroup extends Wrec {
   }
 }
 
-RadioGroup.register();
+RadioGroup.define('radio-group');

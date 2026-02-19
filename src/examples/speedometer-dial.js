@@ -423,4 +423,4 @@ class SpeedometerDial extends Wrec {
   `;
 }
 
-SpeedometerDial.register();
+SpeedometerDial.define('speedometer-dial');

@@ -14,4 +14,4 @@ class MultiplyNumbers extends Wrec {
   `;
 }
 
-MultiplyNumbers.register();
+MultiplyNumbers.define('multiply-numbers');

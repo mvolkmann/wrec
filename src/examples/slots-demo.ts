@@ -58,4 +58,4 @@ class SlotsDemo extends Wrec {
   `;
 }
 
-SlotsDemo.register();
+SlotsDemo.define('slots-demo');
