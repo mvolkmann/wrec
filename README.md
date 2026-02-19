@@ -37,7 +37,6 @@ To release a new version of the wrec library:
 - Verify that all the tests pass by running `npm run test`.
 - Update the version in `package.json`.
 - Enter `npm run build`.
-- Enter `npm run minify`.
 - Commit all the changes to the local git repository.
 - Push all the changes to the remote git repository.
 - Enter `npm login`.
