@@ -359,7 +359,11 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
   static define(elementName: string) {
     this.elementName = elementName;
-    customElements.define(elementName, this as any);
+    if (customElements.get(elementName)) {
+      throw new Error(`custom element ${elementName} is already defined`);
+    } else {
+      customElements.define(elementName, this as any);
+    }
   }
 
   constructor() {
