@@ -360,7 +360,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   static define(elementName: string) {
     this.elementName = elementName;
     if (customElements.get(elementName)) {
-      throw new Error(`custom element ${elementName} is already defined`);
+      throw new WrecError(`custom element ${elementName} is already defined`);
     } else {
       customElements.define(elementName, this as any);
     }
@@ -411,6 +411,8 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       style += '</style>\n';
 
       let html = ctor.html.trim();
+      if (!html) throw new WrecError('static property html must be set');
+
       // If the HTML string does not start with <,
       // assume it is a JavaScript expression.
       if (!html.startsWith('<')) html = `<span><!--${html}--></span>`;
