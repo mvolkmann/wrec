@@ -13,12 +13,13 @@
     "component"
   ],
   "type": "module",
+  "main": "./dist/wrec.umd.js",
+  "module": "./dist/wrec.es.js",
   "types": "./dist/wrec.d.ts",
-  "main": "dist/wrec.umd.js",
-  "module": "dist/wrec.es.js",
   "moduleResolution": "bundler",
   "exports": {
     ".": {
+      "types": "./dist/wrec.d.ts",
       "import": "./dist/wrec.es.js",
       "require": "./dist/wrec.umd.js"
     }
@@ -39,7 +40,6 @@
     "unittest": "vitest"
   },
   "devDependencies": {
-    "@microsoft/api-extractor": "7.56.3",
     "@playwright/test": "^1.57.0",
     "@types/node": "^25.0.6",
     "oxlint": "^1.38.0",

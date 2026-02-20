@@ -9,9 +9,17 @@ export default defineConfig({
       entry: path.resolve(__dirname, 'src/wrec.ts'),
       name: 'wrec',
       // file name of output bundle
-      fileName: format => `wrec.${format}.js`
+      fileName: format => `wrec.${format}.js`,
+      formats: ['es', 'umd']
     },
-    outDir: path.resolve(__dirname, 'dist')
+    outDir: path.resolve(__dirname, 'dist'),
+    rollupOptions: {
+      // Externalize deps that shouldn't be bundled
+      external: [],
+      output: {
+        globals: {}
+      }
+    }
   },
   plugins: [
     dts({
