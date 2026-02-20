@@ -3,8 +3,10 @@ import path from 'path';
 import dts from 'vite-plugin-dts';
 
 export default defineConfig({
+  // This is required for "npm run test" to work.
   root: path.resolve(__dirname, 'src'),
   build: {
+    emptyOutDir: true,
     lib: {
       entry: path.resolve(__dirname, 'src/wrec.ts'),
       name: 'wrec',
@@ -12,19 +14,16 @@ export default defineConfig({
       fileName: format => `wrec.${format}.js`,
       formats: ['es', 'umd']
     },
-    outDir: path.resolve(__dirname, 'dist'),
-    rollupOptions: {
-      // Externalize deps that shouldn't be bundled
-      external: [],
-      output: {
-        globals: {}
-      }
-    }
+    // Without this line, the dist directory will be
+    // created relative to root which is src.
+    outDir: path.resolve(__dirname, 'dist')
   },
   plugins: [
     dts({
       exclude: [path.resolve(__dirname, 'src/examples/**')],
-      rollupTypes: true // combines all defined types in a single .d.ts file
+      rollupTypes: true, // combines all defined types in a single .d.ts file
+      tsconfigPath: './tsconfig.json',
+      root: __dirname
     })
   ]
 });
