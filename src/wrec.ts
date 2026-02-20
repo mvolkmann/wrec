@@ -1,6 +1,8 @@
 import DOMPurify from 'dompurify';
-import {ChangeListener, WrecState} from './wrec-state';
-import {getPathValue, setPathValue} from './paths.js';
+import type {ChangeListener, WrecState} from './wrec-state';
+import {getPathValue, setPathValue} from './paths';
+export type {ChangeListener, WrecState};
+export type {getPathValue, setPathValue};
 
 // Prevent DOMPurify from removing certain attributes whose names
 // begin with "on" because wrec uses those wire up event listeners.
@@ -1304,5 +1306,3 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]) {
 
   return result;
 }
-
-export {WrecState} from './wrec-state';

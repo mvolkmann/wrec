@@ -1,17 +1,19 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
-
     "allowSyntheticDefaultImports": true,
+    "declaration": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "outDir": "dist",
     "skipLibCheck": true,
+    "sourceMap": true,
     "strict": true,
-    "sourceMap": true
+    "target": "ESNext"
   },
-  "files": ["src/examples/table-wired.ts", "src/wrec.ts"]
+  "files": ["src/examples/table-wired.ts", "src/wrec.ts"],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts"]
 }
