@@ -8,6 +8,7 @@ export default defineConfig({
   build: {
     emptyOutDir: true,
     lib: {
+      // The bundle exports everything exported by this file.
       entry: path.resolve(__dirname, 'src/wrec.ts'),
       name: 'wrec',
       // file name of output bundle

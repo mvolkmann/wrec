@@ -2,6 +2,8 @@ import DOMPurify from 'dompurify';
 import type {ChangeListener} from './wrec-state';
 import {WrecState} from './wrec-state';
 import {getPathValue, setPathValue} from './paths';
+// When this package is bundled by Vite,
+// the bundle exports everything exported by this file.
 export type {ChangeListener};
 export {WrecState};
 
