@@ -816,12 +816,13 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       if (!element.firstElementChild) this.#evaluateText(element);
     }
     /* These lines are useful for debugging.
-    if (this.constructor.name === 'ColorPicker') {
+    if (this.constructor.name === 'SortableTable') {
       console.log('=== this.constructor.name =', this.constructor.name);
       console.log('propToExprsMap =', this.#ctor.propToExprsMap);
       console.log('#exprToRefsMap =', this.#exprToRefsMap);
       console.log('propToComputedMap =', this.#ctor.propToComputedMap);
       console.log('#propToParentPropMap =', this.#propToParentPropMap);
+      console.log('#propToAttrMap =', this.#ctor.propToAttrMap);
       console.log('\n');
     }
     */
@@ -1058,15 +1059,17 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     }
   }
 
-  // Updates the matching attribute for a property if there is one.
+  // Updates the matching attribute for a property.
   // VS Code thinks this is never called, but it is called by #defineProp.
   #updateAttribute(propName: string, type: any, value: any, attrName: string) {
-    if (isPrimitive(value) && this.hasAttribute(attrName)) {
+    if (isPrimitive(value)) {
       const oldValue =
         type === Boolean
           ? this.hasAttribute(attrName)
           : this.#typedAttribute(propName, attrName);
-      if (value !== oldValue) updateAttribute(this, propName, value);
+      if (value !== oldValue) {
+        updateAttribute(this, attrName || propName, value);
+      }
     }
   }
 

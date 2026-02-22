@@ -1227,12 +1227,12 @@ class U extends HTMLElement {
         "is a Boolean attribute, so its value must match attribute name or be missing"
       ), e === t);
   }
-  // Updates the matching attribute for a property if there is one.
+  // Updates the matching attribute for a property.
   // VS Code thinks this is never called, but it is called by #defineProp.
   #N(t, e, n, s) {
-    if (pe(n) && this.hasAttribute(s)) {
+    if (pe(n)) {
       const r = e === Boolean ? this.hasAttribute(s) : this.#A(t, s);
-      n !== r && ln(this, t, n);
+      n !== r && ln(this, s || t, n);
     }
   }
   // Updates all computed properties that reference this property.
