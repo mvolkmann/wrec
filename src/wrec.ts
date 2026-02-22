@@ -7,6 +7,14 @@ import {getPathValue, setPathValue} from './paths';
 export type {ChangeListener};
 export {WrecState};
 
+const globalAttributes = new Set([
+  'class',
+  'hidden',
+  'id',
+  'disabled',
+  'title'
+]);
+
 // Prevent DOMPurify from removing certain attributes whose names
 // begin with "on" because wrec uses those wire up event listeners.
 // Do not allow "onerror" because that can be used for XSS attacks.
@@ -1150,9 +1158,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     }
 
     for (const attrName of this.getAttributeNames()) {
-      if (attrName === 'class') continue;
-      if (attrName === 'id') continue;
-      if (attrName === 'disabled') continue;
+      if (globalAttributes.has(attrName)) continue;
       if (attrName.startsWith('on')) continue;
       if (attrName === 'form-assoc') {
         this.#verifyFormAssociated();
