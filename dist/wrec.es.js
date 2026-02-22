@@ -712,6 +712,12 @@ function Jn(i, t, e) {
   });
 }
 const Qn = /* @__PURE__ */ new Set([
+  "class",
+  "hidden",
+  "id",
+  "disabled",
+  "title"
+]), to = /* @__PURE__ */ new Set([
   "onblur",
   "onchange",
   "onclick",
@@ -723,22 +729,22 @@ const Qn = /* @__PURE__ */ new Set([
 ]);
 tn.addHook("uponSanitizeAttribute", (i, t) => {
   const { attrName: e } = t, n = e.toLowerCase();
-  Qn.has(n) && (t.forceKeepAttr = !0);
+  to.has(n) && (t.forceKeepAttr = !0);
 });
 class st extends Error {
 }
-const to = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g, sn = "a-zA-Z_$", eo = sn + "0-9", Tt = `[${sn}][${eo}]*`, no = /<!--\s*(.*?)\s*-->/, oo = /<(\w+)(?:\s[^>]*)?>((?:[^<]|<(?!\w))*?)<\/\1>/g, se = new RegExp(`^this\\.${Tt}$`), ie = new RegExp(`this\\.${Tt}(\\.${Tt})*`, "g"), rn = new RegExp(`this\\.${Tt}(\\.${Tt})*`), so = /* @__PURE__ */ new Set(["class", "style"]), an = 5;
-function io(i) {
+const eo = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g, sn = "a-zA-Z_$", no = sn + "0-9", Tt = `[${sn}][${no}]*`, oo = /<!--\s*(.*?)\s*-->/, so = /<(\w+)(?:\s[^>]*)?>((?:[^<]|<(?!\w))*?)<\/\1>/g, se = new RegExp(`^this\\.${Tt}$`), ie = new RegExp(`this\\.${Tt}(\\.${Tt})*`, "g"), rn = new RegExp(`this\\.${Tt}(\\.${Tt})*`), io = /* @__PURE__ */ new Set(["class", "style"]), an = 5;
+function ro(i) {
   return i instanceof HTMLButtonElement || i instanceof HTMLFieldSetElement || i instanceof HTMLInputElement || i instanceof HTMLSelectElement || i instanceof HTMLTextAreaElement || i instanceof U;
 }
-function po(i, t, e) {
+function ho(i, t, e) {
   const n = document.createElement(i);
   if (t)
     for (const [s, r] of Object.entries(t))
       n.setAttribute(s, r);
   return e && (n.innerHTML = e), n;
 }
-const ro = (i) => i === String ? "" : i === Number ? 0 : i === Boolean ? !1 : i === Array ? [] : i === Object ? {} : void 0;
+const ao = (i) => i === String ? "" : i === Number ? 0 : i === Boolean ? !1 : i === Array ? [] : i === Object ? {} : void 0;
 function It(i) {
   const t = [];
   let e = i.firstElementChild;
@@ -764,11 +770,11 @@ function he(i) {
   const { localName: t } = i;
   return t === "input" || t === "select";
 }
-const ao = (i) => i.replace(/<!--[\s\S]*?-->/g, "");
+const co = (i) => i.replace(/<!--[\s\S]*?-->/g, "");
 function ln(i, t, e, n) {
   return i.slice(0, t) + n + i.slice(t + e);
 }
-function co(i) {
+function lo(i) {
   let t = i.trim(), e = null;
   /^\s*<tr[\s>]/i.test(t) ? (t = `<table><tbody>${t}</tbody></table>`, e = "tbody") : /^\s*<(td|th)[\s>]/i.test(t) ? (t = `<table><tbody><tr>${t}</tr></tbody></table>`, e = "tr") : /^\s*<option[\s>]/i.test(t) ? (t = `<select>${t}</select>`, e = "select") : /^\s*<col[\s>]/i.test(t) && (t = `<table><colgroup>${t}</colgroup></table>`, e = "colgroup");
   const n = tn.sanitize(t, {
@@ -807,7 +813,7 @@ function ae(i, t, e) {
   const [n, s] = t.split(":");
   i instanceof CSSStyleRule ? i.style.setProperty(n, e) : (fn(i, n, e), n === "value" && he(i) && (i.value = e));
 }
-async function lo(i) {
+async function fo(i) {
   const t = /* @__PURE__ */ new Set();
   for (const n of It(i.content)) {
     const { localName: s } = n;
@@ -919,7 +925,7 @@ class U extends HTMLElement {
       if (!s) throw new st("static property html must be set");
       s.startsWith("<") || (s = `<span><!--${s}--></span>`), e.innerHTML = n + s;
     }
-    await lo(e), this.shadowRoot.replaceChildren(e.content.cloneNode(!0));
+    await fo(e), this.shadowRoot.replaceChildren(e.content.cloneNode(!0));
   }
   changed(t, e, n) {
     this[e] = n;
@@ -944,7 +950,7 @@ class U extends HTMLElement {
     e.required && !r && this.#e(this, t, "is a required attribute");
     let c = e.value;
     this.hasOwnProperty(t) && (c = this[t], delete this[t]);
-    const { type: u } = e, p = u === Boolean ? c || r : n.includes(s) && r ? this.#g(t, s) : c || ro(u), h = "#" + t;
+    const { type: u } = e, p = u === Boolean ? c || r : n.includes(s) && r ? this.#g(t, s) : c || ao(u), h = "#" + t;
     this[h] = p, e.computed && this.#L(t, e), Object.defineProperty(this, t, {
       enumerable: !0,
       get() {
@@ -970,7 +976,7 @@ class U extends HTMLElement {
   #h() {
     const t = this.hasAttribute("disabled"), e = It(this.shadowRoot);
     for (const n of e)
-      io(n) && (n.disabled = t);
+      ro(n) && (n.disabled = t);
   }
   disconnectedCallback() {
     this.#n.clear(), this.#l.clear(), this.#u.clear();
@@ -1026,7 +1032,7 @@ class U extends HTMLElement {
       let n = "";
       if (dt(t)) {
         this.#r(t.textContent, t);
-        const s = t.textContent?.match(no);
+        const s = t.textContent?.match(oo);
         s && (n = s[1]);
       } else {
         const s = Array.from(t.childNodes).find(
@@ -1244,7 +1250,7 @@ class U extends HTMLElement {
     ), t instanceof HTMLElement && dt(t))
       t.value = e;
     else if (n && s === "string" && e.trim().startsWith("<")) {
-      const r = co(e);
+      const r = lo(e);
       t.replaceChildren(...r), this.#b(t), this.#m(t);
     } else n && (t.textContent = e);
   }
@@ -1284,13 +1290,13 @@ class U extends HTMLElement {
   #P() {
     const t = this.#t, e = new Set(Object.keys(t.properties));
     for (const n of e)
-      so.has(n) && this.#e(
+      io.has(n) && this.#e(
         null,
         "",
         `property "${n}" is not allowed because it is a reserved attribute`
       );
     for (const n of this.getAttributeNames())
-      if (n !== "class" && n !== "id" && n !== "disabled" && !n.startsWith("on")) {
+      if (!Qn.has(n) && !n.startsWith("on")) {
         if (n === "form-assoc") {
           this.#d();
           continue;
@@ -1363,10 +1369,10 @@ class U extends HTMLElement {
     }
   }
 }
-function ho(i, ...t) {
+function mo(i, ...t) {
   let e = cn(i, t);
   for (; ; ) {
-    const n = to.exec(e);
+    const n = eo.exec(e);
     if (!n) break;
     const s = n[2];
     if (rn.test(s)) {
@@ -1380,12 +1386,12 @@ function ho(i, ...t) {
   }
   return e;
 }
-function mo(i, ...t) {
+function To(i, ...t) {
   let e = cn(i, t);
   for (; ; ) {
-    const n = oo.exec(e);
+    const n = so.exec(e);
     if (!n || n[1] === "style") break;
-    const s = ao(n[2]);
+    const s = co(n[2]);
     if (rn.test(s)) {
       const r = `<!-- ${s.trim()} -->`, c = n.index + n[0].indexOf(">") + 1;
       e = ln(e, c, s.length, r);
@@ -1396,7 +1402,7 @@ function mo(i, ...t) {
 export {
   U as Wrec,
   ue as WrecState,
-  po as createElement,
-  ho as css,
-  mo as html
+  ho as createElement,
+  mo as css,
+  To as html
 };
