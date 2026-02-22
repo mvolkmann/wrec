@@ -466,7 +466,16 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   #defineProps() {
     const ctor = this.#ctor;
     const {observedAttributes, properties} = ctor;
+
+    // Define all the non-computed properties first.
     for (const [propName, config] of Object.entries(properties)) {
+      if (config.computed) continue;
+      this.#defineProp(propName, config, observedAttributes);
+    }
+
+    // Define the computed properties last.
+    for (const [propName, config] of Object.entries(properties)) {
+      if (!config.computed) continue;
       this.#defineProp(propName, config, observedAttributes);
     }
   }
@@ -620,8 +629,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
   #evaluateInContext(expr: string) {
     // This approach is safer than using the eval function.
-    const result = new Function('return ' + expr).call(this);
-    return Array.isArray(result) ? result.join('') : result;
+    return new Function('return ' + expr).call(this);
   }
 
   #evaluateText(element: HTMLElement) {
@@ -901,7 +909,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
     const matches = computed.match(REFS_RE) || [];
     for (const match of matches) {
-      const referencedProp = match.substring(SKIP);
+      const referencedProp = getPropName(match);
       if (this[referencedProp] === undefined) {
         this.#throwInvalidRef(null, propName, referencedProp);
       }
@@ -1073,10 +1081,11 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     }
   }
 
-  #updateElementContent(element: HTMLElement | CSSStyleRule, value: string) {
+  #updateElementContent(element: HTMLElement | CSSStyleRule, value: unknown) {
     if (value === undefined) return;
 
     const isHTML = element instanceof HTMLElement;
+    if (Array.isArray(value)) value = value.join('');
     const t = typeof value;
     if (t !== 'string' && t !== 'number') {
       this.#throw(
@@ -1086,18 +1095,20 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       );
     }
 
+    const text = String(value);
+
     if (element instanceof HTMLElement && isTextArea(element)) {
-      (element as HTMLTextAreaElement).value = value;
-    } else if (isHTML && t === 'string' && value.trim().startsWith('<')) {
+      (element as HTMLTextAreaElement).value = text;
+    } else if (isHTML && t === 'string' && text.trim().startsWith('<')) {
       //element.innerHTML = value; // This approach allows XSS attacks!
-      const safeValue = sanitize(value);
+      const safeValue = sanitize(text);
       element.replaceChildren(...safeValue);
 
       this.#wireEvents(element);
       // This is necessary in case the new HTML contains JavaScript expressions.
       this.#makeReactive(element);
     } else if (isHTML) {
-      element.textContent = value;
+      element.textContent = text;
     }
   }
 
