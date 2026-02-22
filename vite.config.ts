@@ -3,8 +3,6 @@ import path from 'path';
 import dts from 'vite-plugin-dts';
 
 export default defineConfig({
-  // This is required for "npm run test" to work.
-  root: path.resolve(__dirname, 'src'),
   build: {
     emptyOutDir: true,
     lib: {
@@ -23,8 +21,7 @@ export default defineConfig({
     dts({
       exclude: [path.resolve(__dirname, 'src/examples/**')],
       rollupTypes: true, // combines all defined types in a single .d.ts file
-      tsconfigPath: './tsconfig.json',
-      root: __dirname
+      tsconfigPath: './tsconfig.json'
     })
   ]
 });

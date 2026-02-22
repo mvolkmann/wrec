@@ -49,7 +49,7 @@ export default defineConfig({
 
   // Run local server before starting tests.
   webServer: {
-    command: 'npm run dev',
+    command: 'vite --config vite.config.test.ts',
     url: 'http://localhost:5173/examples/',
     reuseExistingServer: true
   }

@@ -9,9 +9,10 @@ export {WrecState};
 
 const globalAttributes = new Set([
   'class',
+  'disabled',
   'hidden',
   'id',
-  'disabled',
+  'tabindex',
   'title'
 ]);
 
@@ -58,8 +59,6 @@ const HTML_ELEMENT_TEXT_RE = /<(\w+)(?:\s[^>]*)?>((?:[^<]|<(?!\w))*?)<\/\1>/g;
 const REF_RE = new RegExp(`^this\\.${IDENTIFIER}$`);
 const REFS_RE = new RegExp(`this\\.${IDENTIFIER}(\\.${IDENTIFIER})*`, 'g');
 const REFS_TEST_RE = new RegExp(`this\\.${IDENTIFIER}(\\.${IDENTIFIER})*`);
-// Don't add 'disabled', 'id', or 'name' here!
-const RESERVED_ATTRS = new Set(['class', 'style']);
 const SKIP = 'this.'.length;
 
 function canDisable(element: Element) {
@@ -1156,18 +1155,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   }
 
   #validateAttributes() {
-    const ctor = this.#ctor;
-    const propNames = new Set(Object.keys(ctor.properties));
-    for (const propName of propNames) {
-      if (RESERVED_ATTRS.has(propName)) {
-        this.#throw(
-          null,
-          '',
-          `property "${propName}" is not allowed because it is a reserved attribute`
-        );
-      }
-    }
-
+    const propNames = new Set(Object.keys(this.#ctor.properties));
     for (const attrName of this.getAttributeNames()) {
       if (globalAttributes.has(attrName)) continue;
       if (attrName.startsWith('on')) continue;
