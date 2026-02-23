@@ -138,7 +138,7 @@ To run the examples in the `src/examples` directory:
 1. cd to the `wrec` project directory.
 1. Enter `npm install`.
 1. Enter `npm run dev`.
-1. Browse `localhost:5173/examples/{name}.html` where `name`
+1. Browse `localhost:5173/src/examples/{name}.html` where `name`
    is the name of one of the `.html` files in that directory.
 
 `hello-world.html` demonstrates a basic Wrec component.

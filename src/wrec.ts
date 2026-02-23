@@ -423,7 +423,9 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       style += '</style>\n';
 
       let html = ctor.html.trim();
-      if (!html) throw new WrecError('static property html must be set');
+      if (!html) {
+        this.#throw(this, undefined, 'static property html must be set');
+      }
 
       // If the HTML string does not start with <,
       // assume it is a JavaScript expression.
@@ -484,10 +486,14 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     config: Record<string, any>,
     observedAttributes: string[]
   ) {
+    if (propName === 'class' || propName === 'style') {
+      throw new WrecError(`"${propName}" is a reserved property`);
+    }
+
     const attrName = Wrec.getAttrName(propName);
     const has = this.hasAttribute(attrName);
     if (config.required && !has) {
-      this.#throw(this, propName, 'is a required attribute');
+      this.#throw(this, attrName, 'is a required attribute');
     }
 
     // This follows the best practice
@@ -708,7 +714,9 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
           fa = `value:${name}`;
         } else {
           //TODO: Should this be considered an error?
-          //throw new WrecError(
+          //this.#throw(
+          //  this,
+          //  undefined,
           //  `can't submit by name because component has no value property`
           //);
           return; // nothing to submit
@@ -832,7 +840,9 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   #verifyFormAssociated() {
     if (this.#ctor.formAssociated || this.closest('form') === null) return;
     const className = this.#ctor.name;
-    throw new WrecError(
+    this.#throw(
+      this,
+      undefined,
       `inside form, class ${className} requires "static formAssociated = true;"`
     );
   }
@@ -1198,7 +1208,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     for (const [statePath, componentProp] of Object.entries(map)) {
       let value = getPathValue(state, statePath);
       if (value === undefined) {
-        throw new WrecError(`invalid state path "${statePath}"`);
+        this.#throw(this, undefined, `invalid state path "${statePath}"`);
       }
 
       value = this[componentProp];
