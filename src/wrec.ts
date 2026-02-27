@@ -7,6 +7,8 @@ import {getPathValue, setPathValue} from './paths';
 export type {ChangeListener};
 export {WrecState};
 
+type LooseObject = Record<string, any>;
+
 const globalAttributes = new Set([
   'class',
   'disabled',
@@ -226,7 +228,7 @@ function updateAttribute(
       // This is essential for the "disabled" attribute and
       // possibly others like "checked".
       const propName = Wrec.getPropName(realAttrName);
-      (element as Record<string, any>)[propName] = value;
+      (element as LooseObject)[propName] = value;
     } else {
       // Set the attribute.
       const currentValue = element.getAttribute(attrName);
@@ -241,7 +243,7 @@ function updateAttribute(
   } else {
     // Set the corresponding property.
     const propName = Wrec.getPropName(attrName);
-    (element as Record<string, any>)[propName] = value;
+    (element as LooseObject)[propName] = value;
   }
 }
 
@@ -321,7 +323,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
   // This must be set in each Wrec subclass.
   // It describes all the properties that a web component supports.
-  static properties: Record<string, any>;
+  static properties: LooseObject;
 
   // This is a map from properties to arrays of
   // computed property expressions that use the property.
@@ -338,6 +340,8 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
   static template: HTMLTemplateElement | null = null;
 
+  #batching = false;
+
   #ctor: typeof Wrec = this.constructor as typeof Wrec;
 
   // This is a map from expressions to references to them
@@ -353,7 +357,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   // this stores in the initial value of each property
   // in the formAssociatedCallback method
   // so they can be restored in the formResetCallback method.
-  #initialValuesMap: Record<string, any> = {};
+  #initialValuesMap: LooseObject = {};
 
   #internals: ElementInternals | null = null;
 
@@ -408,6 +412,23 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       if (formKey) this.setFormValue(formKey, String(value));
       this.propertyChangedCallback(propName, oldValue, newValue);
     }
+  }
+
+  // This applies multiple property changes and
+  // only updates the affected parts of the DOM after they are made.
+  batch(changes: LooseObject) {
+    this.#batching = true;
+    const map = this.#ctor.propToExprsMap;
+    const exprSet = new Set<string>();
+    for (const [propName, value] of Object.entries(changes)) {
+      this[propName] = value;
+      const exprs = map.get(propName) ?? [];
+      for (const expr of exprs) {
+        exprSet.add(expr);
+      }
+    }
+    this.#evaluateExpressions([...exprSet]);
+    this.#batching = false;
   }
 
   async #buildDOM() {
@@ -483,7 +504,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
   #defineProp(
     propName: string,
-    config: Record<string, any>,
+    config: LooseObject,
     observedAttributes: string[]
   ) {
     if (propName === 'class' || propName === 'style') {
@@ -539,7 +560,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
         this.#updateComputedProperties(propName);
         this.#updateAttribute(propName, type, value, attrName);
-        this.#react(propName);
+        if (!this.#batching) this.#react(propName);
         this.#updateParentProperty(propName, value);
         const formKey = this.#formAssoc[propName];
         if (formKey) this.setFormValue(formKey, String(value));
@@ -629,6 +650,33 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       }
 
       this.#registerPlaceholders(text, element, attrName);
+    }
+  }
+
+  #evaluateExpressions(exprs: string[]) {
+    for (const expr of exprs) {
+      let value = this.#evaluateInContext(expr);
+      const refs: Ref[] = this.#exprToRefsMap.get(expr) ?? [];
+      for (const ref of refs) {
+        if (ref instanceof HTMLElement) {
+          this.#updateElementContent(ref, value);
+        } else if (ref instanceof CSSStyleRule) {
+          // We need to handle this case for completeness,
+          // but a ref is never just a CSSStyleRule.
+          // It can be an object with element and attrName properties
+          // where the element is a CSSStyleRule.
+          // The call to the #registerPlaceholders method
+          // in the #evaluateText method creates those.
+          // That case is is handled by the else block below.
+        } else {
+          const {element, attrName} = ref;
+          if (element instanceof CSSStyleRule) {
+            element.style.setProperty(attrName, value);
+          } else {
+            updateValue(element, attrName, value);
+          }
+        }
+      }
     }
   }
 
@@ -876,33 +924,10 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     const ctor = this.#ctor;
     const map = ctor.propToExprsMap;
     const exprs = map!.get(propName) || [];
-    for (const expr of exprs) {
-      let value = this.#evaluateInContext(expr);
-      const refs: Ref[] = this.#exprToRefsMap.get(expr) ?? [];
-      for (const ref of refs) {
-        if (ref instanceof HTMLElement) {
-          this.#updateElementContent(ref, value);
-        } else if (ref instanceof CSSStyleRule) {
-          // We need to handle this case for completeness,
-          // but a ref is never just a CSSStyleRule.
-          // It can be an object with element and attrName properties
-          // where the element is a CSSStyleRule.
-          // The call to the #registerPlaceholders method
-          // in the #evaluateText method creates those.
-          // That case is is handled by the else block below.
-        } else {
-          const {element, attrName} = ref;
-          if (element instanceof CSSStyleRule) {
-            element.style.setProperty(attrName, value);
-          } else {
-            updateValue(element, attrName, value);
-          }
-        }
-      }
-    }
+    this.#evaluateExpressions(exprs);
   }
 
-  #registerComputedProp(propName: string, config: Record<string, any>) {
+  #registerComputedProp(propName: string, config: LooseObject) {
     const {computed, uses} = config;
     const map = this.#ctor.propToComputedMap!;
 
@@ -1135,7 +1160,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     const {host} = root;
     if (!host) return;
 
-    const parent = host as Record<string, any>;
+    const parent = host as LooseObject;
     parent[parentProp] = value;
   }
 
