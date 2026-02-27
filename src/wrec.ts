@@ -7,7 +7,8 @@ import {getPathValue, setPathValue} from './paths';
 export type {ChangeListener};
 export {WrecState};
 
-type LooseObject = Record<string, any>;
+type StringToAny = Record<string, any>;
+type StringToString = Record<string, string>;
 
 const globalAttributes = new Set([
   'class',
@@ -78,7 +79,7 @@ function canDisable(element: Element) {
 // but web components created with wrec can use it.
 export function createElement(
   name: string,
-  attributes: Record<string, string>,
+  attributes: StringToString,
   innerHTML: string
 ): HTMLElement {
   const element = document.createElement(name);
@@ -228,7 +229,7 @@ function updateAttribute(
       // This is essential for the "disabled" attribute and
       // possibly others like "checked".
       const propName = Wrec.getPropName(realAttrName);
-      (element as LooseObject)[propName] = value;
+      (element as StringToAny)[propName] = value;
     } else {
       // Set the attribute.
       const currentValue = element.getAttribute(attrName);
@@ -243,7 +244,7 @@ function updateAttribute(
   } else {
     // Set the corresponding property.
     const propName = Wrec.getPropName(attrName);
-    (element as LooseObject)[propName] = value;
+    (element as StringToAny)[propName] = value;
   }
 }
 
@@ -323,7 +324,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
   // This must be set in each Wrec subclass.
   // It describes all the properties that a web component supports.
-  static properties: LooseObject;
+  static properties: StringToAny;
 
   // This is a map from properties to arrays of
   // computed property expressions that use the property.
@@ -340,6 +341,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
   static template: HTMLTemplateElement | null = null;
 
+  // This is true while the batchSet method is running.
   #batching = false;
 
   #ctor: typeof Wrec = this.constructor as typeof Wrec;
@@ -350,14 +352,14 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   // Each component instance needs its own map.
   #exprToRefsMap = new Map<string, Ref[]>();
 
-  #formAssoc: Record<string, string> = {};
+  #formAssoc: StringToString = {};
   #formData: FormData | undefined;
 
   // For components that set `formAssociated` to true,
   // this stores in the initial value of each property
   // in the formAssociatedCallback method
   // so they can be restored in the formResetCallback method.
-  #initialValuesMap: LooseObject = {};
+  #initialValuesMap: StringToAny = {};
 
   #internals: ElementInternals | null = null;
 
@@ -414,19 +416,46 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     }
   }
 
-  // This applies multiple property changes and
-  // only updates the affected parts of the DOM after they are made.
-  batch(changes: LooseObject) {
+  // This applies multiple property changes and only updates
+  // the affected parts of the DOM after all of them are made.
+  batchSet(changes: StringToAny) {
     this.#batching = true;
-    const map = this.#ctor.propToExprsMap;
+
+    // Find the expressions that use any of the properties being changed.
+    const propToExprsMap = this.#ctor.propToExprsMap;
     const exprSet = new Set<string>();
     for (const [propName, value] of Object.entries(changes)) {
       this[propName] = value;
-      const exprs = map.get(propName) ?? [];
+      const exprs = propToExprsMap.get(propName) ?? [];
       for (const expr of exprs) {
         exprSet.add(expr);
       }
     }
+
+    // Find the set of computed property names
+    // that depend on any of the properties being changed.
+    const propToComputedMap = this.#ctor.propToComputedMap;
+    const computedSet = new Set<string>();
+    const computedToExprMap: StringToString = {};
+    for (const propName of Object.keys(changes)) {
+      const computes = propToComputedMap.get(propName) || [];
+      for (const [computedName, expr] of computes) {
+        computedSet.add(computedName);
+        computedToExprMap[computedName] = expr;
+      }
+    }
+
+    for (const computedName of computedSet) {
+      // Update the computed property.
+      const expr = computedToExprMap[computedName];
+      this[computedName] = this.#evaluateInContext(expr);
+      // Find the expressions that use the computed property.
+      const exprs = propToExprsMap.get(computedName) ?? [];
+      for (const expr of exprs) {
+        exprSet.add(expr);
+      }
+    }
+
     this.#evaluateExpressions([...exprSet]);
     this.#batching = false;
   }
@@ -504,7 +533,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
   #defineProp(
     propName: string,
-    config: LooseObject,
+    config: StringToAny,
     observedAttributes: string[]
   ) {
     if (propName === 'class' || propName === 'style') {
@@ -558,9 +587,11 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
         const {state, stateProp} = this.#ctor.properties[propName];
         if (stateProp) setPathValue(state, stateProp, value);
 
-        this.#updateComputedProperties(propName);
         this.#updateAttribute(propName, type, value, attrName);
-        if (!this.#batching) this.#react(propName);
+        if (!this.#batching) {
+          this.#updateComputedProperties(propName);
+          this.#react(propName);
+        }
         this.#updateParentProperty(propName, value);
         const formKey = this.#formAssoc[propName];
         if (formKey) this.setFormValue(formKey, String(value));
@@ -655,7 +686,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
   #evaluateExpressions(exprs: string[]) {
     for (const expr of exprs) {
-      let value = this.#evaluateInContext(expr);
+      const value = this.#evaluateInContext(expr);
       const refs: Ref[] = this.#exprToRefsMap.get(expr) ?? [];
       for (const ref of refs) {
         if (ref instanceof HTMLElement) {
@@ -775,7 +806,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     }
 
     // Build mapping from component property names to form field names.
-    const formAssoc: Record<string, string> = {};
+    const formAssoc: StringToString = {};
     const pairs = fa.split(',');
     for (const pair of pairs) {
       const [key, value] = pair.split(':');
@@ -921,13 +952,11 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
   #react(propName: string) {
     // Update all expression references.
-    const ctor = this.#ctor;
-    const map = ctor.propToExprsMap;
-    const exprs = map!.get(propName) || [];
+    const exprs = this.#ctor.propToExprsMap!.get(propName) || [];
     this.#evaluateExpressions(exprs);
   }
 
-  #registerComputedProp(propName: string, config: LooseObject) {
+  #registerComputedProp(propName: string, config: StringToAny) {
     const {computed, uses} = config;
     const map = this.#ctor.propToComputedMap!;
 
@@ -1160,7 +1189,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     const {host} = root;
     if (!host) return;
 
-    const parent = host as LooseObject;
+    const parent = host as StringToAny;
     parent[parentProp] = value;
   }
 
@@ -1169,7 +1198,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
    * @param map - object whose keys are state properties and
    *   whose values are component properties
    */
-  useState(state: WrecState, map?: Record<string, string>) {
+  useState(state: WrecState, map?: StringToString) {
     if (!map) {
       // Assume this component has the same properties as the state.
       map = {};
@@ -1229,7 +1258,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     return matches;
   }
 
-  #validateStateMap(state: WrecState, map: Record<string, string>) {
+  #validateStateMap(state: WrecState, map: StringToString) {
     for (const [statePath, componentProp] of Object.entries(map)) {
       let value = getPathValue(state, statePath);
       if (value === undefined) {
