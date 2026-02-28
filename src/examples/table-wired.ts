@@ -2,6 +2,7 @@ import {css, html, Wrec} from '../wrec';
 
 type LooseObject = Record<string, unknown>;
 
+// This component is replaced by the newer sortable-table component.
 class TableWired extends Wrec {
   static properties = {
     headings: {type: Array<string>},

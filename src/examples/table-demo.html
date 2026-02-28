@@ -8,7 +8,7 @@
       }
     </style>
     <script src="table-manual.js" type="module"></script>
-    <script src="table-wired.js" type="module"></script>
+    <script src="sortable-table.js" type="module"></script>
     <script type="module">
       const propNames = ['name', 'age', 'occupation'];
       const headings = ['Name', 'Age', 'Occupation'];
@@ -26,15 +26,16 @@
       tableManual.headings = headings;
       tableManual.data = data;
 
-      const tableWired = document.querySelector('table-wired');
-      tableWired.propNames = propNames;
-      tableWired.headings = headings;
-      tableWired.data = data;
+      const sortableTable = document.querySelector('sortable-table');
+      sortableTable.data = data;
     </script>
   </head>
   <body>
     <table-manual></table-manual>
     <hr />
-    <table-wired></table-wired>
+    <sortable-table
+      headings="Name,Age,Occupation"
+      properties="name,age,occupation"
+    ></sortable-table>
   </body>
 </html>
