@@ -308,6 +308,11 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   // that corresponds to a camelCase property name.
   static propToAttrMap = new Map<string, string>();
 
+  // This can be overridden in each Wrec subclass.
+  // It lists all the module-level functions
+  // that be used in JavaScript expressions.
+  static context = {};
+
   // This can be set in each Wrec subclass.
   // It describes CSS rules that a web component uses.
   static css = '';
@@ -445,6 +450,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       }
     }
 
+    // Compute new values for the computed properties.
     for (const computedName of computedSet) {
       // Update the computed property.
       const expr = computedToExprMap[computedName];
@@ -454,6 +460,22 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       for (const expr of exprs) {
         exprSet.add(expr);
       }
+    }
+
+    // Computed properties can depend on other computed properties.
+    // So we need to recompute them until they stop changing.
+    while (true) {
+      let changed = false;
+      for (const computedName of computedSet) {
+        const expr = computedToExprMap[computedName];
+        const newValue = this.#evaluateInContext(expr);
+        const oldValue = this[computedName];
+        if (JSON.stringify(newValue) !== JSON.stringify(oldValue)) {
+          this[computedName] = newValue;
+          changed = true;
+        }
+      }
+      if (!changed) break;
     }
 
     this.#evaluateExpressions([...exprSet]);
@@ -711,9 +733,15 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     }
   }
 
-  #evaluateInContext(expr: string) {
+  #evaluateInContext(expression: string) {
     // This approach is safer than using the eval function.
-    return new Function('return ' + expr).call(this);
+    //return new Function('return ' + expr).call(this);
+    const {context} = this.#ctor;
+    const fn = new Function(
+      'context',
+      `const {${Object.keys(context).join(',')}} = context; return ${expression};`
+    );
+    return fn.call(this, context);
   }
 
   #evaluateText(element: HTMLElement) {
@@ -984,7 +1012,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
     if (uses) {
       for (const use of uses.split(',')) {
-        register(use, computed);
+        register(use.trim(), computed);
       }
     }
   }

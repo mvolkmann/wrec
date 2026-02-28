@@ -163,11 +163,11 @@ function Qe() {
   const n = e, s = n.currentScript, {
     DocumentFragment: r,
     HTMLTemplateElement: a,
-    Node: f,
+    Node: l,
     Element: p,
     NodeFilter: h,
     NamedNodeMap: m = i.NamedNodeMap || i.MozNamedAttrMap,
-    HTMLFormElement: b,
+    HTMLFormElement: A,
     DOMParser: G,
     trustedTypes: H
   } = i, B = p.prototype, fn = pt(B, "cloneNode"), un = pt(B, "remove"), pn = pt(B, "nextSibling"), hn = pt(B, "childNodes"), At = pt(B, "parentNode");
@@ -198,7 +198,7 @@ function Qe() {
   } = Ye;
   let {
     IS_ALLOWED_URI: de
-  } = Ye, _ = null;
+  } = Ye, b = null;
   const Te = d({}, [...We, ...te, ...ee, ...ne, ...Ge]);
   let S = null;
   const ge = d({}, [...Be, ...oe, ...je, ...Ct]);
@@ -250,14 +250,14 @@ function Qe() {
   const Rn = d({}, ["title", "style", "font", "a", "script"]);
   let ct = null;
   const On = ["application/xhtml+xml", "text/html"], wn = "text/html";
-  let A = null, et = null;
+  let _ = null, et = null;
   const Mn = e.createElement("form"), we = function(o) {
     return o instanceof RegExp || o instanceof Function;
   }, Xt = function() {
     let o = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : {};
     if (!(et && et === o)) {
       if ((!o || typeof o != "object") && (o = {}), o = k(o), ct = // eslint-disable-next-line unicorn/prefer-includes
-      On.indexOf(o.PARSER_MEDIA_TYPE) === -1 ? wn : o.PARSER_MEDIA_TYPE, A = ct === "application/xhtml+xml" ? Jt : Nt, _ = v(o, "ALLOWED_TAGS") ? d({}, o.ALLOWED_TAGS, A) : Te, S = v(o, "ALLOWED_ATTR") ? d({}, o.ALLOWED_ATTR, A) : ge, Vt = v(o, "ALLOWED_NAMESPACES") ? d({}, o.ALLOWED_NAMESPACES, Jt) : yn, jt = v(o, "ADD_URI_SAFE_ATTR") ? d(k(Oe), o.ADD_URI_SAFE_ATTR, A) : Oe, ye = v(o, "ADD_DATA_URI_TAGS") ? d(k(Re), o.ADD_DATA_URI_TAGS, A) : Re, I = v(o, "FORBID_CONTENTS") ? d({}, o.FORBID_CONTENTS, A) : Bt, rt = v(o, "FORBID_TAGS") ? d({}, o.FORBID_TAGS, A) : k({}), Ht = v(o, "FORBID_ATTR") ? d({}, o.FORBID_ATTR, A) : k({}), Q = v(o, "USE_PROFILES") ? o.USE_PROFILES : !1, Ee = o.ALLOW_ARIA_ATTR !== !1, zt = o.ALLOW_DATA_ATTR !== !1, Ae = o.ALLOW_UNKNOWN_PROTOCOLS || !1, _e = o.ALLOW_SELF_CLOSE_IN_ATTR !== !1, Z = o.SAFE_FOR_TEMPLATES || !1, _t = o.SAFE_FOR_XML !== !1, V = o.WHOLE_DOCUMENT || !1, J = o.RETURN_DOM || !1, bt = o.RETURN_DOM_FRAGMENT || !1, St = o.RETURN_TRUSTED_TYPE || !1, Wt = o.FORCE_BODY || !1, be = o.SANITIZE_DOM !== !1, Se = o.SANITIZE_NAMED_PROPS || !1, Gt = o.KEEP_CONTENT !== !1, at = o.IN_PLACE || !1, de = o.ALLOWED_URI_REGEXP || Ze, tt = o.NAMESPACE || z, Ot = o.MATHML_TEXT_INTEGRATION_POINTS || Ot, wt = o.HTML_INTEGRATION_POINTS || wt, g = o.CUSTOM_ELEMENT_HANDLING || {}, o.CUSTOM_ELEMENT_HANDLING && we(o.CUSTOM_ELEMENT_HANDLING.tagNameCheck) && (g.tagNameCheck = o.CUSTOM_ELEMENT_HANDLING.tagNameCheck), o.CUSTOM_ELEMENT_HANDLING && we(o.CUSTOM_ELEMENT_HANDLING.attributeNameCheck) && (g.attributeNameCheck = o.CUSTOM_ELEMENT_HANDLING.attributeNameCheck), o.CUSTOM_ELEMENT_HANDLING && typeof o.CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements == "boolean" && (g.allowCustomizedBuiltInElements = o.CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements), Z && (zt = !1), bt && (J = !0), Q && (_ = d({}, Ge), S = [], Q.html === !0 && (d(_, We), d(S, Be)), Q.svg === !0 && (d(_, te), d(S, oe), d(S, Ct)), Q.svgFilters === !0 && (d(_, ee), d(S, oe), d(S, Ct)), Q.mathMl === !0 && (d(_, ne), d(S, je), d(S, Ct))), o.ADD_TAGS && (typeof o.ADD_TAGS == "function" ? K.tagCheck = o.ADD_TAGS : (_ === Te && (_ = k(_)), d(_, o.ADD_TAGS, A))), o.ADD_ATTR && (typeof o.ADD_ATTR == "function" ? K.attributeCheck = o.ADD_ATTR : (S === ge && (S = k(S)), d(S, o.ADD_ATTR, A))), o.ADD_URI_SAFE_ATTR && d(jt, o.ADD_URI_SAFE_ATTR, A), o.FORBID_CONTENTS && (I === Bt && (I = k(I)), d(I, o.FORBID_CONTENTS, A)), o.ADD_FORBID_CONTENTS && (I === Bt && (I = k(I)), d(I, o.ADD_FORBID_CONTENTS, A)), Gt && (_["#text"] = !0), V && d(_, ["html", "head", "body"]), _.table && (d(_, ["tbody"]), delete rt.tbody), o.TRUSTED_TYPES_POLICY) {
+      On.indexOf(o.PARSER_MEDIA_TYPE) === -1 ? wn : o.PARSER_MEDIA_TYPE, _ = ct === "application/xhtml+xml" ? Jt : Nt, b = v(o, "ALLOWED_TAGS") ? d({}, o.ALLOWED_TAGS, _) : Te, S = v(o, "ALLOWED_ATTR") ? d({}, o.ALLOWED_ATTR, _) : ge, Vt = v(o, "ALLOWED_NAMESPACES") ? d({}, o.ALLOWED_NAMESPACES, Jt) : yn, jt = v(o, "ADD_URI_SAFE_ATTR") ? d(k(Oe), o.ADD_URI_SAFE_ATTR, _) : Oe, ye = v(o, "ADD_DATA_URI_TAGS") ? d(k(Re), o.ADD_DATA_URI_TAGS, _) : Re, I = v(o, "FORBID_CONTENTS") ? d({}, o.FORBID_CONTENTS, _) : Bt, rt = v(o, "FORBID_TAGS") ? d({}, o.FORBID_TAGS, _) : k({}), Ht = v(o, "FORBID_ATTR") ? d({}, o.FORBID_ATTR, _) : k({}), Q = v(o, "USE_PROFILES") ? o.USE_PROFILES : !1, Ee = o.ALLOW_ARIA_ATTR !== !1, zt = o.ALLOW_DATA_ATTR !== !1, Ae = o.ALLOW_UNKNOWN_PROTOCOLS || !1, _e = o.ALLOW_SELF_CLOSE_IN_ATTR !== !1, Z = o.SAFE_FOR_TEMPLATES || !1, _t = o.SAFE_FOR_XML !== !1, V = o.WHOLE_DOCUMENT || !1, J = o.RETURN_DOM || !1, bt = o.RETURN_DOM_FRAGMENT || !1, St = o.RETURN_TRUSTED_TYPE || !1, Wt = o.FORCE_BODY || !1, be = o.SANITIZE_DOM !== !1, Se = o.SANITIZE_NAMED_PROPS || !1, Gt = o.KEEP_CONTENT !== !1, at = o.IN_PLACE || !1, de = o.ALLOWED_URI_REGEXP || Ze, tt = o.NAMESPACE || z, Ot = o.MATHML_TEXT_INTEGRATION_POINTS || Ot, wt = o.HTML_INTEGRATION_POINTS || wt, g = o.CUSTOM_ELEMENT_HANDLING || {}, o.CUSTOM_ELEMENT_HANDLING && we(o.CUSTOM_ELEMENT_HANDLING.tagNameCheck) && (g.tagNameCheck = o.CUSTOM_ELEMENT_HANDLING.tagNameCheck), o.CUSTOM_ELEMENT_HANDLING && we(o.CUSTOM_ELEMENT_HANDLING.attributeNameCheck) && (g.attributeNameCheck = o.CUSTOM_ELEMENT_HANDLING.attributeNameCheck), o.CUSTOM_ELEMENT_HANDLING && typeof o.CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements == "boolean" && (g.allowCustomizedBuiltInElements = o.CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements), Z && (zt = !1), bt && (J = !0), Q && (b = d({}, Ge), S = [], Q.html === !0 && (d(b, We), d(S, Be)), Q.svg === !0 && (d(b, te), d(S, oe), d(S, Ct)), Q.svgFilters === !0 && (d(b, ee), d(S, oe), d(S, Ct)), Q.mathMl === !0 && (d(b, ne), d(S, je), d(S, Ct))), o.ADD_TAGS && (typeof o.ADD_TAGS == "function" ? K.tagCheck = o.ADD_TAGS : (b === Te && (b = k(b)), d(b, o.ADD_TAGS, _))), o.ADD_ATTR && (typeof o.ADD_ATTR == "function" ? K.attributeCheck = o.ADD_ATTR : (S === ge && (S = k(S)), d(S, o.ADD_ATTR, _))), o.ADD_URI_SAFE_ATTR && d(jt, o.ADD_URI_SAFE_ATTR, _), o.FORBID_CONTENTS && (I === Bt && (I = k(I)), d(I, o.FORBID_CONTENTS, _)), o.ADD_FORBID_CONTENTS && (I === Bt && (I = k(I)), d(I, o.ADD_FORBID_CONTENTS, _)), Gt && (b["#text"] = !0), V && d(b, ["html", "head", "body"]), b.table && (d(b, ["tbody"]), delete rt.tbody), o.TRUSTED_TYPES_POLICY) {
         if (typeof o.TRUSTED_TYPES_POLICY.createHTML != "function")
           throw ut('TRUSTED_TYPES_POLICY configuration option must provide a "createHTML" hook.');
         if (typeof o.TRUSTED_TYPES_POLICY.createScriptURL != "function")
@@ -273,8 +273,8 @@ function Qe() {
       namespaceURI: tt,
       tagName: "template"
     });
-    const l = Nt(o.tagName), T = Nt(c.tagName);
-    return Vt[o.namespaceURI] ? o.namespaceURI === Rt ? c.namespaceURI === z ? l === "svg" : c.namespaceURI === yt ? l === "svg" && (T === "annotation-xml" || Ot[T]) : !!Me[l] : o.namespaceURI === yt ? c.namespaceURI === z ? l === "math" : c.namespaceURI === Rt ? l === "math" && wt[T] : !!Ce[l] : o.namespaceURI === z ? c.namespaceURI === Rt && !wt[T] || c.namespaceURI === yt && !Ot[T] ? !1 : !Ce[l] && (Rn[l] || !Me[l]) : !!(ct === "application/xhtml+xml" && Vt[o.namespaceURI]) : !1;
+    const f = Nt(o.tagName), T = Nt(c.tagName);
+    return Vt[o.namespaceURI] ? o.namespaceURI === Rt ? c.namespaceURI === z ? f === "svg" : c.namespaceURI === yt ? f === "svg" && (T === "annotation-xml" || Ot[T]) : !!Me[f] : o.namespaceURI === yt ? c.namespaceURI === z ? f === "math" : c.namespaceURI === Rt ? f === "math" && wt[T] : !!Ce[f] : o.namespaceURI === z ? c.namespaceURI === Rt && !wt[T] || c.namespaceURI === yt && !Ot[T] ? !1 : !Ce[f] && (Rn[f] || !Me[f]) : !!(ct === "application/xhtml+xml" && Vt[o.namespaceURI]) : !1;
   }, P = function(o) {
     lt(t.removed, {
       element: o
@@ -308,12 +308,12 @@ function Qe() {
         } catch {
         }
   }, Ne = function(o) {
-    let c = null, l = null;
+    let c = null, f = null;
     if (Wt)
       o = "<remove></remove>" + o;
     else {
       const E = Qt(o, /^[\r\n\t ]+/);
-      l = E && E[0];
+      f = E && E[0];
     }
     ct === "application/xhtml+xml" && tt === z && (o = '<html xmlns="http://www.w3.org/1999/xhtml"><head></head><body>' + o + "</body></html>");
     const T = w ? w.createHTML(o) : o;
@@ -330,7 +330,7 @@ function Qe() {
       }
     }
     const O = c.body || c.documentElement;
-    return o && l && O.insertBefore(e.createTextNode(l), O.childNodes[0] || null), tt === z ? Tn.call(c, V ? "html" : "body")[0] : V ? c.documentElement : O;
+    return o && f && O.insertBefore(e.createTextNode(f), O.childNodes[0] || null), tt === z ? Tn.call(c, V ? "html" : "body")[0] : V ? c.documentElement : O;
   }, Le = function(o) {
     return mn.call(
       o.ownerDocument || o,
@@ -340,29 +340,29 @@ function Qe() {
       null
     );
   }, qt = function(o) {
-    return o instanceof b && (typeof o.nodeName != "string" || typeof o.textContent != "string" || typeof o.removeChild != "function" || !(o.attributes instanceof m) || typeof o.removeAttribute != "function" || typeof o.setAttribute != "function" || typeof o.namespaceURI != "string" || typeof o.insertBefore != "function" || typeof o.hasChildNodes != "function");
+    return o instanceof A && (typeof o.nodeName != "string" || typeof o.textContent != "string" || typeof o.removeChild != "function" || !(o.attributes instanceof m) || typeof o.removeAttribute != "function" || typeof o.setAttribute != "function" || typeof o.namespaceURI != "string" || typeof o.insertBefore != "function" || typeof o.hasChildNodes != "function");
   }, De = function(o) {
-    return typeof f == "function" && o instanceof f;
+    return typeof l == "function" && o instanceof l;
   };
   function $(u, o, c) {
-    Mt(u, (l) => {
-      l.call(t, o, c, et);
+    Mt(u, (f) => {
+      f.call(t, o, c, et);
     });
   }
   const xe = function(o) {
     let c = null;
     if ($(M.beforeSanitizeElements, o, null), qt(o))
       return P(o), !0;
-    const l = A(o.nodeName);
+    const f = _(o.nodeName);
     if ($(M.uponSanitizeElement, o, {
-      tagName: l,
-      allowedTags: _
+      tagName: f,
+      allowedTags: b
     }), _t && o.hasChildNodes() && !De(o.firstElementChild) && C(/<[/\w!]/g, o.innerHTML) && C(/<[/\w!]/g, o.textContent) || o.nodeType === ht.progressingInstruction || _t && o.nodeType === ht.comment && C(/<[/\w]/g, o.data))
       return P(o), !0;
-    if (!(K.tagCheck instanceof Function && K.tagCheck(l)) && (!_[l] || rt[l])) {
-      if (!rt[l] && Ie(l) && (g.tagNameCheck instanceof RegExp && C(g.tagNameCheck, l) || g.tagNameCheck instanceof Function && g.tagNameCheck(l)))
+    if (!(K.tagCheck instanceof Function && K.tagCheck(f)) && (!b[f] || rt[f])) {
+      if (!rt[f] && Ie(f) && (g.tagNameCheck instanceof RegExp && C(g.tagNameCheck, f) || g.tagNameCheck instanceof Function && g.tagNameCheck(f)))
         return !1;
-      if (Gt && !I[l]) {
+      if (Gt && !I[f]) {
         const T = At(o) || o.parentNode, O = hn(o) || o.childNodes;
         if (O && T) {
           const E = O.length;
@@ -374,13 +374,13 @@ function Qe() {
       }
       return P(o), !0;
     }
-    return o instanceof p && !Cn(o) || (l === "noscript" || l === "noembed" || l === "noframes") && C(/<\/no(script|embed|frames)/i, o.innerHTML) ? (P(o), !0) : (Z && o.nodeType === ht.text && (c = o.textContent, Mt([kt, Ft, Ut], (T) => {
+    return o instanceof p && !Cn(o) || (f === "noscript" || f === "noembed" || f === "noframes") && C(/<\/no(script|embed|frames)/i, o.innerHTML) ? (P(o), !0) : (Z && o.nodeType === ht.text && (c = o.textContent, Mt([kt, Ft, Ut], (T) => {
       c = ft(c, T, " ");
     }), o.textContent !== c && (lt(t.removed, {
       element: o.cloneNode()
     }), o.textContent = c)), $(M.afterSanitizeElements, o, null), !1);
-  }, ve = function(o, c, l) {
-    if (be && (c === "id" || c === "name") && (l in e || l in Mn))
+  }, ve = function(o, c, f) {
+    if (be && (c === "id" || c === "name") && (f in e || f in Mn))
       return !1;
     if (!(zt && !Ht[c] && C(En, c))) {
       if (!(Ee && C(An, c))) {
@@ -392,13 +392,13 @@ function Qe() {
               // and c) if the attribute name passes whatever the user has configured for CUSTOM_ELEMENT_HANDLING.attributeNameCheck
               !(Ie(o) && (g.tagNameCheck instanceof RegExp && C(g.tagNameCheck, o) || g.tagNameCheck instanceof Function && g.tagNameCheck(o)) && (g.attributeNameCheck instanceof RegExp && C(g.attributeNameCheck, c) || g.attributeNameCheck instanceof Function && g.attributeNameCheck(c, o)) || // Alternative, second condition checks if it's an `is`-attribute, AND
               // the value passes whatever the user has configured for CUSTOM_ELEMENT_HANDLING.tagNameCheck
-              c === "is" && g.allowCustomizedBuiltInElements && (g.tagNameCheck instanceof RegExp && C(g.tagNameCheck, l) || g.tagNameCheck instanceof Function && g.tagNameCheck(l)))
+              c === "is" && g.allowCustomizedBuiltInElements && (g.tagNameCheck instanceof RegExp && C(g.tagNameCheck, f) || g.tagNameCheck instanceof Function && g.tagNameCheck(f)))
             ) return !1;
           } else if (!jt[c]) {
-            if (!C(de, ft(l, me, ""))) {
-              if (!((c === "src" || c === "xlink:href" || c === "href") && o !== "script" && Pn(l, "data:") === 0 && ye[o])) {
-                if (!(Ae && !C(_n, ft(l, me, "")))) {
-                  if (l)
+            if (!C(de, ft(f, me, ""))) {
+              if (!((c === "src" || c === "xlink:href" || c === "href") && o !== "script" && Pn(f, "data:") === 0 && ye[o])) {
+                if (!(Ae && !C(_n, ft(f, me, "")))) {
+                  if (f)
                     return !1;
                 }
               }
@@ -417,7 +417,7 @@ function Qe() {
     } = o;
     if (!c || qt(o))
       return;
-    const l = {
+    const f = {
       attrName: "",
       attrValue: "",
       keepAttr: !0,
@@ -430,9 +430,9 @@ function Qe() {
         name: E,
         namespaceURI: D,
         value: W
-      } = O, nt = A(E), Kt = W;
+      } = O, nt = _(E), Kt = W;
       let y = E === "value" ? Kt : kn(Kt);
-      if (l.attrName = nt, l.attrValue = y, l.keepAttr = !0, l.forceKeepAttr = void 0, $(M.uponSanitizeAttribute, o, l), y = l.attrValue, Se && (nt === "id" || nt === "name") && (X(E, o), y = Sn + y), _t && C(/((--!?|])>)|<\/(style|title|textarea)/i, y)) {
+      if (f.attrName = nt, f.attrValue = y, f.keepAttr = !0, f.forceKeepAttr = void 0, $(M.uponSanitizeAttribute, o, f), y = f.attrValue, Se && (nt === "id" || nt === "name") && (X(E, o), y = Sn + y), _t && C(/((--!?|])>)|<\/(style|title|textarea)/i, y)) {
         X(E, o);
         continue;
       }
@@ -440,9 +440,9 @@ function Qe() {
         X(E, o);
         continue;
       }
-      if (l.forceKeepAttr)
+      if (f.forceKeepAttr)
         continue;
-      if (!l.keepAttr) {
+      if (!f.keepAttr) {
         X(E, o);
         continue;
       }
@@ -453,7 +453,7 @@ function Qe() {
       Z && Mt([kt, Ft, Ut], (Fe) => {
         y = ft(y, Fe, " ");
       });
-      const ke = A(o.nodeName);
+      const ke = _(o.nodeName);
       if (!ve(ke, nt, y)) {
         X(E, o);
         continue;
@@ -479,13 +479,13 @@ function Qe() {
     $(M.afterSanitizeAttributes, o, null);
   }, Nn = function u(o) {
     let c = null;
-    const l = Le(o);
-    for ($(M.beforeSanitizeShadowDOM, o, null); c = l.nextNode(); )
+    const f = Le(o);
+    for ($(M.beforeSanitizeShadowDOM, o, null); c = f.nextNode(); )
       $(M.uponSanitizeShadowNode, c, null), xe(c), Pe(c), c.content instanceof r && u(c.content);
     $(M.afterSanitizeShadowDOM, o, null);
   };
   return t.sanitize = function(u) {
-    let o = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {}, c = null, l = null, T = null, O = null;
+    let o = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {}, c = null, f = null, T = null, O = null;
     if (Yt = !u, Yt && (u = "<!-->"), typeof u != "string" && !De(u))
       if (typeof u.toString == "function") {
         if (u = u.toString(), typeof u != "string")
@@ -496,12 +496,12 @@ function Qe() {
       return u;
     if ($t || Xt(o), t.removed = [], typeof u == "string" && (at = !1), at) {
       if (u.nodeName) {
-        const W = A(u.nodeName);
-        if (!_[W] || rt[W])
+        const W = _(u.nodeName);
+        if (!b[W] || rt[W])
           throw ut("root node is forbidden and cannot be sanitized in-place");
       }
-    } else if (u instanceof f)
-      c = Ne("<!---->"), l = c.ownerDocument.importNode(u, !0), l.nodeType === ht.element && l.nodeName === "BODY" || l.nodeName === "HTML" ? c = l : c.appendChild(l);
+    } else if (u instanceof l)
+      c = Ne("<!---->"), f = c.ownerDocument.importNode(u, !0), f.nodeType === ht.element && f.nodeName === "BODY" || f.nodeName === "HTML" ? c = f : c.appendChild(f);
     else {
       if (!J && !Z && !V && // eslint-disable-next-line unicorn/prefer-includes
       u.indexOf("<") === -1)
@@ -524,7 +524,7 @@ function Qe() {
       return (S.shadowroot || S.shadowrootmode) && (O = gn.call(n, O, !0)), O;
     }
     let D = V ? c.outerHTML : c.innerHTML;
-    return V && _["!doctype"] && c.ownerDocument && c.ownerDocument.doctype && c.ownerDocument.doctype.name && C(Je, c.ownerDocument.doctype.name) && (D = "<!DOCTYPE " + c.ownerDocument.doctype.name + `>
+    return V && b["!doctype"] && c.ownerDocument && c.ownerDocument.doctype && c.ownerDocument.doctype.name && C(Je, c.ownerDocument.doctype.name) && (D = "<!DOCTYPE " + c.ownerDocument.doctype.name + `>
 ` + D), Z && Mt([kt, Ft, Ut], (W) => {
       D = ft(D, W, " ");
     }), w && St ? w.createHTML(D) : D;
@@ -535,8 +535,8 @@ function Qe() {
     et = null, $t = !1;
   }, t.isValidAttribute = function(u, o, c) {
     et || Xt({});
-    const l = A(u), T = A(o);
-    return ve(l, T, c);
+    const f = _(u), T = _(o);
+    return ve(f, T, c);
   }, t.addHook = function(u, o) {
     typeof o == "function" && lt(M[u], o);
   }, t.removeHook = function(u, o) {
@@ -557,20 +557,20 @@ function en(i, t, e = "") {
     // Intercept property reads.
     // This creates nested proxies lazily.
     get(r, a) {
-      const f = Reflect.get(r, a);
-      if (f === null || typeof f != "object") return f;
-      const p = n.get(f);
+      const l = Reflect.get(r, a);
+      if (l === null || typeof l != "object") return l;
+      const p = n.get(l);
       if (p) return p;
-      const h = e ? `${e}.${a}` : a, m = en(f, t, h);
-      return n.set(f, m), m;
+      const h = e ? `${e}.${a}` : a, m = en(l, t, h);
+      return n.set(l, m), m;
     },
     // Intercept property writes.
-    set(r, a, f) {
+    set(r, a, l) {
       const p = Reflect.get(r, a);
-      if (p !== f) {
-        Reflect.set(r, a, f);
+      if (p !== l) {
+        Reflect.set(r, a, l);
         const h = e ? `${e}.${a}` : a;
-        t(h, p, f);
+        t(h, p, l);
       }
       return !0;
     }
@@ -676,10 +676,10 @@ q = new WeakMap(), vt = new WeakMap(), F = new WeakMap(), gt = new WeakMap(), Et
     else if (Lt && a instanceof HTMLElement && !a.isConnected)
       s.add(r);
     else {
-      const { propertyMap: f } = r, p = Object.keys(f);
+      const { propertyMap: l } = r, p = Object.keys(l);
       (p.length === 0 || p.includes(t)) && a.changed(
         t,
-        f[t],
+        l[t],
         n,
         e,
         this
@@ -707,8 +707,8 @@ function qe(i, t) {
 function Zn(i, t, e) {
   const n = t.split("."), s = n.length - 1;
   let r = i;
-  n.forEach((a, f) => {
-    f === s ? r[a] = e : r = r[a];
+  n.forEach((a, l) => {
+    l === s ? r[a] = e : r = r[a];
   });
 }
 const Jn = /* @__PURE__ */ new Set([
@@ -846,6 +846,10 @@ class U extends HTMLElement {
   // This is used to lookup the kebab-case attribute name
   // that corresponds to a camelCase property name.
   static propToAttrMap = /* @__PURE__ */ new Map();
+  // This can be overridden in each Wrec subclass.
+  // It lists all the module-level functions
+  // that be used in JavaScript expressions.
+  static context = {};
   // This can be set in each Wrec subclass.
   // It describes CSS rules that a web component uses.
   static css = "";
@@ -920,24 +924,32 @@ class U extends HTMLElement {
   batchSet(t) {
     this.#c = !0;
     const e = this.#t.propToExprsMap, n = /* @__PURE__ */ new Set();
-    for (const [f, p] of Object.entries(t)) {
-      this[f] = p;
-      const h = e.get(f) ?? [];
+    for (const [l, p] of Object.entries(t)) {
+      this[l] = p;
+      const h = e.get(l) ?? [];
       for (const m of h)
         n.add(m);
     }
     const s = this.#t.propToComputedMap, r = /* @__PURE__ */ new Set(), a = {};
-    for (const f of Object.keys(t)) {
-      const p = s.get(f) || [];
+    for (const l of Object.keys(t)) {
+      const p = s.get(l) || [];
       for (const [h, m] of p)
         r.add(h), a[h] = m;
     }
-    for (const f of r) {
-      const p = a[f];
-      this[f] = this.#n(p);
-      const h = e.get(f) ?? [];
+    for (const l of r) {
+      const p = a[l];
+      this[l] = this.#n(p);
+      const h = e.get(l) ?? [];
       for (const m of h)
         n.add(m);
+    }
+    for (; ; ) {
+      let l = !1;
+      for (const p of r) {
+        const h = a[p], m = this.#n(h), A = this[p];
+        JSON.stringify(m) !== JSON.stringify(A) && (this[p] = m, l = !0);
+      }
+      if (!l) break;
     }
     this.#T([...n]), this.#c = !1;
   }
@@ -982,24 +994,24 @@ class U extends HTMLElement {
     e.required && !r && this.#e(this, s, "is a required attribute");
     let a = e.value;
     this.hasOwnProperty(t) && (a = this[t], delete this[t]);
-    const { type: f } = e, p = f === Boolean ? a || r : n.includes(s) && r ? this.#b(t, s) : a || ro(f), h = "#" + t;
+    const { type: l } = e, p = l === Boolean ? a || r : n.includes(s) && r ? this.#b(t, s) : a || ro(l), h = "#" + t;
     this[h] = p, e.computed && this.#D(t, e), Object.defineProperty(this, t, {
       enumerable: !0,
       get() {
         return this[h];
       },
       set(m) {
-        f === Number && typeof m == "string" && (m = re(m));
-        const b = this[h];
-        if (m === b) return;
-        this.#F(t, f, m), this[h] = m;
+        l === Number && typeof m == "string" && (m = re(m));
+        const A = this[h];
+        if (m === A) return;
+        this.#F(t, l, m), this[h] = m;
         const { state: G, stateProp: H } = this.#t.properties[t];
-        H && Zn(G, H, m), this.#x(t, f, m, s), this.#c || (this.#v(t), this.#_(t)), this.#I(t, m);
+        H && Zn(G, H, m), this.#x(t, l, m, s), this.#c || (this.#v(t), this.#_(t)), this.#I(t, m);
         const B = this.#l[t];
-        B && this.setFormValue(B, String(m)), this.propertyChangedCallback(t, b, m), e.dispatch && this.dispatch("change", {
+        B && this.setFormValue(B, String(m)), this.propertyChangedCallback(t, A, m), e.dispatch && this.dispatch("change", {
           tagName: this.localName,
           property: t,
-          oldValue: b,
+          oldValue: A,
           value: m
         });
       }
@@ -1034,9 +1046,9 @@ class U extends HTMLElement {
       if (r) {
         const a = this[r];
         a === void 0 && this.#a(t, n, r), t[r] = a;
-        let [f, p] = n.split(":");
-        f === "value" && (p ? (t["on" + p] === void 0 && this.#e(t, n, "refers to an unsupported event name"), t.setAttribute(f, this[r])) : p = "change"), e && t.#p.set(
-          U.getPropName(f),
+        let [l, p] = n.split(":");
+        l === "value" && (p ? (t["on" + p] === void 0 && this.#e(t, n, "refers to an unsupported event name"), t.setAttribute(l, this[r])) : p = "change"), e && t.#p.set(
+          U.getPropName(l),
           r
         );
       }
@@ -1050,13 +1062,17 @@ class U extends HTMLElement {
         if (r instanceof HTMLElement)
           this.#y(r, n);
         else if (!(r instanceof CSSStyleRule)) {
-          const { element: a, attrName: f } = r;
-          a instanceof CSSStyleRule ? a.style.setProperty(f, n) : ae(a, f, n);
+          const { element: a, attrName: l } = r;
+          a instanceof CSSStyleRule ? a.style.setProperty(l, n) : ae(a, l, n);
         }
     }
   }
   #n(t) {
-    return new Function("return " + t).call(this);
+    const { context: e } = this.#t;
+    return new Function(
+      "context",
+      `const {${Object.keys(e).join(",")}} = context; return ${t};`
+    ).call(this, e);
   }
   #N(t) {
     const { localName: e } = t;
@@ -1064,8 +1080,8 @@ class U extends HTMLElement {
       const { sheet: n } = t, s = n?.cssRules ?? [], r = Array.from(s);
       for (const a of r)
         if (a.constructor === CSSStyleRule) {
-          const f = Array.from(a.style);
-          for (const p of f)
+          const l = Array.from(a.style);
+          for (const p of l)
             if (p.startsWith("--")) {
               const h = a.style.getPropertyValue(p);
               this.#r(h, a, p);
@@ -1107,8 +1123,8 @@ class U extends HTMLElement {
     }
     const e = {}, n = t.split(",");
     for (const a of n) {
-      const [f, p] = a.split(":");
-      e[f.trim()] = p.trim();
+      const [l, p] = a.split(":");
+      e[l.trim()] = p.trim();
     }
     this.#l = e, this.#s = new FormData(), this.#u = this.attachInternals(), this.#u.setFormValue(this.#s);
     const s = Object.keys(this.#t.properties), r = this.#f;
@@ -1135,14 +1151,14 @@ class U extends HTMLElement {
     const [s] = n;
     if (!se.test(s)) return;
     const r = he(t) || dt(t);
-    let [a, f] = (e ?? "").split(":");
+    let [a, l] = (e ?? "").split(":");
     if (!(r && a === "value" || dt(t))) return;
-    f ? t["on" + f] === void 0 && this.#e(t, e, "refers to an unsupported event name") : f = "change";
+    l ? t["on" + l] === void 0 && this.#e(t, e, "refers to an unsupported event name") : l = "change";
     const h = mt(s);
-    t.addEventListener(f, (m) => {
-      const { target: b } = m;
-      if (!b) return;
-      const G = b.value, { type: H } = this.#t.properties[h];
+    t.addEventListener(l, (m) => {
+      const { target: A } = m;
+      if (!A) return;
+      const G = A.value, { type: H } = this.#t.properties[h];
       this[h] = H === Number ? re(G) : G, this.#_(h);
     });
   }
@@ -1188,14 +1204,14 @@ class U extends HTMLElement {
       let m = r.get(p);
       m || (m = [], r.set(p, m)), m.push([t, h]);
     }
-    const f = n.match(ie) || [];
-    for (const p of f) {
+    const l = n.match(ie) || [];
+    for (const p of l) {
       const h = mt(p);
       this[h] === void 0 && this.#a(null, t, h), typeof this[h] != "function" && a(h, n);
     }
     if (s)
       for (const p of s.split(","))
-        a(p, n);
+        a(p.trim(), n);
   }
   // WARNING: Do not place untrusted JavaScript expressions
   // in attribute values or the text content of elements!
@@ -1212,21 +1228,21 @@ class U extends HTMLElement {
       const h = mt(p);
       if (typeof this[h] == "function") return;
       const m = r.propToExprsMap;
-      let b = m.get(h);
-      b || (b = [], m.set(h, b)), b.includes(t) || b.push(t);
+      let A = m.get(h);
+      A || (A = [], m.set(h, A)), A.includes(t) || A.push(t);
     });
     for (const [p, h] of this.#o.entries())
       for (const m of h) {
-        const b = m instanceof HTMLElement || m instanceof CSSStyleRule ? m : m.element;
-        b instanceof CSSStyleRule || b.isConnected || this.#o.set(
+        const A = m instanceof HTMLElement || m instanceof CSSStyleRule ? m : m.element;
+        A instanceof CSSStyleRule || A.isConnected || this.#o.set(
           p,
           h.filter((G) => G !== m)
         );
       }
     let a = this.#o.get(t);
     a || (a = [], this.#o.set(t, a)), a.push(n ? { element: e, attrName: n } : e), e instanceof HTMLElement && this.#L(e, n, s);
-    const f = this.#n(t);
-    n ? ae(e, n, f) : this.#y(e, f);
+    const l = this.#n(t);
+    n ? ae(e, n, l) : this.#y(e, l);
   }
   // This follows the best practice
   // "Do not override author-set, global attributes."
@@ -1387,12 +1403,12 @@ class U extends HTMLElement {
       for (const r of Array.from(n.attributes)) {
         const a = r.name;
         if (a.startsWith("on")) {
-          let f = a.slice(2);
-          f = f[0].toLowerCase() + f.slice(1).toLowerCase();
+          let l = a.slice(2);
+          l = l[0].toLowerCase() + l.slice(1).toLowerCase();
           const p = r.value;
           this.#h(n, a, p);
           let h;
-          typeof this[p] == "function" ? h = (m) => this[p](m) : (this.#h(n, a, p), h = () => this.#n(p)), n.addEventListener(f, h), s.push(a);
+          typeof this[p] == "function" ? h = (m) => this[p](m) : (this.#h(n, a, p), h = () => this.#n(p)), n.addEventListener(l, h), s.push(a);
         }
       }
       for (const r of s)
