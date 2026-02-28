@@ -1,6 +1,7 @@
 // Claude Code generated this file.
 import {expect, Page, test} from '@playwright/test';
 import {setProperty, waitForNextFrame} from './util';
+import {Wrec} from '../src/wrec';
 
 test.beforeEach(async ({page}: {page: Page}) => {
   await page.goto('http://localhost:5173/examples/table-demo.html');
@@ -158,4 +159,31 @@ test('headers have correct accessibility attributes', async ({
   // Check it's focusable
   await nameHeader.focus();
   await expect(nameHeader).toBeFocused();
+});
+
+test('batchSet works', async ({page}: {page: Page}) => {
+  const sortableTable = page.locator('sortable-table');
+  const headings = ['Age', 'Name'];
+  const properties = ['age', 'name'];
+
+  await sortableTable.evaluate(
+    (el: HTMLElement, [headings, properties]) => {
+      const actual = el as Wrec;
+      actual.batchSet({
+        headings: headings.join(','),
+        properties: properties.join(',')
+      });
+    },
+    [headings, properties]
+  );
+
+  const headers = sortableTable.locator('thead th');
+  async function testHeading(n: number) {
+    const header = headers.nth(n);
+    await expect(header).toHaveText(headings[n]);
+    await expect(header).toHaveAttribute('data-property', properties[n]);
+  }
+  for (let i = 0; i < headings.length; i++) {
+    await testHeading(i);
+  }
 });
