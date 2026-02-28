@@ -11,13 +11,13 @@ test('has title', async ({page}: {page: Page}) => {
 });
 
 test('renders table with data', async ({page}: {page: Page}) => {
-  const tablePlus = page.locator('table-wired');
+  const sortableTable = page.locator('sortable-table');
 
   // Wait for component to initialize
   await waitForNextFrame(page);
 
   // Check table structure exists
-  const table = tablePlus.locator('table');
+  const table = sortableTable.locator('table');
   await expect(table).toBeVisible();
 
   // Check headers are rendered
@@ -39,10 +39,10 @@ test('renders table with data', async ({page}: {page: Page}) => {
 });
 
 test('sorts by name column', async ({page}: {page: Page}) => {
-  const tablePlus = page.locator('table-wired');
+  const sortableTable = page.locator('sortable-table');
   await waitForNextFrame(page);
 
-  const table = tablePlus.locator('table');
+  const table = sortableTable.locator('table');
   const nameHeader = table.locator('thead th').nth(0);
   const rows = table.locator('tbody tr');
 
@@ -73,10 +73,10 @@ test('sorts by name column', async ({page}: {page: Page}) => {
 });
 
 test('sorts by age column', async ({page}: {page: Page}) => {
-  const tablePlus = page.locator('table-wired');
+  const sortableTable = page.locator('sortable-table');
   await waitForNextFrame(page);
 
-  const table = tablePlus.locator('table');
+  const table = sortableTable.locator('table');
   const ageHeader = table.locator('thead th').nth(1);
   const rows = table.locator('tbody tr');
 
@@ -107,10 +107,10 @@ test('sorts by age column', async ({page}: {page: Page}) => {
 });
 
 test('updates data dynamically', async ({page}: {page: Page}) => {
-  const tablePlus = page.locator('table-wired');
+  const sortableTable = page.locator('sortable-table');
   await waitForNextFrame(page);
 
-  const table = tablePlus.locator('table');
+  const table = sortableTable.locator('table');
   let rows = table.locator('tbody tr');
 
   // Initially should have 3 rows
@@ -124,7 +124,7 @@ test('updates data dynamically', async ({page}: {page: Page}) => {
     {name: 'Diana', age: 28, occupation: 'Doctor'}
   ];
 
-  await setProperty(tablePlus, 'data', newData);
+  await setProperty(sortableTable, 'data', newData);
   await waitForNextFrame(page);
 
   // Should now have 4 rows
@@ -143,10 +143,10 @@ test('headers have correct accessibility attributes', async ({
 }: {
   page: Page;
 }) => {
-  const tablePlus = page.locator('table-wired');
+  const sortableTable = page.locator('sortable-table');
   await waitForNextFrame(page);
 
-  const table = tablePlus.locator('table');
+  const table = sortableTable.locator('table');
   const headers = table.locator('thead th');
 
   // Check first header has correct attributes
