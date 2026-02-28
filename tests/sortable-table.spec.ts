@@ -153,7 +153,7 @@ test('headers have correct accessibility attributes', async ({
   const nameHeader = headers.nth(0);
   await expect(nameHeader).toHaveAttribute('role', 'button');
   await expect(nameHeader).toHaveAttribute('tabindex', '0');
-  await expect(nameHeader).toHaveAttribute('aria-label', 'sort by Name');
+  await expect(nameHeader).toHaveAttribute('title', 'sort by Name');
 
   // Check it's focusable
   await nameHeader.focus();
