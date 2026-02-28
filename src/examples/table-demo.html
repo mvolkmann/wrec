@@ -28,6 +28,12 @@
 
       const sortableTable = document.querySelector('sortable-table');
       sortableTable.data = data;
+
+      const button = document.querySelector('button');
+      button.addEventListener('click', () => {
+        sortableTable.batchSet({headings: 'Age,Name', properties: 'age,name'});
+        button.remove();
+      });
     </script>
   </head>
   <body>
@@ -37,5 +43,6 @@
       headings="Name,Age,Occupation"
       properties="name,age,occupation"
     ></sortable-table>
+    <div><button>Batch Set</button></div>
   </body>
 </html>
