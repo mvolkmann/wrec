@@ -3,16 +3,27 @@ import './dom-setup';
 
 import HelloWorld from '../src/examples/hello-world.js';
 
+const normalize = (str: string) =>
+  str
+    .split('\n')
+    .map(line => line.trim())
+    .join('\n');
+
 test('ssr', async () => {
   const name = 'Earth';
-  const actual = HelloWorld.ssr({name});
-  // Indentation matters here!
-  const expected = `
-      <hello-world name="${name}">
-        <template shadowroot="open">
-           <p>Hello, <span>${name}</span>!</p> 
-        </template>
-      </hello-world>
-    `;
+  const actual = normalize(HelloWorld.ssr({name}));
+  const expected = normalize(`
+    <hello-world name="${name}">
+      <template shadowroot="open">
+        <style>
+          :host([hidden]) { display: none; }
+          p {
+            color: purple;
+          }
+        </style>
+        <p>Hello, <span>${name}</span>!</p> 
+      </template>
+    </hello-world>
+  `);
   expect(actual).toBe(expected);
 });

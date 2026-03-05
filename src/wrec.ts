@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify';
+import {parseHTML} from 'linkedom';
 import type {ChangeListener} from './wrec-state';
 import {WrecState} from './wrec-state';
 import {getPathValue, setPathValue} from './paths';
@@ -880,7 +881,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     return attrName;
   }
 
-  private static getPropName(attrName: string) {
+  static getPropName(attrName: string) {
     let propName = this.attrToPropMap.get(attrName);
     if (!propName) {
       propName = attrName.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
@@ -1107,16 +1108,51 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   }
 
   static ssr(properties: StringToAny) {
+    function evaluate(expr: string) {
+      return new Function('return ' + expr).call(properties);
+    }
+
     let attributes = '';
     for (const [property, value] of Object.entries(properties)) {
       const attrName = this.getAttrName(property);
       attributes += ` ${attrName}="${value}"`;
     }
+
+    const htmlString = this.buildHTML();
+    const {document} = parseHTML(htmlString);
+
+    const elements = document.querySelectorAll('*');
+    for (const element of elements) {
+      // Replace JS expressions in attribute values with their values.
+      // See the #evaluateAttributes method.
+      for (const attr of element.attributes) {
+        const {value} = attr;
+        if (REFS_TEST_RE.test(value)) {
+          attr.value = evaluate(value);
+        }
+      }
+
+      // Replace JS expressions in all text content with their values.
+      // See the #evaluateText method.
+      for (const node of element.childNodes) {
+        // The code for COMMENT_NODE is 8.
+        // This function is used in servers where Node isn't defined.
+        if (node.nodeType === 8) {
+          const value = node.textContent ?? '';
+          if (REFS_TEST_RE.test(value)) {
+            const newNode = document.createTextNode(evaluate(value));
+            element.replaceChild(newNode, node);
+          }
+        }
+      }
+    }
+
+    const result = [...document.children].map(e => e.outerHTML).join('\n');
     const {elementName} = this;
     return `
       <${elementName}${attributes}>
         <template shadowroot="open">
-          ${this.buildHTML()}
+          ${result}
         </template>
       </${elementName}>
     `;
