@@ -19,25 +19,31 @@ const globalAttributes = new Set([
   'title'
 ]);
 
-// Prevent DOMPurify from removing certain attributes whose names
-// begin with "on" because wrec uses those wire up event listeners.
-// Do not allow "onerror" because that can be used for XSS attacks.
-//TODO: More may need to be added later.
-const safeOnAttrNames = new Set([
-  'onblur',
-  'onchange',
-  'onclick',
-  'onfocus',
-  'oninput',
-  'onkeydown',
-  'onreset',
-  'onsubmit'
-]);
-DOMPurify.addHook('uponSanitizeAttribute', (_node, data) => {
-  const {attrName} = data;
-  const lower = attrName.toLowerCase();
-  if (safeOnAttrNames.has(lower)) data.forceKeepAttr = true;
-});
+// If running in a web browser, versus server-side for SSR ...
+if (typeof window !== 'undefined') {
+  // Prevent DOMPurify from removing certain attributes whose names
+  // begin with "on" because wrec uses those wire up event listeners.
+  // Do not allow "onerror" because that can be used for XSS attacks.
+  //TODO: More may need to be added later.
+  const safeOnAttrNames = new Set([
+    'onblur',
+    'onchange',
+    'onclick',
+    'onfocus',
+    'oninput',
+    'onkeydown',
+    'onreset',
+    'onsubmit'
+  ]);
+  (DOMPurify as any).addHook(
+    'uponSanitizeAttribute',
+    (_node: HTMLElement, data: any) => {
+      const {attrName} = data;
+      const lower = attrName.toLowerCase();
+      if (safeOnAttrNames.has(lower)) data.forceKeepAttr = true;
+    }
+  );
+}
 
 type AnyClass = new (...args: any[]) => any;
 
@@ -302,22 +308,22 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
   // This is used to lookup the camelCase property name
   // that corresponds to a kebab-case attribute name.
-  static attrToPropMap = new Map<string, string>();
+  private static attrToPropMap = new Map<string, string>();
 
   // This is used to lookup the kebab-case attribute name
   // that corresponds to a camelCase property name.
-  static propToAttrMap = new Map<string, string>();
+  private static propToAttrMap = new Map<string, string>();
 
   // This can be overridden in each Wrec subclass.
   // It lists all the module-level functions
   // that be used in JavaScript expressions.
-  static context = {};
+  private static context = {};
 
   // This can be set in each Wrec subclass.
   // It describes CSS rules that a web component uses.
-  static css = '';
+  private static css = '';
 
-  static elementName = '';
+  private static elementName = '';
 
   // Set this to true in Wrec subclasses that need
   // the ability to contribute data to form submissions.
@@ -325,11 +331,11 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
   // This must be set in each Wrec subclass.
   // It describes HTML that a web component renders.
-  static html = '';
+  private static html = '';
 
   // This must be set in each Wrec subclass.
   // It describes all the properties that a web component supports.
-  static properties: StringToAny;
+  private static properties: StringToAny;
 
   // This is a map from properties to arrays of
   // computed property expressions that use the property.
@@ -337,14 +343,14 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   // when the properties on which they depend are modified.
   // See the method #updateComputedProperties.
   // This map cannot be private.
-  static propToComputedMap: Map<string, string[][]>;
+  private static propToComputedMap: Map<string, string[][]>;
 
   // This is a map from properties to expressions that refer to them.
   // It is the sma for all instances of a component.
   // This map cannot be private.
-  static propToExprsMap: Map<string, string[]>;
+  private static propToExprsMap: Map<string, string[]>;
 
-  static template: HTMLTemplateElement | null = null;
+  private static template: HTMLTemplateElement | null = null;
 
   // This is true while the batchSet method is running.
   #batching = false;
@@ -380,7 +386,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   // This tells TypeScript that it's okay to access properties by string keys.
   [key: string]: any;
 
-  static define(elementName: string) {
+  private static define(elementName: string) {
     this.elementName = elementName;
     if (customElements.get(elementName)) {
       throw new WrecError(`custom element ${elementName} is already defined`);
@@ -487,27 +493,27 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     let {template} = ctor;
     if (!template) {
       template = ctor.template = document.createElement('template');
-
-      // Include a CSS rule that respects the "hidden" attribute.
-      // This is a web.dev custom element best practice.
-      let style = `<style>\n    :host([hidden]) { display: none; }`;
-      if (ctor.css) style += ctor.css;
-      style += '</style>\n';
-
-      let html = ctor.html.trim();
-      if (!html) {
-        this.#throw(this, undefined, 'static property html must be set');
-      }
-
-      // If the HTML string does not start with <,
-      // assume it is a JavaScript expression.
-      if (!html.startsWith('<')) html = `<span><!--${html}--></span>`;
-
-      template.innerHTML = style + html;
+      template.innerHTML = ctor.buildHTML();
     }
-
     await waitForDefines(template);
     this.shadowRoot!.replaceChildren(template.content.cloneNode(true));
+  }
+
+  private static buildHTML() {
+    // Include a CSS rule that respects the "hidden" attribute.
+    // This is a web.dev custom element best practice.
+    let style = `<style>\n    :host([hidden]) { display: none; }`;
+    if (this.css) style += this.css;
+    style += '</style>\n';
+
+    let html = this.html.trim();
+    if (!html) throw new WrecError('static property html must be set');
+
+    // If the HTML string does not start with <,
+    // assume it is a JavaScript expression.
+    if (!html.startsWith('<')) html = `<span><!--${html}--></span>`;
+
+    return style + html;
   }
 
   changed(_statePath: string, componentProp: string, newValue: unknown) {
@@ -865,7 +871,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     }
   }
 
-  static getAttrName(propName: string) {
+  private static getAttrName(propName: string) {
     let attrName = this.propToAttrMap.get(propName);
     if (!attrName) {
       attrName = propName.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
@@ -874,7 +880,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     return attrName;
   }
 
-  static getPropName(attrName: string) {
+  private static getPropName(attrName: string) {
     let propName = this.attrToPropMap.get(attrName);
     if (!propName) {
       propName = attrName.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
@@ -1098,6 +1104,22 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     if (!this.#formData || !isPrimitive(value)) return;
     this.#formData.set(propName, value);
     this.#internals?.setFormValue(this.#formData);
+  }
+
+  static ssr(properties: StringToAny) {
+    let attributes = '';
+    for (const [property, value] of Object.entries(properties)) {
+      const attrName = this.getAttrName(property);
+      attributes += ` ${attrName}="${value}"`;
+    }
+    const {elementName} = this;
+    return `
+      <${elementName}${attributes}>
+        <template shadowroot="open">
+          ${this.buildHTML()}
+        </template>
+      </${elementName}>
+    `;
   }
 
   #throw(

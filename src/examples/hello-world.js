@@ -15,3 +15,6 @@ class HelloWorld extends Wrec {
 }
 
 HelloWorld.define('hello-world');
+
+// This is exported for use in tests/ssr.spec.ts.
+export default HelloWorld;
