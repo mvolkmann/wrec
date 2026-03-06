@@ -8694,6 +8694,11 @@ class Ft extends HTMLElement {
     !this.#i || !wi(e) || (this.#i.set(t, e), this.#u?.setFormValue(this.#i));
   }
   static ssr(t = {}) {
+    for (const [a, u] of Object.entries(this.properties))
+      if (t[a] === void 0) {
+        const { value: g } = u;
+        g !== void 0 && (t[a] = g);
+      }
     function e(a) {
       return new Function("return " + a).call(t);
     }
@@ -8721,7 +8726,7 @@ class Ft extends HTMLElement {
 `), { elementName: c } = this;
     return `
       <${c}${n}>
-        <template shadowroot="open">
+        <template shadowrootmode="open">
           ${A}
         </template>
       </${c}>

@@ -1108,6 +1108,14 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   }
 
   static ssr(properties: StringToAny = {}) {
+    // Add properties with default values if missing.
+    for (const [propName, descriptor] of Object.entries(this.properties)) {
+      if (properties[propName] === undefined) {
+        const {value} = descriptor;
+        if (value !== undefined) properties[propName] = value;
+      }
+    }
+
     function evaluate(expr: string) {
       return new Function('return ' + expr).call(properties);
     }
@@ -1151,7 +1159,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     const {elementName} = this;
     return `
       <${elementName}${attributes}>
-        <template shadowroot="open">
+        <template shadowrootmode="open">
           ${result}
         </template>
       </${elementName}>
