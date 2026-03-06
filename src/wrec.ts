@@ -397,7 +397,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   // This tells TypeScript that it's okay to access properties by string keys.
   [key: string]: any;
 
-  private static define(elementName: string) {
+  static define(elementName: string) {
     this.elementName = elementName;
     if (customElements.get(elementName)) {
       throw new WrecError(`custom element ${elementName} is already defined`);
