@@ -23,5 +23,10 @@ export default defineConfig({
       rollupTypes: true, // combines all defined types in a single .d.ts file
       tsconfigPath: './tsconfig.json'
     })
-  ]
+  ],
+  resolve: {
+    alias: {
+      canvas: './src/empty-shim.js'
+    }
+  }
 });

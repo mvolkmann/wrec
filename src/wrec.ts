@@ -37,8 +37,8 @@ if (typeof window !== 'undefined') {
     'onsubmit'
   ]);
   (DOMPurify as any).addHook(
-    'uponSanitizeAttribute',
-    (_node: HTMLElement, data: any) => {
+    'uponSanitizeAttribute' as any,
+    (_node: any, data: any) => {
       const {attrName} = data;
       const lower = attrName.toLowerCase();
       if (safeOnAttrNames.has(lower)) data.forceKeepAttr = true;
@@ -1107,7 +1107,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     this.#internals?.setFormValue(this.#formData);
   }
 
-  static ssr(properties: StringToAny) {
+  static ssr(properties: StringToAny = {}) {
     function evaluate(expr: string) {
       return new Function('return ' + expr).call(properties);
     }
@@ -1252,7 +1252,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     if (element instanceof HTMLElement && isTextArea(element)) {
       (element as HTMLTextAreaElement).value = text;
     } else if (isHTML && t === 'string' && text.trim().startsWith('<')) {
-      //element.innerHTML = value; // This approach allows XSS attacks!
+      //element.innerHTML = value as string; // This approach allows XSS attacks!
       const safeValue = sanitize(text);
       element.replaceChildren(...safeValue);
 
