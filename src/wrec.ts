@@ -21,7 +21,17 @@ const globalAttributes = new Set([
 ]);
 
 // If running in a web browser, versus server-side for SSR ...
-if (typeof window !== 'undefined') {
+if (typeof window === 'undefined') {
+  const {HTMLElement} = parseHTML('<!DOCTYPE html>');
+  global.HTMLElement = HTMLElement;
+  global.customElements = {
+    get: (_name: string) => undefined,
+    getName: () => '',
+    define: () => {},
+    upgrade: () => {},
+    whenDefined: () => Promise.reject()
+  };
+} else {
   // Prevent DOMPurify from removing certain attributes whose names
   // begin with "on" because wrec uses those wire up event listeners.
   // Do not allow "onerror" because that can be used for XSS attacks.
@@ -318,11 +328,11 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   // This can be overridden in each Wrec subclass.
   // It lists all the module-level functions
   // that be used in JavaScript expressions.
-  private static context = {};
+  static context = {};
 
   // This can be set in each Wrec subclass.
   // It describes CSS rules that a web component uses.
-  private static css = '';
+  static css = '';
 
   private static elementName = '';
 
@@ -332,11 +342,11 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
   // This must be set in each Wrec subclass.
   // It describes HTML that a web component renders.
-  private static html = '';
+  static html = '';
 
   // This must be set in each Wrec subclass.
   // It describes all the properties that a web component supports.
-  private static properties: StringToAny;
+  static properties: StringToAny;
 
   // This is a map from properties to arrays of
   // computed property expressions that use the property.
