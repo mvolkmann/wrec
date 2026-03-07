@@ -98,7 +98,7 @@ class SortableTable extends Wrec {
   makeTr(obj: LooseObject, propertyArray: string[]) {
     return html`
       <tr>
-        ${propertyArray.map(propName => this.makeTd(obj[propName]))}
+        ${propertyArray.map(propName => this.makeTd(obj[propName])).join('')}
       </tr>
     `;
   }

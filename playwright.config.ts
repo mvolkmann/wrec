@@ -7,7 +7,7 @@ export default defineConfig({
   testDir: './tests',
   /* Run tests in files in parallel */
   fullyParallel: true,
-  reporter: 'html',
+  //reporter: 'html',
   projects: [
     {
       name: 'chromium',

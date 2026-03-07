@@ -2,7 +2,7 @@
   "name": "wrec",
   "description": "a small library that greatly simplifies building web components",
   "author": "R. Mark Volkmann",
-  "version": "0.21.0",
+  "version": "0.21.1",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -46,7 +46,7 @@
     "vite-plugin-dts": "^4.5.4"
   },
   "dependencies": {
-    "dompurify": "^3.3.2",
-    "linkedom": "^0.18.12"
+    "linkedom": "^0.18.12",
+    "xss": "^1.0.15"
   }
 }
