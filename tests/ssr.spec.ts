@@ -14,7 +14,7 @@ test('ssr', async () => {
   const actual = normalize(HelloWorld.ssr({name}));
   const expected = normalize(`
     <hello-world name="${name}">
-      <template shadowroot="open">
+      <template shadowrootmode="open">
         <style>
           :host([hidden]) { display: none; }
           p {

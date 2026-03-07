@@ -15,7 +15,10 @@ export default defineConfig({
     },
     // Without this line, the dist directory will be
     // created relative to root which is src.
-    outDir: path.resolve(__dirname, 'dist')
+    outDir: path.resolve(__dirname, 'dist'),
+    rollupOptions: {
+      external: ['dompurify', 'linkedom']
+    }
   },
   plugins: [
     dts({
