@@ -4,8 +4,7 @@ var W = (n) => {
 var L = (n, t, e) => t.has(n) || W("Cannot " + e);
 var u = (n, t, e) => (L(n, t, "read from private field"), e ? e.call(n) : t.get(n)), b = (n, t, e) => t.has(n) ? W("Cannot add the same private member more than once") : t instanceof WeakSet ? t.add(n) : t.set(n, e), w = (n, t, e, s) => (L(n, t, "write to private field"), s ? s.call(n, e) : t.set(n, e), e), B = (n, t, e) => (L(n, t, "access private method"), e);
 import J from "dompurify";
-import { parseHTML as K } from "linkedom";
-function U(n, t, e = "") {
+function K(n, t, e = "") {
   const s = /* @__PURE__ */ new WeakMap(), o = {
     // Intercept property reads.
     // This creates nested proxies lazily.
@@ -14,7 +13,7 @@ function U(n, t, e = "") {
       if (c === null || typeof c != "object") return c;
       const f = s.get(c);
       if (f) return f;
-      const a = e ? `${e}.${r}` : r, l = U(c, t, a);
+      const a = e ? `${e}.${r}` : r, l = K(c, t, a);
       return s.set(c, l), l;
     },
     // Intercept property writes.
@@ -30,18 +29,18 @@ function U(n, t, e = "") {
   };
   return new Proxy(n, o);
 }
-function Z(n) {
+function U(n) {
   const t = {};
   for (const [e, s] of Object.entries(n)) {
     const o = typeof s == "object" && s !== null;
-    t[e] = o ? Z(s) : s;
+    t[e] = o ? U(s) : s;
   }
   return t;
 }
 const N = typeof window < "u" && typeof window.document < "u";
 let q = class extends Error {
 };
-var g, R, p, v, C, y, O, G;
+var g, R, p, v, C, y, O, Z;
 const E = class E {
   constructor(t, e, s) {
     b(this, O);
@@ -55,7 +54,7 @@ const E = class E {
     if (!t) throw new q("name cannot be empty");
     if (u(E, g).has(t))
       throw new q(`WrecState with name "${t}" already exists`);
-    if (w(this, v, t), w(this, C, e), w(this, y, U({}, B(this, O, G).bind(this))), e && N) {
+    if (w(this, v, t), w(this, C, e), w(this, y, K({}, B(this, O, Z).bind(this))), e && N) {
       const o = sessionStorage.getItem("wrec-state-" + t), i = o ? JSON.parse(o) : void 0;
       i && (s = i);
     }
@@ -120,7 +119,7 @@ const E = class E {
     w(this, p, u(this, p).filter((e) => e.listenerRef.deref() !== t));
   }
 };
-g = new WeakMap(), R = new WeakMap(), p = new WeakMap(), v = new WeakMap(), C = new WeakMap(), y = new WeakMap(), O = new WeakSet(), G = function(t, e, s) {
+g = new WeakMap(), R = new WeakMap(), p = new WeakMap(), v = new WeakMap(), C = new WeakMap(), y = new WeakMap(), O = new WeakSet(), Z = function(t, e, s) {
   const o = /* @__PURE__ */ new Set();
   for (const i of u(this, p)) {
     const r = i.listenerRef.deref();
@@ -145,7 +144,7 @@ g = new WeakMap(), R = new WeakMap(), p = new WeakMap(), v = new WeakMap(), C = 
 }, b(E, g, /* @__PURE__ */ new Map()), N && window.addEventListener("beforeunload", () => {
   for (const [t, e] of u(E, g).entries())
     if (u(e, C)) {
-      const s = Z(e);
+      const s = U(e);
       sessionStorage.setItem("wrec-state-" + t, JSON.stringify(s));
     }
 });
@@ -172,10 +171,11 @@ const st = /* @__PURE__ */ new Set([
   "tabindex",
   "title"
 ]);
+let G = (n, t) => ({});
 if (typeof window > "u") {
-  const { HTMLElement: n } = K("<!DOCTYPE html>");
-  global.HTMLElement = n, global.customElements = {
-    get: (t) => {
+  const { parseHTML: n } = await import("linkedom"), { HTMLElement: t } = n("<!DOCTYPE html>");
+  G = n, global.HTMLElement = t, global.customElements = {
+    get: (e) => {
     },
     getName: () => "",
     define: () => {
@@ -209,7 +209,7 @@ const ot = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g, X = "a-zA-Z_$", it = X + "0-9", S = `
 function at(n) {
   return n instanceof HTMLButtonElement || n instanceof HTMLFieldSetElement || n instanceof HTMLInputElement || n instanceof HTMLSelectElement || n instanceof HTMLTextAreaElement || n instanceof d;
 }
-function yt(n, t, e) {
+function bt(n, t, e) {
   const s = document.createElement(n);
   if (t)
     for (const [o, i] of Object.entries(t))
@@ -737,7 +737,7 @@ class d extends HTMLElement {
       const h = this.getAttrName(a);
       s += ` ${h}="${l}"`;
     }
-    const o = this.buildHTML(), { document: i } = K(o), r = i.querySelectorAll("*");
+    const o = this.buildHTML(), { document: i } = G(o), r = i.querySelectorAll("*");
     for (const a of r) {
       for (const l of a.attributes) {
         const { value: h } = l;
@@ -926,7 +926,7 @@ class d extends HTMLElement {
     }
   }
 }
-function gt(n, ...t) {
+function yt(n, ...t) {
   let e = Y(n, t);
   for (; ; ) {
     const s = ot.exec(e);
@@ -943,7 +943,7 @@ function gt(n, ...t) {
   }
   return e;
 }
-function wt(n, ...t) {
+function gt(n, ...t) {
   let e = Y(n, t);
   for (; ; ) {
     const s = rt.exec(e);
@@ -959,7 +959,7 @@ function wt(n, ...t) {
 export {
   d as Wrec,
   D as WrecState,
-  yt as createElement,
-  gt as css,
-  wt as html
+  bt as createElement,
+  yt as css,
+  gt as html
 };

@@ -1,5 +1,4 @@
 import DOMPurify from 'dompurify';
-import {parseHTML} from 'linkedom';
 import type {ChangeListener} from './wrec-state';
 import {WrecState} from './wrec-state';
 import {getPathValue, setPathValue} from './paths';
@@ -20,9 +19,14 @@ const globalAttributes = new Set([
   'title'
 ]);
 
+let myParseHTML = (_html: string, _globals?: any) =>
+  ({}) as Window & typeof globalThis;
+
 // If running in a web browser, versus server-side for SSR ...
 if (typeof window === 'undefined') {
+  const {parseHTML} = await import('linkedom');
   const {HTMLElement} = parseHTML('<!DOCTYPE html>');
+  myParseHTML = parseHTML; // used in ssr method
   global.HTMLElement = HTMLElement;
   global.customElements = {
     get: (_name: string) => undefined,
@@ -1137,8 +1141,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     }
 
     const htmlString = this.buildHTML();
-    const {document} = parseHTML(htmlString);
-
+    const {document} = myParseHTML(htmlString);
     const elements = document.querySelectorAll('*');
     for (const element of elements) {
       // Replace JS expressions in attribute values with their values.

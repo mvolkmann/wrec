@@ -11,7 +11,7 @@ export default defineConfig({
       name: 'wrec',
       // file name of output bundle
       fileName: format => `wrec.${format}.js`,
-      formats: ['es', 'umd']
+      formats: ['es']
     },
     // Without this line, the dist directory will be
     // created relative to root which is src.
@@ -31,8 +31,5 @@ export default defineConfig({
     alias: {
       canvas: './src/empty-shim.js'
     }
-  },
-  ssr: {
-    noExternal: ['linkedom']
   }
 });
