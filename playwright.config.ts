@@ -1,11 +1,9 @@
 import {defineConfig, devices} from '@playwright/test';
 
-/**
- * See https://playwright.dev/docs/test-configuration.
- */
+const PORT = 5173;
+
 export default defineConfig({
   testDir: './tests',
-  /* Run tests in files in parallel */
   fullyParallel: true,
   //reporter: 'html',
   projects: [
@@ -46,11 +44,11 @@ export default defineConfig({
     },
     */
   ],
-
-  // Run local server before starting tests.
+  use: {
+    baseURL: `http://localhost:${PORT}/examples/`
+  },
   webServer: {
-    command: 'vite --config vite.config.test.ts',
-    url: 'http://localhost:5173/examples/',
-    reuseExistingServer: true
+    command: `vite --config vite.config.test.ts --port ${PORT} --strictPort`,
+    reuseExistingServer: !process.env.CI
   }
 });

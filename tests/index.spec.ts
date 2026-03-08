@@ -2,7 +2,7 @@ import {expect, Page, test} from '@playwright/test';
 import {setAttribute} from './util';
 
 test.beforeEach(async ({page}: {page: Page}) => {
-  await page.goto('http://localhost:5173/examples/');
+  await page.goto('');
 });
 
 test('has title', async ({page}: {page: Page}) => {

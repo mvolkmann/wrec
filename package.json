@@ -2,7 +2,7 @@
   "name": "wrec",
   "description": "a small library that greatly simplifies building web components",
   "author": "R. Mark Volkmann",
-  "version": "0.21.2",
+  "version": "0.21.3",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -33,13 +33,14 @@
     "clean": "rm -rf dist",
     "preview": "vite preview",
     "lint": "oxlint",
-    "test": "playwright test",
+    "test": "node port-check.js && playwright test",
     "testui": "playwright test --ui",
     "unittest": "vitest"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@types/node": "^25.3.5",
+    "get-port": "^7.1.0",
     "oxlint": "^1.51.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",

@@ -4,7 +4,7 @@ import {setProperty, waitForNextFrame} from './util';
 import {Wrec} from '../src/wrec';
 
 test.beforeEach(async ({page}: {page: Page}) => {
-  await page.goto('http://localhost:5173/examples/table-demo.html');
+  await page.goto('table-demo.html');
 });
 
 test('has title', async ({page}: {page: Page}) => {

@@ -4,7 +4,7 @@ import {WrecState} from '../src/wrec-state';
 
 test.beforeEach(async ({page}: {page: Page}) => {
   //showBrowserConsole(page);
-  await page.goto('http://localhost:5173/examples/state-demo.html');
+  await page.goto('state-demo.html');
 });
 
 test('hello-world', async ({page}: {page: Page}) => {
