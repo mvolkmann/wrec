@@ -17,8 +17,7 @@ export default defineConfig({
     // created relative to root which is src.
     outDir: path.resolve(__dirname, 'dist'),
     rollupOptions: {
-      //external: ['dompurify', 'linkedom']
-      external: ['linkedom', 'xss']
+      external: ['node-html-parser', 'xss']
     }
   },
   plugins: [

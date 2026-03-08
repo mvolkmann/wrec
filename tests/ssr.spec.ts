@@ -9,7 +9,7 @@ const normalize = (str: string) =>
     .map(line => line.trim())
     .join('\n');
 
-test('ssr', async () => {
+test('ssr 1', async () => {
   const name = 'Earth';
   const actual = normalize(HelloWorld.ssr({name}));
   const expected = normalize(`
@@ -18,10 +18,33 @@ test('ssr', async () => {
         <style>
           :host([hidden]) { display: none; }
           p {
-            color: purple;
+            --color: this.color;
+            color: var(--color);
           }
         </style>
         <p>Hello, <span>${name}</span>!</p> 
+      </template>
+    </hello-world>
+  `);
+  expect(actual).toBe(expected);
+});
+
+test('ssr 2', async () => {
+  const color = 'red';
+  const name = 'Moon';
+  const title = 'My Title';
+  const actual = normalize(HelloWorld.ssr({color, name, title}));
+  const expected = normalize(`
+    <hello-world color="${color}" name="${name}" title="${title}">
+      <template shadowrootmode="open">
+        <style>
+          :host([hidden]) { display: none; }
+          p {
+            --color: this.color;
+            color: var(--color);
+          }
+        </style>
+        <p title="${title}">Hello, <span>${name}</span>!</p> 
       </template>
     </hello-world>
   `);

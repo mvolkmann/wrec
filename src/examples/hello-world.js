@@ -2,16 +2,20 @@ import {css, html, Wrec} from '../wrec';
 
 class HelloWorld extends Wrec {
   static properties = {
-    name: {type: String, value: 'World'}
+    color: {type: String, value: 'blue'},
+    name: {type: String, value: 'World'},
+    title: {type: String, value: ''}
   };
 
   static css = css`
     p {
-      color: purple;
+      color: this.color;
     }
   `;
 
-  static html = html` <p>Hello, <span>this.name</span>!</p> `;
+  static html = html`
+    <p title="this.title">Hello, <span>this.name</span>!</p>
+  `;
 }
 
 HelloWorld.define('hello-world');

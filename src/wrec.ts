@@ -1,3 +1,9 @@
+import {
+  parse,
+  HTMLElement as NHPElement,
+  NodeType as NHPNodeType,
+  TextNode as NHPTextNode
+} from 'node-html-parser';
 import type {ChangeListener} from './wrec-state';
 import {WrecState} from './wrec-state';
 import {getPathValue, setPathValue} from './paths';
@@ -20,15 +26,9 @@ const globalAttributes = new Set([
   'title'
 ]);
 
-let myParseHTML = (_html: string, _globals?: any) =>
-  ({}) as Window & typeof globalThis;
-
-// If running in a web browser, versus server-side for SSR ...
+// If running server-side for SSR, versus in a web browser ...
 if (typeof window === 'undefined') {
-  const {parseHTML} = await import('linkedom');
-  const {HTMLElement} = parseHTML('<!DOCTYPE html>');
-  myParseHTML = parseHTML; // used in ssr method
-  global.HTMLElement = HTMLElement;
+  global.HTMLElement = NHPElement as any;
   global.customElements = {
     get: (_name: string) => undefined,
     getName: () => '',
@@ -1060,8 +1060,17 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   }
 
   static ssr(properties: StringToAny = {}) {
+    let attributes = '';
+    const keys = Object.keys(properties);
+    keys.sort();
+    for (const property of keys) {
+      const attrName = this.getAttrName(property);
+      attributes += ` ${attrName}="${properties[property]}"`;
+    }
+
+    const staticProperties = this.properties;
     // Add properties with default values if missing.
-    for (const [propName, descriptor] of Object.entries(this.properties)) {
+    for (const [propName, descriptor] of Object.entries(staticProperties)) {
       if (properties[propName] === undefined) {
         const {value} = descriptor;
         if (value !== undefined) properties[propName] = value;
@@ -1072,41 +1081,39 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       return new Function('return ' + expr).call(properties);
     }
 
-    let attributes = '';
-    for (const [property, value] of Object.entries(properties)) {
-      const attrName = this.getAttrName(property);
-      attributes += ` ${attrName}="${value}"`;
-    }
-
-    const htmlString = this.buildHTML();
-    const {document} = myParseHTML(htmlString);
-    const elements = document.querySelectorAll('*');
-    for (const element of elements) {
-      // Replace JS expressions in attribute values with their values.
-      // See the #evaluateAttributes method.
-      for (const attr of element.attributes) {
-        const {value} = attr;
+    function process(element: NHPElement) {
+      const {attributes} = element;
+      for (const [name, value] of Object.entries(attributes)) {
         if (REFS_TEST_RE.test(value)) {
-          attr.value = evaluate(value);
-        }
-      }
-
-      // Replace JS expressions in all text content with their values.
-      // See the #evaluateText method.
-      for (const node of element.childNodes) {
-        // The code for COMMENT_NODE is 8.
-        // This function is used in servers where Node isn't defined.
-        if (node.nodeType === 8) {
-          const value = node.textContent ?? '';
-          if (REFS_TEST_RE.test(value)) {
-            const newNode = document.createTextNode(evaluate(value));
-            element.replaceChild(newNode, node);
+          const newValue = evaluate(value);
+          const defaultValue = staticProperties[name].value;
+          if (newValue === defaultValue) {
+            element.removeAttribute(name);
+          } else {
+            element.setAttribute(name, newValue);
           }
         }
       }
+
+      const {childNodes} = element;
+      childNodes.forEach((node, index) => {
+        if (node.nodeType === NHPNodeType.ELEMENT_NODE) {
+          process(node as NHPElement);
+        } else if (node.nodeType === NHPNodeType.COMMENT_NODE) {
+          const value = node.textContent ?? '';
+          if (REFS_TEST_RE.test(value)) {
+            const newValue = evaluate(value);
+            childNodes[index] = new NHPTextNode(newValue);
+          }
+        }
+      });
     }
 
-    const result = [...document.children].map(e => e.outerHTML).join('\n');
+    const htmlString = this.buildHTML();
+    const root = parse(htmlString, {comment: true});
+    const {children} = root;
+    children.forEach(process);
+    const result = children.map(e => e.outerHTML).join('\n');
     const {elementName} = this;
     return `
       <${elementName}${attributes}>
