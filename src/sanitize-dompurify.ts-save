@@ -1,3 +1,4 @@
+console.info('Saving this file until we are sure it can be replaced by xss.');
 // wrec.ts currently uses sanitize-xss instead of this.
 // Keep this file for a bit longer until you are sure
 // that using xss instead of dompurify works correctly.
