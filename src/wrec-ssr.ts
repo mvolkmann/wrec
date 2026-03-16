@@ -4,9 +4,9 @@ import {
   NodeType as NHPNodeType,
   TextNode as NHPTextNode
 } from 'node-html-parser';
-import {Wrec} from './wrec';
+import {Wrec, WrecState, createElement, css, html} from './wrec';
 
-export * from './wrec';
+export {Wrec, WrecState, createElement, css, html};
 
 const FIRST_CHAR = 'a-zA-Z_$';
 const OTHER_CHAR = FIRST_CHAR + '0-9';

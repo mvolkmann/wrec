@@ -1,4 +1,4 @@
-export declare type ChangeListener = {
+declare type ChangeListener = {
     changed: (statePath: string, componentProperty: string, newValue: unknown, oldValue: unknown, state: WrecState) => void;
 };
 
