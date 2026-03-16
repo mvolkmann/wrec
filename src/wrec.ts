@@ -1,9 +1,3 @@
-import {
-  parse,
-  HTMLElement as NHPElement,
-  NodeType as NHPNodeType,
-  TextNode as NHPTextNode
-} from 'node-html-parser';
 import type {ChangeListener} from './wrec-state';
 import {WrecState} from './wrec-state';
 import {getPathValue, setPathValue} from './paths';
@@ -27,17 +21,20 @@ const globalAttributes = new Set([
   'title'
 ]);
 
-// If running server-side for SSR, versus in a web browser ...
-if (typeof window === 'undefined') {
-  global.HTMLElement = NHPElement as any;
-  global.customElements = {
+const HTMLElementBase =
+  globalThis.HTMLElement ?? (class {} as typeof HTMLElement);
+const customElementsApi: CustomElementRegistry =
+  globalThis.customElements ??
+  ({
     get: (_name: string) => undefined,
     getName: () => '',
     define: () => {},
     upgrade: () => {},
-    whenDefined: () => Promise.reject()
-  };
-}
+    whenDefined: () =>
+      Promise.reject(
+        new Error('customElements is not available in this environment')
+      )
+  } as CustomElementRegistry);
 
 type AnyClass = new (...args: any[]) => any;
 
@@ -248,7 +245,10 @@ async function waitForDefines(
   // Wait for all the custom elements to be defined.
   return Promise.all(
     [...customSet].map(async tagName =>
-      Promise.race([customElements.whenDefined(tagName), getTimeout(tagName)])
+      Promise.race([
+        customElementsApi.whenDefined(tagName),
+        getTimeout(tagName)
+      ])
     )
   );
 }
@@ -347,10 +347,10 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
   static define(elementName: string) {
     this.elementName = elementName;
-    if (customElements.get(elementName)) {
+    if (customElementsApi.get(elementName)) {
       throw new WrecError(`custom element ${elementName} is already defined`);
     } else {
-      customElements.define(elementName, this as any);
+      customElementsApi.define(elementName, this as any);
     }
   }
 
@@ -1073,69 +1073,10 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   }
 
   static ssr(properties: StringToAny = {}) {
-    let attributes = '';
-    const keys = Object.keys(properties);
-    keys.sort();
-    for (const property of keys) {
-      const attrName = this.getAttrName(property);
-      attributes += ` ${attrName}="${properties[property]}"`;
-    }
-
-    const staticProperties = this.properties;
-    // Add properties with default values if missing.
-    for (const [propName, descriptor] of Object.entries(staticProperties)) {
-      if (properties[propName] === undefined) {
-        const {value} = descriptor;
-        if (value !== undefined) properties[propName] = value;
-      }
-    }
-
-    function evaluate(expr: string) {
-      return new Function('return ' + expr).call(properties);
-    }
-
-    function process(element: NHPElement) {
-      const {attributes} = element;
-      for (const [attrName, value] of Object.entries(attributes)) {
-        if (REFS_TEST_RE.test(value)) {
-          const newValue = evaluate(value);
-          const propName = getPropName(attrName);
-          const defaultValue = staticProperties[propName]?.value ?? '';
-          if (newValue === defaultValue) {
-            element.removeAttribute(attrName);
-          } else {
-            element.setAttribute(attrName, newValue);
-          }
-        }
-      }
-
-      const {childNodes} = element;
-      childNodes.forEach((node, index) => {
-        if (node.nodeType === NHPNodeType.ELEMENT_NODE) {
-          process(node as NHPElement);
-        } else if (node.nodeType === NHPNodeType.COMMENT_NODE) {
-          const value = node.textContent ?? '';
-          if (REFS_TEST_RE.test(value)) {
-            const newValue = evaluate(value);
-            childNodes[index] = new NHPTextNode(newValue);
-          }
-        }
-      });
-    }
-
-    const htmlString = this.buildHTML();
-    const root = parse(htmlString, {comment: true});
-    const {children} = root;
-    children.forEach(process);
-    const result = children.map(e => e.outerHTML).join('\n');
-    const {elementName} = this;
-    return `
-      <${elementName}${attributes}>
-        <template shadowrootmode="open">
-          ${result}
-        </template>
-      </${elementName}>
-    `;
+    void properties;
+    throw new WrecError(
+      'SSR support moved to the "wrec/ssr" entry. Import from "wrec/ssr" to use Wrec.ssr().'
+    );
   }
 
   #throw(

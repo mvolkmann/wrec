@@ -6,11 +6,12 @@ export default defineConfig({
   build: {
     emptyOutDir: true,
     lib: {
-      // The bundle exports everything exported by this file.
-      entry: path.resolve(__dirname, 'src/wrec.ts'),
+      entry: {
+        wrec: path.resolve(__dirname, 'src/wrec.ts'),
+        'wrec-ssr': path.resolve(__dirname, 'src/wrec-ssr.ts')
+      },
       name: 'wrec',
-      // file name of output bundle
-      fileName: format => `wrec.${format}.js`,
+      fileName: (format, entryName) => `${entryName}.${format}.js`,
       formats: ['es']
     },
     // Without this line, the dist directory will be
