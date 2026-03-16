@@ -643,9 +643,10 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
           this.#throwInvalidRef(element, attrName, propName);
         }
 
-        (element as any)[propName] = value;
-
         let [realAttrName, eventName] = attrName.split(':');
+        const childPropName = Wrec.getPropName(realAttrName);
+        (element as any)[childPropName] = value;
+
         if (realAttrName === 'value') {
           if (eventName) {
             if ((element as any)['on' + eventName] === undefined) {
