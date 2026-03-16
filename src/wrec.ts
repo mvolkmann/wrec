@@ -1074,9 +1074,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
   static ssr(properties: StringToAny = {}) {
     void properties;
-    throw new WrecError(
-      'SSR support moved to the "wrec/ssr" entry. Import from "wrec/ssr" to use Wrec.ssr().'
-    );
+    throw new WrecError('Import Wrec from "wrec/ssr" to use the ssr method.');
   }
 
   #throw(
