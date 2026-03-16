@@ -8,13 +8,18 @@ export declare function css(strings: TemplateStringsArray, ...values: unknown[])
 
 export declare function html(strings: TemplateStringsArray, ...values: unknown[]): string;
 
+declare const HTMLElementBase: {
+    new (): HTMLElement;
+    prototype: HTMLElement;
+};
+
 declare type LooseObject = Record<string, unknown>;
 
 declare type StringToAny = Record<string, any>;
 
 declare type StringToString = Record<string, string>;
 
-export declare abstract class Wrec extends HTMLElement implements ChangeListener {
+export declare abstract class Wrec extends HTMLElementBase implements ChangeListener {
     #private;
     private static attrToPropMap;
     private static propToAttrMap;

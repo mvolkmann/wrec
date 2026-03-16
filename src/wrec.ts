@@ -253,7 +253,7 @@ async function waitForDefines(
   );
 }
 
-export abstract class Wrec extends HTMLElement implements ChangeListener {
+export abstract class Wrec extends HTMLElementBase implements ChangeListener {
   // There is one instance of `attrToPropMap`, `properties`, `propToAttrMap`,
   // `propToComputedMap`, and `propToExprsMap` per Wrec subclass,
   // not one for only the Wrec class.
