@@ -1185,7 +1185,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
             'must match attribute name or be missing'
         );
       }
-      return stringValue === propName;
+      return stringValue === '' || stringValue === attrName;
     }
   }
 
