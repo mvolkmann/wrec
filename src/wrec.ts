@@ -16,6 +16,7 @@ export {WrecState};
 
 type StringToAny = Record<string, any>;
 type StringToString = Record<string, string>;
+type StateBinding = {state: WrecState; stateProp: string};
 
 const globalAttributes = new Set([
   'class',
@@ -336,6 +337,11 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
   // when the corresponding child property value changes.
   #propToParentPropMap = new Map<string, string>();
 
+  // This is a map from component properties to state bindings.
+  // It must be instance-specific because each component instance
+  // can bind the same property to a different WrecState/path.
+  #propToStateMap = new Map<string, StateBinding>();
+
   // This tells TypeScript that it's okay to access properties by string keys.
   [key: string]: any;
 
@@ -565,8 +571,10 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
         this.#validateType(propName, type, value);
 
         this[privateName] = value;
-        const {state, stateProp} = this.#ctor.properties[propName];
-        if (stateProp) setPathValue(state, stateProp, value);
+        const stateBinding = this.#propToStateMap.get(propName);
+        if (stateBinding) {
+          setPathValue(stateBinding.state, stateBinding.stateProp, value);
+        }
 
         this.#updateAttribute(propName, type, value, attrName);
         if (!this.#batching) {
@@ -1272,9 +1280,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
       if (this.#hasProperty(componentProp)) {
         const value = getPathValue(state, stateProp);
         if (value !== undefined) this[componentProp] = value;
-        const config = this.#ctor.properties[componentProp];
-        config.state = state;
-        config.stateProp = stateProp;
+        this.#propToStateMap.set(componentProp, {state, stateProp});
       }
     }
     state.addListener(this, map);
