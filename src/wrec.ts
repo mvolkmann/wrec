@@ -363,7 +363,7 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     const ctor = this.#ctor;
     if (!this.#hasOwn('attrToPropMap')) ctor.attrToPropMap = new Map();
     if (!this.#hasOwn('properties')) ctor.properties = {};
-    if (!this.#hasOwn('propToAttrMap')) ctor.propToExprsMap = new Map();
+    if (!this.#hasOwn('propToAttrMap')) ctor.propToAttrMap = new Map();
     if (!this.#hasOwn('propToComputedMap')) ctor.propToComputedMap = new Map();
     if (!this.#hasOwn('propToExprsMap')) ctor.propToExprsMap = new Map();
   }
