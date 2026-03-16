@@ -355,17 +355,17 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     // Create one instance of `properties`, `propToComputedMap`,
     // and `propToExprsMap` for each Wrec subclass.
     const ctor = this.#ctor;
-    if (!ctor.attrToPropMap) ctor.attrToPropMap = new Map();
-    if (!ctor.properties) ctor.properties = {};
-    if (!ctor.propToAttrMap) ctor.propToExprsMap = new Map();
-    if (!ctor.propToComputedMap) ctor.propToComputedMap = new Map();
-    if (!ctor.propToExprsMap) ctor.propToExprsMap = new Map();
+    if (!this.#hasOwn('attrToPropMap')) ctor.attrToPropMap = new Map();
+    if (!this.#hasOwn('properties')) ctor.properties = {};
+    if (!this.#hasOwn('propToAttrMap')) ctor.propToExprsMap = new Map();
+    if (!this.#hasOwn('propToComputedMap')) ctor.propToComputedMap = new Map();
+    if (!this.#hasOwn('propToExprsMap')) ctor.propToExprsMap = new Map();
   }
 
   attributeChangedCallback(
     attrName: string,
-    oldValue: string,
-    newValue: string | number | boolean | undefined
+    oldValue: string | null,
+    newValue: string | null
   ) {
     if (attrName === 'disabled') this.#disableOrEnable();
 
@@ -877,6 +877,10 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     });
   }
 
+  #hasOwn(propName: string) {
+    return Object.hasOwn(this.#ctor, propName);
+  }
+
   #hasProperty(propName: string) {
     return Boolean(this.#ctor.properties[propName]);
   }
@@ -1083,14 +1087,15 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
 
     function process(element: NHPElement) {
       const {attributes} = element;
-      for (const [name, value] of Object.entries(attributes)) {
+      for (const [attrName, value] of Object.entries(attributes)) {
         if (REFS_TEST_RE.test(value)) {
           const newValue = evaluate(value);
-          const defaultValue = staticProperties[name].value;
+          const propName = getPropName(attrName);
+          const defaultValue = staticProperties[propName]?.value ?? '';
           if (newValue === defaultValue) {
-            element.removeAttribute(name);
+            element.removeAttribute(attrName);
           } else {
-            element.setAttribute(name, newValue);
+            element.setAttribute(attrName, newValue);
           }
         }
       }
@@ -1163,7 +1168,8 @@ export abstract class Wrec extends HTMLElement implements ChangeListener {
     if (type === Boolean) {
       if (stringValue === 'true') return true;
       if (stringValue === 'false' || stringValue === 'null') return false;
-      if (stringValue && stringValue !== propName) {
+      const attrName = Wrec.getAttrName(propName);
+      if (stringValue && stringValue !== attrName) {
         this.#throw(
           null,
           propName,
