@@ -1,6 +1,8 @@
 import xss from 'xss';
 
 const keepTags = new Set(['input', 'label', 'option', 'th']);
+const COMMENT_PREFIX = '__WREC';
+const COMMENT_SUFFIX = '__';
 
 function sanitize(html: string): string {
   const options = {
@@ -34,7 +36,10 @@ function sanitize(html: string): string {
 
   // Replace comments with placeholders
   html = html.replace(/<!--[\s\S]*?-->/g, match => {
-    const token = `__COMMENT_${comments.length}__`;
+    let token = '';
+    do {
+      token = COMMENT_PREFIX + comments.length + COMMENT_SUFFIX;
+    } while (html.includes(token));
     comments.push(match);
     return token;
   });
@@ -42,7 +47,13 @@ function sanitize(html: string): string {
   let sanitized = xss(html, options);
 
   // Restore comments
-  sanitized = sanitized.replace(/__COMMENT_(\d+)__/g, (_, i) => comments[i]);
+  comments.forEach((comment, index) => {
+    const tokenPattern = new RegExp(
+      `${COMMENT_PREFIX}${index}${COMMENT_SUFFIX}`,
+      'g'
+    );
+    sanitized = sanitized.replace(tokenPattern, comment);
+  });
 
   return sanitized;
 }
