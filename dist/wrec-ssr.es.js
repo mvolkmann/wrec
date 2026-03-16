@@ -1,71 +1,60 @@
-import { HTMLElement as y, parse as H, NodeType as T, TextNode as M } from "node-html-parser";
-import { Wrec as R } from "./wrec.es.js";
-import { WrecState as I, createElement as C, css as D, html as F } from "./wrec.es.js";
-const b = "a-zA-Z_$", S = b + "0-9", h = `[${b}][${S}]*`, N = new RegExp(`this\\.${h}(\\.${h})*`), _ = 5, O = (c) => c.substring(_).split(".")[0];
-typeof window > "u" && !globalThis.HTMLElement && (globalThis.HTMLElement = y);
-typeof window > "u" && !globalThis.customElements && (globalThis.customElements = {
-  get: (c) => {
-  },
-  getName: () => "",
-  define: () => {
-  },
-  upgrade: () => {
-  },
-  whenDefined: () => Promise.reject(new Error("customElements is not available"))
-});
-R.ssr = function(o = {}) {
-  let l = "";
-  const m = Object.keys(o);
-  m.sort();
-  for (const t of m) {
-    const n = this.getAttrName(t);
-    l += ` ${n}="${o[t]}"`;
+import { parse as S, NodeType as h, TextNode as O } from "node-html-parser";
+import { Wrec as _ } from "./wrec.es.js";
+import { WrecState as j, createElement as C, css as F, html as D } from "./wrec.es.js";
+const $ = "a-zA-Z_$", w = $ + "0-9", T = `[${$}][${w}]*`, d = new RegExp(`this\\.${T}(\\.${T})*`), y = 5, A = (a) => a.substring(y).split(".")[0];
+_.ssr = function(o = {}) {
+  let u = "";
+  const l = Object.keys(o);
+  l.sort();
+  for (const t of l) {
+    const s = this.getAttrName(t);
+    u += ` ${s}="${o[t]}"`;
   }
-  const u = this.properties;
-  for (const [t, n] of Object.entries(u))
+  const f = this.properties;
+  for (const [t, s] of Object.entries(f))
     if (o[t] === void 0) {
-      const { value: s } = n;
-      s !== void 0 && (o[t] = s);
+      const { value: n } = s;
+      n !== void 0 && (o[t] = n);
     }
-  function f(t) {
+  function m(t) {
     return new Function("return " + t).call(o);
   }
-  function E(t) {
-    const { attributes: n } = t;
-    for (const [e, i] of Object.entries(n))
-      if (N.test(i)) {
-        const r = f(i), a = O(e), v = u[a]?.value ?? "";
-        r === v ? t.removeAttribute(e) : t.setAttribute(e, String(r));
+  function p(t) {
+    const { attributes: s } = t;
+    for (const [e, c] of Object.entries(s))
+      if (d.test(c)) {
+        const r = m(c), i = A(e), R = f[i]?.value ?? "";
+        r === R ? t.removeAttribute(e) : t.setAttribute(e, String(r));
       }
-    const { childNodes: s } = t;
-    s.forEach((e, i) => {
-      if (e.nodeType === T.ELEMENT_NODE)
-        E(e);
-      else if (e.nodeType === T.COMMENT_NODE) {
+    const { childNodes: n } = t;
+    n.forEach((e, c) => {
+      if (e.nodeType === h.ELEMENT_NODE)
+        p(e);
+      else if (e.nodeType === h.COMMENT_NODE) {
         const r = e.textContent ?? "";
-        if (N.test(r)) {
-          const a = f(r);
-          s[i] = new M(String(a));
+        if (d.test(r)) {
+          const i = m(r);
+          n[c] = new O(String(i));
         }
       }
     });
   }
-  const g = this.buildHTML(), w = H(g, { comment: !0 }), { children: d } = w;
-  d.forEach(E);
-  const $ = d.map((t) => t.outerHTML).join(`
-`), p = this.elementName;
+  const b = this.buildHTML(), g = S(b, { comment: !0 }), { children: E } = g;
+  E.forEach(p);
+  const v = E.map((t) => t.outerHTML).join(`
+`), N = this.elementName;
   return `
-      <${p}${l}>
+      <${N}${u}>
         <template shadowrootmode="open">
-          ${$}
+          ${v}
         </template>
-      </${p}>
+      </${N}>
     `;
 };
 export {
-  R as Wrec,
-  I as WrecState,
+  _ as Wrec,
+  j as WrecState,
   C as createElement,
-  D as css,
-  F as html
+  F as css,
+  D as html
 };

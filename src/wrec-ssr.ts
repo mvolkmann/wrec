@@ -16,21 +16,6 @@ const SKIP = 'this.'.length;
 
 const getPropName = (str: string) => str.substring(SKIP).split('.')[0];
 
-// Make importing the SSR entry safe in Node-like environments.
-if (typeof window === 'undefined' && !globalThis.HTMLElement) {
-  (globalThis as any).HTMLElement = NHPElement;
-}
-
-if (typeof window === 'undefined' && !globalThis.customElements) {
-  (globalThis as any).customElements = {
-    get: (_name: string) => undefined,
-    getName: () => '',
-    define: () => {},
-    upgrade: () => {},
-    whenDefined: () => Promise.reject(new Error('customElements is not available'))
-  };
-}
-
 Wrec.ssr = function ssr(properties: Record<string, any> = {}) {
   let attributes = '';
   const keys = Object.keys(properties);
