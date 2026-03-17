@@ -4,8 +4,8 @@ class BindingDemo extends Wrec {
   static formAssociated = true;
 
   static properties = {
+    moving: {type: Boolean},
     name: {type: String},
-    power: {type: Boolean},
     speed: {type: Number},
     story: {type: String}
   };
@@ -29,13 +29,13 @@ class BindingDemo extends Wrec {
 
   static html = html`
     <div class="toggle-row">
-      <label>Power:</label>
+      <label>Moving:</label>
       <toggle-switch
-        checked="this.power"
-        onChange="console.log('binding-demo.js: power =', this.power)"
+        checked="this.moving"
+        onChange="console.log('moving =', this.moving)"
       ></toggle-switch>
     </div>
-    <stop-light go="this.speed < 10"></stop-light>
+    <traffic-light state="this.moving ? 'go' : 'stop'"></traffic-light>
     <div id="input-demo">
       <label>Name:</label>
       <input value:input="this.name" />

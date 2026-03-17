@@ -8,6 +8,14 @@ import sanitize from './sanitize-xss';
 export type {ChangeListener};
 export {WrecState};
 
+type PropertyConfig = {
+  computed?: string;
+  dispatch?: boolean;
+  required?: boolean;
+  type: AnyClass;
+  value?: any;
+  values?: string[];
+};
 type StringToAny = Record<string, any>;
 type StringToString = Record<string, string>;
 type StateBinding = {state: WrecState; stateProp: string};
@@ -88,6 +96,11 @@ export function createElement(
   if (innerHTML) element.innerHTML = innerHTML;
   return element;
 }
+
+const defaultForConfig = (config: PropertyConfig) =>
+  Array.isArray(config.values) && config.values.length > 0
+    ? config.values[0]
+    : defaultForType(config.type);
 
 const defaultForType = (type: AnyClass) =>
   type === String
@@ -289,7 +302,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
 
   // This must be set in each Wrec subclass.
   // It describes all the properties that a web component supports.
-  static properties: StringToAny;
+  static properties: Record<string, PropertyConfig>;
 
   // This is a map from properties to arrays of
   // computed property expressions that use the property.
@@ -378,7 +391,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
     const propName = Wrec.getPropName(attrName);
     if (this.#hasProperty(propName)) {
       // Update the corresponding property.
-      const value = this.#typedValue(propName, String(newValue));
+      const value = this.#typedValue(propName, newValue);
       this[propName] = value;
       const formKey = this.#formAssoc[propName];
       if (formKey) this.setFormValue(formKey, String(value));
@@ -520,7 +533,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
 
   #defineProp(
     propName: string,
-    config: StringToAny,
+    config: PropertyConfig,
     observedAttributes: string[]
   ) {
     if (propName === 'class' || propName === 'style') {
@@ -550,7 +563,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
         ? value || has
         : observedAttributes.includes(attrName) && has
           ? this.#typedAttribute(propName, attrName)
-          : value || defaultForType(type);
+          : (value ?? defaultForConfig(config));
     const privateName = '#' + propName;
     this[privateName] = typedValue;
 
@@ -1108,10 +1121,20 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
     if (stringValue?.match(REFS_RE)) return stringValue;
 
     const ctor = this.#ctor;
-    const {type} = ctor.properties[propName];
+    const config = ctor.properties[propName];
+    const {type, values} = config;
     if (!type) this.#throw(null, propName, 'does not specify its type');
+    if (stringValue === null) {
+      return type === Boolean ? false : defaultForConfig(config);
+    }
 
-    if (type === String) return stringValue;
+    if (type === String) {
+      if (values && !values.includes(stringValue)) {
+        const allowed = values.map(value => `"${value}"`).join(', ');
+        this.#throw(null, propName, `must be one of ${allowed}`);
+      }
+      return stringValue;
+    }
     if (type === Number) return stringToNumber(stringValue);
     if (type === Boolean) {
       if (stringValue === 'true') return true;
@@ -1284,6 +1307,20 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
   // When type is an array, this can't validate the type of the array elements.
   // This is called by #defineProp.
   #validateType(propName: string, type: AnyClass, value: any) {
+    const {values} = this.#ctor.properties[propName] as PropertyConfig;
+    if (values) {
+      let msg;
+      if (type !== String) {
+        msg = 'declares allowed values, but its type is not String';
+      } else if (typeof value !== 'string') {
+        msg = `value is a ${typeof value}, but type is String`;
+      } else if (!values.includes(value)) {
+        const allowed = values.map(value => `"${value}"`).join(', ');
+        msg = `must be one of ${allowed}`;
+      }
+      if (msg) this.#throw(null, propName, msg);
+    }
+
     if (value instanceof type) return;
 
     let t = typeof value as string;

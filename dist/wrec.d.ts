@@ -1,3 +1,5 @@
+declare type AnyClass = new (...args: any[]) => any;
+
 export declare type ChangeListener = {
     changed: (statePath: string, componentProperty: string, newValue: unknown, oldValue: unknown, state: WrecState) => void;
 };
@@ -15,6 +17,15 @@ declare const HTMLElementBase: {
 
 declare type LooseObject = Record<string, unknown>;
 
+declare type PropertyConfig = {
+    computed?: string;
+    dispatch?: boolean;
+    required?: boolean;
+    type: AnyClass;
+    value?: any;
+    values?: string[];
+};
+
 declare type StringToAny = Record<string, any>;
 
 declare type StringToString = Record<string, string>;
@@ -28,7 +39,7 @@ export declare abstract class Wrec extends HTMLElementBase implements ChangeList
     private static elementName;
     static formAssociated: boolean;
     static html: string;
-    static properties: StringToAny;
+    static properties: Record<string, PropertyConfig>;
     private static propToComputedMap;
     private static propToExprsMap;
     private static template;

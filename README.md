@@ -110,6 +110,23 @@ Here are the steps:
    MyCounter.define('my-counter');
    ```
 
+Property definitions can also constrain string values to an allowed set:
+
+```js
+class TrafficLight extends Wrec {
+  static properties = {
+    color: {
+      type: String,
+      values: ['red', 'yellow', 'green'],
+      value: 'red'
+    }
+  };
+}
+```
+
+With that configuration, the `color` attribute and property can only be set
+to one of those strings.
+
 1. Create the file `index.html` containing the following.
 
    ```html
@@ -225,3 +242,5 @@ to share state across multiple wrec components.
   state.name; // to see current value of "name" property
   state.name = 'Earth'; // to modify "name" property
   ```
+
+`traffic-light.html` demonstrates a property with an enumerated value.
