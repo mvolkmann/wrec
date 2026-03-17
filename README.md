@@ -130,6 +130,17 @@ Here are the steps:
 
 1. Click the "-" and "+" buttons to verify that the component is working.
 
+## SSR Support
+
+Server-side rendering (SSR) is supported.
+This requires importing from "wrec/ssr" instead of "wrec".
+That bundle is much larger because it bundles the node-html-parser package.
+However, the size increase is not likely an issue
+because it is used on the server-side rather than downloaded to web browsers.
+
+For an example of using wrec with SSR, see
+https://github.com/mvolkmann/web-component-book-code/tree/main/ch15/wrec-ssr-demo.
+
 ## Examples
 
 To run the examples in the `src/examples` directory:
