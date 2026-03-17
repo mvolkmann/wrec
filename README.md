@@ -151,6 +151,7 @@ to one of those strings.
 
 Server-side rendering (SSR) is supported.
 This requires importing from "wrec/ssr" instead of "wrec".
+"wrec/ssr" should only be imported by server code.
 That bundle is much larger because it bundles the node-html-parser package.
 However, the size increase is not likely an issue
 because it is used on the server-side rather than downloaded to web browsers.
