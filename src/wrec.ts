@@ -393,7 +393,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
     if (attrName === 'disabled') this.#disableOrEnable();
 
     const propName = Wrec.getPropName(attrName);
-    if (this.#hasProperty(propName)) {
+    if (!this.#isComputedProp(propName) && this.#hasProperty(propName)) {
       // Update the corresponding property.
       const value = this.#typedValue(propName, newValue);
       this[propName] = value;
@@ -989,9 +989,10 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
   }
 
   static get observedAttributes() {
-    const keys = Object.keys(this.properties || {}).map(key =>
-      Wrec.getAttrName(key)
-    );
+    // Only observe attributes for non-computed properties.
+    const keys = Object.entries(this.properties || {})
+      .filter(([_key, config]) => !config.computed)
+      .map(([key]) => Wrec.getAttrName(key));
     if (!keys.includes('disabled')) keys.push('disabled');
     return keys;
   }
@@ -1213,7 +1214,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
   // Updates the matching attribute for a property.
   // VS Code thinks this is never called, but it is called by #defineProp.
   #updateAttribute(propName: string, type: any, value: any, attrName: string) {
-    if (isPrimitive(value)) {
+    if (isPrimitive(value) && !this.#isComputedProp(propName)) {
       const oldValue =
         type === Boolean
           ? this.hasAttribute(attrName)
