@@ -620,10 +620,14 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
   }
 
   disconnectedCallback() {
-    //TODO: Should more cleanup be performed here?
+    for (const {state} of this.#propToStateMap.values()) {
+      state.removeListener(this);
+    }
+
     this.#exprToRefsMap.clear();
     this.#initialValuesMap.clear();
     this.#propToParentPropMap.clear();
+    this.#propToStateMap.clear();
   }
 
   dispatch(name: string, detail: any) {
