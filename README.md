@@ -29,6 +29,8 @@ For each expression, a new value is computed.
 Then wrec uses `#exprToRefsMap` to find all the references to that expression
 and updates them.
 
+An architecture diagram for this flow is in [docs/how-wrec-works.md](docs/how-wrec-works.md).
+
 ## Releasing New Versions
 
 To release a new version of the wrec library:
