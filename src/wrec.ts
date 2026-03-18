@@ -322,6 +322,10 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
   // This is true while the batchSet method is running.
   #batching = false;
 
+  // This holds the names of computed properties
+  // that are currently being updated.
+  #computedUpdates = new Set<string>();
+
   #ctor: typeof Wrec = this.constructor as typeof Wrec;
 
   // This is a map from expressions to references to them
@@ -432,7 +436,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
     for (const computedName of computedSet) {
       // Update the computed property.
       const expr = computedToExprMap[computedName];
-      this[computedName] = this.#evaluateInContext(expr);
+      this.#setComputed(computedName, this.#evaluateInContext(expr));
       // Find the expressions that use the computed property.
       const exprs = propToExprsMap.get(computedName) ?? [];
       for (const expr of exprs) {
@@ -449,7 +453,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
         const newValue = this.#evaluateInContext(expr);
         const oldValue = this[computedName];
         if (JSON.stringify(newValue) !== JSON.stringify(oldValue)) {
-          this[computedName] = newValue;
+          this.#setComputed(computedName, newValue);
           changed = true;
         }
       }
@@ -510,7 +514,9 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
     const ctor = this.#ctor;
     const {properties} = ctor;
     for (const [propName, {computed}] of Object.entries(properties)) {
-      if (computed) this[propName] = this.#evaluateInContext(computed);
+      if (computed) {
+        this.#setComputed(propName, this.#evaluateInContext(computed));
+      }
     }
   }
 
@@ -575,6 +581,13 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
         return this[privateName];
       },
       set(value) {
+        if (config.computed && !this.#computedUpdates.has(propName)) {
+          this.#throw(
+            null,
+            propName,
+            'is a computed property and cannot be set directly'
+          );
+        }
         if (type === Number && typeof value === 'string') {
           value = stringToNumber(value);
         }
@@ -662,7 +675,15 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
 
         let [realAttrName, eventName] = attrName.split(':');
         const childPropName = Wrec.getPropName(realAttrName);
-        (element as any)[childPropName] = value;
+        // Bindings to computed properties are one-way,
+        // from child to parent, not two-way.
+        const parentComputed = this.#isComputedProp(propName);
+        const childComputed = isWC
+          ? (element as Wrec).#isComputedProp(childPropName)
+          : false;
+        if (!childComputed) {
+          (element as any)[childPropName] = value;
+        }
 
         if (realAttrName === 'value') {
           if (eventName) {
@@ -679,7 +700,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
         // If the element is a wrec web component instance,
         // save a mapping from the attribute name in this web component
         // to the property name in that web component.
-        if (isWC) {
+        if (isWC && !parentComputed) {
           (element as Wrec).#propToParentPropMap.set(
             Wrec.getPropName(realAttrName),
             propName
@@ -931,6 +952,10 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
     return Boolean(this.#ctor.properties[propName]);
   }
 
+  #isComputedProp(propName: string) {
+    return Boolean(this.#ctor.properties[propName]?.computed);
+  }
+
   #makeReactive(root: ShadowRoot | HTMLElement) {
     const elements = Array.from(root.querySelectorAll('*')) as HTMLElement[];
     for (const element of elements) {
@@ -1023,6 +1048,15 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
       for (const use of uses.split(',')) {
         register(use.trim(), computed);
       }
+    }
+  }
+
+  #setComputed(propName: string, value: unknown) {
+    this.#computedUpdates.add(propName);
+    try {
+      this[propName] = value;
+    } finally {
+      this.#computedUpdates.delete(propName);
     }
   }
 
@@ -1196,7 +1230,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
     const map = this.#ctor.propToComputedMap!;
     const computes = map.get(propName) || [];
     for (const [computedName, expr] of computes) {
-      this[computedName] = this.#evaluateInContext(expr);
+      this.#setComputed(computedName, this.#evaluateInContext(expr));
     }
   }
 

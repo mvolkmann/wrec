@@ -85,20 +85,13 @@ test('colors', async ({page}) => {
   await setProperty(dataBinding, 'colors', values);
   await testColors(values);
 
-  const capitalize = (str: string) =>
-    str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
-
   // Change the list of values in the radio-group element.
   values = 'white,gray,black';
-  let labels = values.split(',').map(capitalize).join(',');
-  await setProperty(radioGroup, 'labels', labels);
   await setProperty(radioGroup, 'values', values);
   await testColors(values);
 
   // Change the list of values in the select-list element.
   values = 'purple,orange,cyan,brown';
-  labels = values.split(',').map(capitalize).join(',');
-  await setProperty(selectList, 'labels', labels);
   await setProperty(selectList, 'values', values);
   await testColors(values);
 });
