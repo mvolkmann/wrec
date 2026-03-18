@@ -695,7 +695,18 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
     for (const expr of exprs) {
       const value = this.#evaluateInContext(expr);
       const refs: Ref[] = this.#exprToRefsMap.get(expr) ?? [];
+      const disconnectedRefs = new Set<Ref>();
+
       for (const ref of refs) {
+        const element =
+          ref instanceof HTMLElement || ref instanceof CSSStyleRule
+            ? ref
+            : ref.element;
+        if (element instanceof HTMLElement && !element.isConnected) {
+          disconnectedRefs.add(ref);
+          continue;
+        }
+
         if (ref instanceof HTMLElement) {
           this.#updateElementContent(ref, value);
         } else if (ref instanceof CSSStyleRule) {
@@ -713,6 +724,15 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
           } else {
             updateValue(element, attrName, value);
           }
+        }
+      }
+
+      if (disconnectedRefs.size > 0) {
+        const newRefs = refs.filter(ref => !disconnectedRefs.has(ref));
+        if (newRefs.length === 0) {
+          this.#exprToRefsMap.delete(expr);
+        } else {
+          this.#exprToRefsMap.set(expr, newRefs);
         }
       }
     }
