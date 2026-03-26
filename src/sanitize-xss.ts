@@ -1,6 +1,6 @@
 import xss from 'xss';
 
-const keepTags = new Set(['input', 'label', 'option', 'th']);
+const keepTags = new Set(['button', 'input', 'label', 'option', 'th']);
 const COMMENT_PREFIX = '__WREC';
 const COMMENT_SUFFIX = '__';
 

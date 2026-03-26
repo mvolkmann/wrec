@@ -1,7 +1,6 @@
 import type {ChangeListener} from './wrec-state';
 import {WrecState} from './wrec-state';
 import {getPathValue, setPathValue} from './paths';
-//import sanitize from './sanitize-dompurify';
 import sanitize from './sanitize-xss';
 // When this package is bundled by Vite,
 // the bundle exports everything exported by this file.

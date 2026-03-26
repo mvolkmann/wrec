@@ -1,6 +1,6 @@
 // Claude Code generated this file.
 import {expect, Page, test} from '@playwright/test';
-import {setProperty, waitForNextFrame} from './util';
+import {expectAttribute, setProperty, waitForNextFrame} from './util';
 import {Wrec} from '../src/wrec';
 
 test.beforeEach(async ({page}: {page: Page}) => {
@@ -53,12 +53,14 @@ test('sorts by name column', async ({page}: {page: Page}) => {
   await expect(rows.nth(2).locator('td').nth(0)).toContainText('Charlie');
 
   // Click name header to sort ascending (should already be ascending)
-  await nameHeader.click();
+  const button = nameHeader.locator('button');
+  await button.click();
   await waitForNextFrame(page);
 
   // Should show ascending indicator
-  const sortIndicator = nameHeader.locator('.sort-indicator');
+  const sortIndicator = button.locator('.sort-indicator');
   await expect(sortIndicator).toContainText('▲');
+  await expectAttribute(nameHeader, 'aria-sort', 'ascending');
 
   // Click again to sort descending
   await nameHeader.click();
@@ -66,6 +68,7 @@ test('sorts by name column', async ({page}: {page: Page}) => {
 
   // Should show descending indicator
   await expect(sortIndicator).toContainText('▼');
+  await expectAttribute(nameHeader, 'aria-sort', 'descending');
 
   // Order should be reversed: Charlie, Bob, Alice
   await expect(rows.nth(0).locator('td').nth(0)).toContainText('Charlie');
@@ -82,12 +85,14 @@ test('sorts by age column', async ({page}: {page: Page}) => {
   const rows = table.locator('tbody tr');
 
   // Click age header to sort by age ascending
-  await ageHeader.click();
+  const button = ageHeader.locator('button');
+  await button.click();
   await waitForNextFrame(page);
 
   // Should show ascending indicator
   const sortIndicator = ageHeader.locator('.sort-indicator');
   await expect(sortIndicator).toContainText('▲');
+  await expectAttribute(ageHeader, 'aria-sort', 'ascending');
 
   // Order should be by age: Bob (25), Alice (30), Charlie (35)
   await expect(rows.nth(0).locator('td').nth(0)).toContainText('Bob');
@@ -100,6 +105,7 @@ test('sorts by age column', async ({page}: {page: Page}) => {
 
   // Should show descending indicator
   await expect(sortIndicator).toContainText('▼');
+  await expectAttribute(ageHeader, 'aria-sort', 'descending');
 
   // Order should be reversed: Charlie (35), Alice (30), Bob (25)
   await expect(rows.nth(0).locator('td').nth(0)).toContainText('Charlie');
@@ -150,15 +156,14 @@ test('headers have correct accessibility attributes', async ({
   const table = sortableTable.locator('table');
   const headers = table.locator('thead th');
 
-  // Check first header has correct attributes
+  // Verify that the first header has correct attributes
   const nameHeader = headers.nth(0);
-  await expect(nameHeader).toHaveAttribute('role', 'button');
-  await expect(nameHeader).toHaveAttribute('tabindex', '0');
   await expect(nameHeader).toHaveAttribute('title', 'sort by Name');
 
-  // Check it's focusable
-  await nameHeader.focus();
-  await expect(nameHeader).toBeFocused();
+  // Verify that it's focusable.
+  const button = nameHeader.locator('button');
+  await button.focus();
+  await expect(button).toBeFocused();
 });
 
 test('batchSet works', async ({page}: {page: Page}) => {
@@ -177,5 +182,5 @@ test('batchSet works', async ({page}: {page: Page}) => {
   await expect(header).toHaveAttribute('data-property', 'age');
   header = headers.nth(1);
   await expect(header).toHaveText('Name');
-  //await expect(header).toHaveAttribute('data-property', 'name');
+  await expect(header).toHaveAttribute('data-property', 'name');
 });

@@ -1,4 +1,4 @@
-import {css, html, Wrec} from 'wrec';
+import {css, html, Wrec} from '../wrec';
 
 type LooseObject = Record<string, unknown>;
 
@@ -41,9 +41,20 @@ class SortableTable extends Wrec {
     th {
       background-color: cornflowerblue;
       color: white;
-      cursor: pointer;
-      > span {
-        pointer-events: none;
+
+      > button {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+
+        background: none;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        font: inherit;
+        padding: 0;
+        width: 100%;
       }
     }
   `;
@@ -63,6 +74,18 @@ class SortableTable extends Wrec {
     <slot name="footnote"></slot>
   `;
 
+  getAriaSort(
+    property: string,
+    sortProperty: string,
+    descending: boolean
+  ): string | undefined {
+    return property === sortProperty
+      ? descending
+        ? 'descending'
+        : 'ascending'
+      : undefined;
+  }
+
   makeHeadings(headings: string, propertyArray: string[]) {
     if (propertyArray.length === 0) return '';
     return headings
@@ -81,16 +104,17 @@ class SortableTable extends Wrec {
   makeTh(heading: string, property: string) {
     return html`
       <th
+        aria-sort="this.getAriaSort('${property}', this.sortProperty, this.descending)"
         data-property="${property}"
-        role="button"
-        tabindex="0"
         title="${`sort by ${heading}`}"
-        onClick="this.updateSort('${property}')"
       >
-        <span>${heading}</span>
-        <span class="sort-indicator">
-          this.sortIndicator(this.sortProperty, this.descending, '${property}')
-        </span>
+        <button type="button" onClick="this.updateSort('${property}')">
+          <span>${heading}</span>
+          <span class="sort-indicator">
+            this.sortIndicator(this.sortProperty, this.descending,
+            '${property}')
+          </span>
+        </button>
       </th>
     `;
   }
