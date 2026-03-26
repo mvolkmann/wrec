@@ -7,6 +7,18 @@ type LooseObject = Record<string, unknown>;
 // These are pure functions that are listed in
 // the context property of the SortedTable class.
 
+function getAriaSort(
+  property: string,
+  sortProperty: string,
+  descending: boolean
+): string | undefined {
+  return property === sortProperty
+    ? descending
+      ? 'descending'
+      : 'ascending'
+    : undefined;
+}
+
 function makeTd(value: unknown) {
   return html`<td>${value}</td>`;
 }
@@ -14,7 +26,7 @@ function makeTd(value: unknown) {
 function makeTr(obj: LooseObject, propertyArray: string[]) {
   return html`
     <tr>
-      ${propertyArray.map(propName => makeTd(obj[propName]))}
+      ${propertyArray.map(propName => makeTd(obj[propName])).join('')}
     </tr>
   `;
 }
@@ -49,7 +61,7 @@ function sortIndicator(
 }
 
 class SortableTable extends Wrec {
-  static context = {makeTd, makeTr, makeTrs, sort, sortIndicator};
+  static context = {getAriaSort, makeTd, makeTr, makeTrs, sort, sortIndicator};
 
   static properties = {
     data: {type: Array<LooseObject>},
@@ -94,9 +106,20 @@ class SortableTable extends Wrec {
     th {
       background-color: cornflowerblue;
       color: white;
-      cursor: pointer;
-      > span {
-        pointer-events: none;
+
+      > button {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+
+        background: none;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        font: inherit;
+        padding: 0;
+        width: 100%;
       }
     }
   `;
@@ -119,25 +142,21 @@ class SortableTable extends Wrec {
   makeTh(heading: string, property: string) {
     return html`
       <th
+        aria-sort="getAriaSort('${property}', this.sortProperty, this.descending)"
         data-property="${property}"
-        role="button"
-        tabindex="0"
         title="${`sort by ${heading}`}"
-        onClick="this.updateSort('${property}')"
       >
-        <span>${heading}</span>
-        <span class="sort-indicator">
-          sortIndicator(this.sortProperty, this.descending, '${property}')
-        </span>
+        <button type="button" onClick="this.updateSort('${property}')">
+          <span>${heading}</span>
+          <span class="sort-indicator">
+            sortIndicator(this.sortProperty, this.descending, '${property}')
+          </span>
+        </button>
       </th>
     `;
   }
 
   makeThs() {
-    console.log(
-      'sortable-table.ts makeThs: this.propertyArray =',
-      this.propertyArray
-    );
     if (this.propertyArray.length === 0) return '';
     return this.headings
       .split(',')
