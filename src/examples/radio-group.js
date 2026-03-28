@@ -68,8 +68,10 @@ class RadioGroup extends Wrec {
   // This handles the case when the specified value
   // is not in the list of values.
   #fixValue() {
-    const values = this.values.split(',');
-    if (!this.value || !values.includes(this.value)) this.value = values[0];
+    requestAnimationFrame(() => {
+      const values = this.values.split(',');
+      if (!this.value || !values.includes(this.value)) this.value = values[0];
+    });
   }
 
   // This method cannot be private because it is called when
