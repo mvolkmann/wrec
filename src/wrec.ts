@@ -2,6 +2,7 @@ import type {ChangeListener} from './wrec-state';
 import {WrecState} from './wrec-state';
 import {getPathValue, setPathValue} from './paths';
 import sanitize from './sanitize-xss';
+
 // When this package is bundled by Vite,
 // the bundle exports everything exported by this file.
 export type {ChangeListener};
@@ -12,6 +13,7 @@ type PropertyConfig = {
   dispatch?: boolean;
   required?: boolean;
   type: AnyClass;
+  usedBy?: string[];
   value?: any;
   values?: string[];
 };
@@ -495,18 +497,15 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
     this[componentProp] = newValue;
   }
 
-  connectedCallback() {
+  async connectedCallback() {
     this.#validateAttributes();
     this.#defineProps();
-
-    this.#buildDOM().then(() => {
-      if (this.hasAttribute('disabled')) this.#disableOrEnable();
-
-      this.#wireEvents(this.shadowRoot!);
-      this.#makeReactive(this.shadowRoot!);
-
-      this.#computeProps();
-    });
+    await this.#buildDOM();
+    if (this.hasAttribute('disabled')) this.#disableOrEnable();
+    this.#wireEvents(this.shadowRoot!);
+    this.#makeReactive(this.shadowRoot!);
+    this.#usedBy();
+    this.#computeProps();
   }
 
   #computeProps() {
@@ -1143,7 +1142,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
     this.#internals?.setFormValue(this.#formData);
   }
 
-  static ssr(properties: StringToAny = {}) {
+  static ssr(properties: StringToAny = {}): string {
     void properties;
     throw new WrecError('Import Wrec from "wrec/ssr" to use the ssr method.');
   }
@@ -1279,6 +1278,67 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
 
     const parent = host as StringToAny;
     parent[parentProp] = value;
+  }
+
+  // This adds expressions to the expressions arrays in propToExprsMap
+  // that contain calls to methods listed the usedBy array or each property.
+  #usedBy() {
+    // This is a map from method names to
+    // expressions that include calls to them.
+    // It is built lazily because it isn't needed
+    // if no properties have a usedBy property.
+    let methodToExprsMap: Map<string, string[]> | undefined = undefined;
+
+    function buildMap(this: Wrec) {
+      methodToExprsMap = new Map<string, string[]>();
+      const allExprs = Array.from(this.#exprToRefsMap.keys());
+      const CALL_RE = new RegExp(`this\\.(${IDENTIFIER})\\s*\\(`, 'g');
+      for (const expr of allExprs) {
+        for (const match of expr.matchAll(CALL_RE)) {
+          const methodName = match[1];
+          let exprs = methodToExprsMap.get(methodName);
+          if (!exprs) {
+            exprs = [];
+            methodToExprsMap.set(methodName, exprs);
+          }
+          if (!exprs.includes(expr)) exprs.push(expr);
+        }
+      }
+    }
+
+    const {properties, propToExprsMap} = this.#ctor;
+
+    // For each property whose configuration object
+    // contains a "usedBy" property ...
+    for (const [propName, config] of Object.entries(properties)) {
+      const {usedBy} = config;
+      if (!usedBy) continue;
+
+      if (!methodToExprsMap) buildMap.call(this);
+
+      // Get the array of expressions where the property is used.
+      let propExprs = propToExprsMap.get(propName);
+      if (!propExprs) {
+        propExprs = [];
+        propToExprsMap.set(propName, propExprs);
+      }
+
+      // For each method that uses the property ...
+      for (const method of usedBy) {
+        if (typeof this[method] !== 'function') {
+          const message = `property ${propName} usedBy contains non-method ${method}`;
+          throw new WrecError(message);
+        }
+
+        // For each expressions that calls the method ...
+        const methodExprs = methodToExprsMap!.get(method) || [];
+        for (const expr of methodExprs) {
+          // Add the expression to the array of expressions
+          // that use the property.
+          if (!propExprs.includes(expr)) propExprs.push(expr);
+        }
+      }
+    }
   }
 
   /**

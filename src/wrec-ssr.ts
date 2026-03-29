@@ -16,7 +16,7 @@ const SKIP = 'this.'.length;
 
 const getPropName = (str: string) => str.substring(SKIP).split('.')[0];
 
-Wrec.ssr = function ssr(properties: Record<string, any> = {}) {
+Wrec.ssr = function ssr(properties: Record<string, any> = {}): string {
   let attributes = '';
   const keys = Object.keys(properties);
   keys.sort();

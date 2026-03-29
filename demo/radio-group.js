@@ -15,11 +15,11 @@ class RadioGroup extends Wrec {
   static formAssociated = true;
 
   static properties = {
-    labels: {type: String},
+    labels: {type: String, usedBy: ['makeButtons']},
     legend: {type: String},
     name: {type: String},
     value: {type: String},
-    values: {type: String}
+    values: {type: String, usedBy: ['makeButtons']}
   };
 
   static css = css`
@@ -59,7 +59,7 @@ class RadioGroup extends Wrec {
     <fieldset>
       <legend style="this.displayIfSet(this.legend)">this.legend</legend>
       <slot name="before"></slot>
-      <div>this.makeButtons(this.labels, this.values)</div>
+      <div>this.makeButtons()</div>
       <slot name="after"></slot>
     </fieldset>
   `;
@@ -84,9 +84,9 @@ class RadioGroup extends Wrec {
     this.value = event.target.value;
   }
 
-  makeButtons(labels, values) {
-    const labelArray = labels.split(',');
-    const valueArray = values.split(',').map(value => value.trim());
+  makeButtons() {
+    const labelArray = this.labels.split(',');
+    const valueArray = this.values.split(',').map(value => value.trim());
     // prettier-ignore
     return valueArray.map((value, index) => html`
       <div>

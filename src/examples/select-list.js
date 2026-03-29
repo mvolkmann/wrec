@@ -4,14 +4,14 @@ class SelectList extends Wrec {
   static formAssociated = true;
 
   static properties = {
-    labels: {type: String},
+    labels: {type: String, usedBy: ['makeOptions']},
     value: {type: String},
-    values: {type: String}
+    values: {type: String, usedBy: ['makeOptions']}
   };
 
   static html = html`
     <select value="this.value">
-      this.makeOptions(this.labels, this.values)
+      this.makeOptions()
     </select>
   `;
 
@@ -29,9 +29,9 @@ class SelectList extends Wrec {
     });
   }
 
-  makeOptions(labels, values) {
-    const labelArray = labels.split(',');
-    const valueArray = values.split(',');
+  makeOptions() {
+    const labelArray = this.labels.split(',');
+    const valueArray = this.values.split(',');
     return valueArray.map(
       (value, index) =>
         html`<option value="${value.trim()}">${labelArray[index]}</option>`

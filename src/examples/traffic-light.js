@@ -16,13 +16,17 @@ class TrafficLight extends Wrec {
       type: String,
       value: 'stop',
       values: ['stop', 'yield', 'go'],
-      dispatch: true
+      dispatch: true,
+      usedBy: ['classes']
     }
   };
 
   static css = css`
+    :host {
+      display: block;
+    }
     button {
-      display: inline-flex;
+      display: flex;
       flex-direction: column;
       gap: 0.5rem;
 
@@ -58,14 +62,14 @@ class TrafficLight extends Wrec {
   static html = html`
     <style></style>
     <button aria-label="traffic light" onClick="this.next()" type="button">
-      <div class="this.classes('stop', this.state)"></div>
-      <div class="this.classes('yield', this.state)"></div>
-      <div class="this.classes('go', this.state)"></div>
+      <div class="this.classes('stop')"></div>
+      <div class="this.classes('yield')"></div>
+      <div class="this.classes('go')"></div>
     </button>
   `;
 
-  classes(thisState, currentState) {
-    return thisState + (currentState === thisState ? ' on' : '');
+  classes(state) {
+    return state + (this.state === state ? ' on' : '');
   }
 
   next() {

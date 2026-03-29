@@ -25,6 +25,10 @@ class BindingDemo extends Wrec {
       gap: 0.5rem;
       margin-bottom: 1rem;
     }
+
+    traffic-light {
+      margin-bottom: 0.5rem;
+    }
   `;
 
   static html = html`

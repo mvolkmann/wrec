@@ -4,12 +4,13 @@
     <title>Binding Demo</title>
     <script src="binding-demo.js" type="module"></script>
     <script src="toggle-switch.js" type="module"></script>
+    <script src="traffic-light.js" type="module"></script>
   </head>
   <body>
-    <form method="post" action="/missing">
+    <form method="post" action="https://httpbin.org/post">
       <binding-demo
+        moving
         name="Mark"
-        power
         speed="5"
         story="Once upon a time..."
       ></binding-demo>

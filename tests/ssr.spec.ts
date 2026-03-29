@@ -1,7 +1,7 @@
 import {expect, test} from '@playwright/test';
 import './dom-setup';
 
-import HelloWorld from '../src/examples/hello-world.js';
+import HelloSsr from '../src/examples/hello-ssr.js';
 
 const normalize = (str: string) =>
   str
@@ -11,7 +11,7 @@ const normalize = (str: string) =>
 
 test('ssr 1', async () => {
   const name = 'Earth';
-  const actual = normalize(HelloWorld.ssr({name}));
+  const actual = normalize(HelloSsr.ssr({name}));
   const expected = normalize(`
     <hello-world name="${name}">
       <template shadowrootmode="open">
@@ -33,7 +33,7 @@ test('ssr 2', async () => {
   const color = 'red';
   const name = 'Moon';
   const title = 'My Title';
-  const actual = normalize(HelloWorld.ssr({color, name, title}));
+  const actual = normalize(HelloSsr.ssr({color, name, title}));
   const expected = normalize(`
     <hello-world color="${color}" name="${name}" title="${title}">
       <template shadowrootmode="open">

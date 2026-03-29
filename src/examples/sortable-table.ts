@@ -6,15 +6,17 @@ class SortableTable extends Wrec {
   static properties = {
     data: {type: Array<LooseObject>},
     descending: {type: Boolean, dispatch: true},
-    headings: {type: String},
+    headings: {type: String, usedBy: ['makeHeadings']},
     properties: {type: String, value: ''},
     propertyArray: {
       type: Array<string>,
-      computed: "this.properties.split(',')"
+      computed: "this.properties.split(',')",
+      usedBy: ['makeHeadings', 'makeRows']
     },
     sortedData: {
       computed: 'this.sort(this.data, this.sortProperty, this.descending)',
-      type: Array<LooseObject>
+      type: Array<LooseObject>,
+      usedBy: ['makeRows']
     },
     sortProperty: {type: String, dispatch: true}
   };
@@ -64,11 +66,11 @@ class SortableTable extends Wrec {
     <table>
       <thead>
         <tr>
-          this.makeHeadings(this.headings, this.propertyArray)
+          this.makeHeadings()
         </tr>
       </thead>
       <tbody>
-        this.makeRows(this.sortedData, this.propertyArray)
+        this.makeRows()
       </tbody>
     </table>
     <slot name="footnote"></slot>
@@ -86,15 +88,20 @@ class SortableTable extends Wrec {
       : undefined;
   }
 
-  makeHeadings(headings: string, propertyArray: string[]) {
-    if (propertyArray.length === 0) return '';
-    return headings
+  makeHeadings() {
+    if (this.propertyArray.length === 0) return '';
+    return this.headings
       .split(',')
-      .map((heading, i) => this.makeTh(heading, propertyArray[i]));
+      .map((heading: string, i: number) =>
+        this.makeTh(heading, this.propertyArray[i])
+      );
   }
 
-  makeRows(sortedData: LooseObject[], propertyArray: string[]) {
-    return sortedData.map(obj => this.makeTr(obj, propertyArray));
+  makeRows() {
+    const {propertyArray, sortedData} = this;
+    return sortedData.map((obj: LooseObject) =>
+      this.makeTr(obj, propertyArray)
+    );
   }
 
   makeTd(value: unknown) {
