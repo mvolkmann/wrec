@@ -76,14 +76,6 @@ class SortableTable extends Wrec {
     <slot name="footnote"></slot>
   `;
 
-  getAriaSort(property: string): string | undefined {
-    return property === this.sortProperty
-      ? this.descending
-        ? 'descending'
-        : 'ascending'
-      : undefined;
-  }
-
   makeHeadings() {
     if (this.propertyArray.length === 0) return '';
     return this.headings
