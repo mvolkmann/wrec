@@ -22,6 +22,7 @@ declare type PropertyConfig = {
     dispatch?: boolean;
     required?: boolean;
     type: AnyClass;
+    usedBy?: string[];
     value?: any;
     values?: string[];
 };
@@ -50,7 +51,7 @@ export declare abstract class Wrec extends HTMLElementBase implements ChangeList
     batchSet(changes: StringToAny): void;
     private static buildHTML;
     changed(_statePath: string, componentProp: string, newValue: unknown): void;
-    connectedCallback(): void;
+    connectedCallback(): Promise<void>;
     disconnectedCallback(): void;
     dispatch(name: string, detail: any): void;
     displayIfSet(value: any, display?: string): string;
@@ -62,7 +63,7 @@ export declare abstract class Wrec extends HTMLElementBase implements ChangeList
     propertyChangedCallback(_propName: string, _oldValue: unknown, _newValue: unknown): void;
     setAttributeSafe(name: string, value: string): void;
     setFormValue(propName: string, value: string): void;
-    static ssr(properties?: StringToAny): void;
+    static ssr(properties?: StringToAny): string;
     /**
      * @param state - WrecState object
      * @param map - object whose keys are state properties and
