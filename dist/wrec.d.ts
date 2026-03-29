@@ -42,6 +42,7 @@ export declare abstract class Wrec extends HTMLElementBase implements ChangeList
     static html: string;
     static properties: Record<string, PropertyConfig>;
     private static propToComputedMap;
+    private static methodToExprsMap;
     private static propToExprsMap;
     private static template;
     [key: string]: any;

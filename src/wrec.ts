@@ -311,12 +311,15 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
   // It is used to update computed properties
   // when the properties on which they depend are modified.
   // See the method #updateComputedProperties.
-  // This map cannot be private.
   private static propToComputedMap: Map<string, string[][]>;
 
+  // This is a map from method names to expressions
+  // that include calls to them.
+  // It is the same for all instances of a component.
+  private static methodToExprsMap: Map<string, string[]> | undefined;
+
   // This is a map from properties to expressions that refer to them.
-  // It is the sma for all instances of a component.
-  // This map cannot be private.
+  // It is the same for all instances of a component.
   private static propToExprsMap: Map<string, string[]>;
 
   private static template: HTMLTemplateElement | null = null;
@@ -381,6 +384,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
     // and `propToExprsMap` for each Wrec subclass.
     const ctor = this.#ctor;
     if (!this.#hasOwn('attrToPropMap')) ctor.attrToPropMap = new Map();
+    //if (!this.#hasOwn('methodToExprsMap')) ctor.methodToExprsMap = null;
     if (!this.#hasOwn('properties')) ctor.properties = {};
     if (!this.#hasOwn('propToAttrMap')) ctor.propToAttrMap = new Map();
     if (!this.#hasOwn('propToComputedMap')) ctor.propToComputedMap = new Map();
@@ -1294,37 +1298,34 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
   // This adds expressions to the expressions arrays in propToExprsMap
   // that contain calls to methods listed the usedBy array or each property.
   #usedBy() {
-    // This is a map from method names to
-    // expressions that include calls to them.
-    // It is built lazily because it isn't needed
-    // if no properties have a usedBy property.
-    let methodToExprsMap: Map<string, string[]> | undefined = undefined;
+    const ctor = this.#ctor;
 
     function buildMap(this: Wrec) {
-      methodToExprsMap = new Map<string, string[]>();
+      const map = new Map<string, string[]>();
+      ctor.methodToExprsMap = map;
       const allExprs = Array.from(this.#exprToRefsMap.keys());
       for (const expr of allExprs) {
         for (const match of expr.matchAll(CALL_RE)) {
           const methodName = match[1];
-          let exprs = methodToExprsMap.get(methodName);
+          let exprs = map.get(methodName);
           if (!exprs) {
             exprs = [];
-            methodToExprsMap.set(methodName, exprs);
+            map.set(methodName, exprs);
           }
           if (!exprs.includes(expr)) exprs.push(expr);
         }
       }
     }
 
-    const {properties, propToExprsMap} = this.#ctor;
-
     // For each property whose configuration object
     // contains a "usedBy" property ...
+    const {properties, propToExprsMap} = ctor;
     for (const [propName, config] of Object.entries(properties)) {
       const {usedBy} = config;
       if (!usedBy) continue;
 
-      if (!methodToExprsMap) buildMap.call(this);
+      if (!ctor.methodToExprsMap) buildMap.call(this);
+      const {methodToExprsMap} = ctor;
 
       // Get the array of expressions where the property is used.
       let propExprs = propToExprsMap.get(propName);

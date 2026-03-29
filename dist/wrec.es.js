@@ -5,11 +5,11 @@ var N = (r, t, e) => t.has(r) || D("Cannot " + e);
 var p = (r, t, e) => (N(r, t, "read from private field"), e ? e.call(r) : t.get(r)), b = (r, t, e) => t.has(r) ? D("Cannot add the same private member more than once") : t instanceof WeakSet ? t.add(r) : t.set(r, e), E = (r, t, e, s) => (N(r, t, "write to private field"), s ? s.call(r, e) : t.set(r, e), e), V = (r, t, e) => (N(r, t, "access private method"), e);
 import W from "xss";
 function Z(r, t, e = "") {
-  const s = /* @__PURE__ */ new WeakMap(), o = {
+  const s = /* @__PURE__ */ new WeakMap(), i = {
     // Intercept property reads.
     // This creates nested proxies lazily.
-    get(i, n) {
-      const c = Reflect.get(i, n);
+    get(o, n) {
+      const c = Reflect.get(o, n);
       if (c === null || typeof c != "object") return c;
       const a = s.get(c);
       if (a) return a;
@@ -17,50 +17,50 @@ function Z(r, t, e = "") {
       return s.set(c, h), h;
     },
     // Intercept property writes.
-    set(i, n, c) {
-      const a = Reflect.get(i, n);
+    set(o, n, c) {
+      const a = Reflect.get(o, n);
       if (a !== c) {
-        Reflect.set(i, n, c);
+        Reflect.set(o, n, c);
         const f = e ? `${e}.${n}` : n;
         t(f, a, c);
       }
       return !0;
     }
   };
-  return new Proxy(r, o);
+  return new Proxy(r, i);
 }
 function Y(r) {
   const t = {};
   for (const [e, s] of Object.entries(r)) {
-    const o = typeof s == "object" && s !== null;
-    t[e] = o ? Y(s) : s;
+    const i = typeof s == "object" && s !== null;
+    t[e] = i ? Y(s) : s;
   }
   return t;
 }
 const P = typeof window < "u" && typeof window.document < "u";
 let z = class extends Error {
 };
-var w, R, d, v, C, y, O, G;
+var w, R, m, x, C, y, O, G;
 const T = class T {
   constructor(t, e, s) {
     b(this, O);
     b(this, R, /* @__PURE__ */ Symbol("objectId"));
     // This cannot be replaced by a WeakMap<ChangeListener, Set<string>>
     // because there is no way to iterate over the keys of a WeakMap.
-    b(this, d, []);
-    b(this, v);
+    b(this, m, []);
+    b(this, x);
     b(this, C);
     b(this, y);
     if (!t) throw new z("name cannot be empty");
     if (p(T, w).has(t))
       throw new z(`WrecState with name "${t}" already exists`);
-    if (E(this, v, t), E(this, C, e), E(this, y, Z({}, V(this, O, G).bind(this))), e && P) {
-      const o = sessionStorage.getItem("wrec-state-" + t), i = o ? JSON.parse(o) : void 0;
-      i && (s = i);
+    if (E(this, x, t), E(this, C, e), E(this, y, Z({}, V(this, O, G).bind(this))), e && P) {
+      const i = sessionStorage.getItem("wrec-state-" + t), o = i ? JSON.parse(i) : void 0;
+      o && (s = o);
     }
     if (s)
-      for (const [o, i] of Object.entries(s))
-        this.addProperty(o, i);
+      for (const [i, o] of Object.entries(s))
+        this.addProperty(i, o);
     p(T, w).set(t, this);
   }
   // This static method is useful for accessing a specific WrecState object
@@ -81,15 +81,15 @@ const T = class T {
    * @param map - map from state property paths to component properties
    */
   addListener(t, e = {}) {
-    const s = p(this, d).find(
-      (o) => o.listenerRef.deref() === t
+    const s = p(this, m).find(
+      (i) => i.listenerRef.deref() === t
     );
     if (s) {
-      const { propertyMap: o } = s;
-      for (const [i, n] of Object.entries(e))
-        o[i] = n;
+      const { propertyMap: i } = s;
+      for (const [o, n] of Object.entries(e))
+        i[o] = n;
     } else
-      p(this, d).push({
+      p(this, m).push({
         listenerRef: new WeakRef(t),
         propertyMap: e
       });
@@ -111,24 +111,24 @@ const T = class T {
   // This is useful for debugging from the DevTools console.
   // For example: state.log()
   log() {
-    console.log("WrecState:", p(this, v));
+    console.log("WrecState:", p(this, x));
     for (const [t, e] of Object.entries(p(this, y)))
       console.log(`  ${t} = ${JSON.stringify(e)}`);
   }
   removeListener(t) {
-    E(this, d, p(this, d).filter((e) => e.listenerRef.deref() !== t));
+    E(this, m, p(this, m).filter((e) => e.listenerRef.deref() !== t));
   }
 };
-w = new WeakMap(), R = new WeakMap(), d = new WeakMap(), v = new WeakMap(), C = new WeakMap(), y = new WeakMap(), O = new WeakSet(), G = function(t, e, s) {
-  const o = /* @__PURE__ */ new Set();
-  for (const i of p(this, d)) {
-    const n = i.listenerRef.deref();
+w = new WeakMap(), R = new WeakMap(), m = new WeakMap(), x = new WeakMap(), C = new WeakMap(), y = new WeakMap(), O = new WeakSet(), G = function(t, e, s) {
+  const i = /* @__PURE__ */ new Set();
+  for (const o of p(this, m)) {
+    const n = o.listenerRef.deref();
     if (!n)
-      o.add(i);
+      i.add(o);
     else if (P && n instanceof HTMLElement && !n.isConnected)
-      o.add(i);
+      i.add(o);
     else {
-      const { propertyMap: c } = i, a = Object.keys(c);
+      const { propertyMap: c } = o, a = Object.keys(c);
       (a.length === 0 || a.includes(t)) && n.changed(
         t,
         c[t],
@@ -138,8 +138,8 @@ w = new WeakMap(), R = new WeakMap(), d = new WeakMap(), v = new WeakMap(), C = 
       );
     }
   }
-  E(this, d, p(this, d).filter(
-    (i) => !o.has(i)
+  E(this, m, p(this, m).filter(
+    (o) => !i.has(o)
   ));
 }, b(T, w, /* @__PURE__ */ new Map()), P && window.addEventListener("beforeunload", () => {
   for (const [t, e] of p(T, w).entries())
@@ -157,24 +157,24 @@ function q(r, t) {
   return e;
 }
 function it(r, t, e) {
-  const s = t.split("."), o = s.length - 1;
-  let i = r;
+  const s = t.split("."), i = s.length - 1;
+  let o = r;
   s.forEach((n, c) => {
-    c === o ? i[n] = e : i = i[n];
+    c === i ? o[n] = e : o = o[n];
   });
 }
 const nt = /* @__PURE__ */ new Set(["button", "input", "label", "option", "th"]), J = "__WREC", X = "__";
 function rt(r) {
   const t = {
     allowCommentTag: !0,
-    onTag: (o, i) => {
-      if (nt.has(o)) return i;
+    onTag: (i, o) => {
+      if (nt.has(i)) return o;
     },
-    onTagAttr(o, i, n) {
-      if (i.startsWith("on")) return "";
+    onTagAttr(i, o, n) {
+      if (o.startsWith("on")) return "";
     },
-    safeAttrValue(o, i, n) {
-      return i === "class" || o === "a" && i === "href" && !n.startsWith("javascript") || o === "img" && i === "src" ? n : "";
+    safeAttrValue(i, o, n) {
+      return o === "class" || i === "a" && o === "href" && !n.startsWith("javascript") || i === "img" && o === "src" ? n : "";
     },
     stripIgnoreTagBody: ["script", "style", "iframe"],
     whiteList: {
@@ -183,20 +183,20 @@ function rt(r) {
       span: ["class"]
     }
   }, e = [];
-  r = r.replace(/<!--[\s\S]*?-->/g, (o) => {
-    let i = "";
+  r = r.replace(/<!--[\s\S]*?-->/g, (i) => {
+    let o = "";
     do
-      i = J + e.length + X;
-    while (r.includes(i));
-    return e.push(o), i;
+      o = J + e.length + X;
+    while (r.includes(o));
+    return e.push(i), o;
   });
   let s = W(r, t);
-  return e.forEach((o, i) => {
+  return e.forEach((i, o) => {
     const n = new RegExp(
-      `${J}${i}${X}`,
+      `${J}${o}${X}`,
       "g"
     );
-    s = s.replace(n, o);
+    s = s.replace(n, i);
   }), s;
 }
 const ct = /* @__PURE__ */ new Set([
@@ -223,13 +223,13 @@ class g extends Error {
 }
 const ft = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g, Q = "a-zA-Z_$", ht = Q + "0-9", M = `[${Q}][${ht}]*`, K = new RegExp(`this\\.(${M})\\s*\\(`, "g"), lt = /<!--\s*(.*?)\s*-->/, pt = /<(\w+)(?:\s[^>]*)?>((?:[^<]|<(?!\w))*?)<\/\1>/g, L = new RegExp(`^this\\.${M}$`), j = new RegExp(`this\\.${M}(\\.${M})*`, "g"), tt = new RegExp(`this\\.${M}(\\.${M})*`), ut = 5;
 function dt(r) {
-  return r instanceof HTMLButtonElement || r instanceof HTMLFieldSetElement || r instanceof HTMLInputElement || r instanceof HTMLSelectElement || r instanceof HTMLTextAreaElement || r instanceof u;
+  return r instanceof HTMLButtonElement || r instanceof HTMLFieldSetElement || r instanceof HTMLInputElement || r instanceof HTMLSelectElement || r instanceof HTMLTextAreaElement || r instanceof d;
 }
 function Tt(r, t, e) {
   const s = document.createElement(r);
   if (t)
-    for (const [o, i] of Object.entries(t))
-      s.setAttribute(o, i);
+    for (const [i, o] of Object.entries(t))
+      s.setAttribute(i, o);
   return e && (s.innerHTML = e), s;
 }
 const U = (r) => Array.isArray(r.values) && r.values.length > 0 ? r.values[0] : mt(r.type), mt = (r) => r === String ? "" : r === Number ? 0 : r === Boolean ? !1 : r === Array ? [] : r === Object ? {} : void 0;
@@ -243,8 +243,8 @@ function $(r) {
 const A = (r) => r.substring(ut).split(".")[0];
 function et(r, t) {
   let e = r[0];
-  return t.forEach((s, o) => {
-    e += s + r[o + 1];
+  return t.forEach((s, i) => {
+    e += s + r[i + 1];
   }), e;
 }
 function I(r) {
@@ -268,36 +268,36 @@ function H(r) {
   return t;
 }
 function ot(r, t, e) {
-  const [s, o] = t.split(":");
+  const [s, i] = t.split(":");
   if (I(e))
     if (typeof e == "boolean") {
       e ? r.setAttribute(s, s) : r.removeAttribute(s);
-      const i = u.getPropName(s);
-      r[i] = e;
+      const o = d.getPropName(s);
+      r[o] = e;
     } else {
-      const i = r.getAttribute(t), n = String(e);
-      i !== n && (r.setAttribute(s, n), s === "value" && B(r) && (r.value = n));
+      const o = r.getAttribute(t), n = String(e);
+      o !== n && (r.setAttribute(s, n), s === "value" && B(r) && (r.value = n));
     }
   else {
-    const i = u.getPropName(t);
-    r[i] = e;
+    const o = d.getPropName(t);
+    r[o] = e;
   }
 }
 function k(r, t, e) {
-  const [s, o] = t.split(":");
+  const [s, i] = t.split(":");
   r instanceof CSSStyleRule ? r.style.setProperty(s, e) : (ot(r, s, e), s === "value" && B(r) && (r.value = e));
 }
 async function gt(r) {
   const t = /* @__PURE__ */ new Set();
   for (const s of $(r.content)) {
-    const { localName: o } = s;
-    o.includes("-") && t.add(o);
+    const { localName: i } = s;
+    i.includes("-") && t.add(i);
   }
   function e(s) {
-    return new Promise((o, i) => {
+    return new Promise((i, o) => {
       setTimeout(() => {
         const n = `custom element <${s}> not defined`;
-        i(new Error(n));
+        o(new Error(n));
       }, 1e3);
     });
   }
@@ -310,7 +310,7 @@ async function gt(r) {
     )
   );
 }
-class u extends at {
+class d extends at {
   // There is one instance of `attrToPropMap`, `properties`, `propToAttrMap`,
   // `propToComputedMap`, and `propToExprsMap` per Wrec subclass,
   // not one for only the Wrec class.
@@ -344,11 +344,13 @@ class u extends at {
   // It is used to update computed properties
   // when the properties on which they depend are modified.
   // See the method #updateComputedProperties.
-  // This map cannot be private.
   static propToComputedMap;
+  // This is a map from method names to expressions
+  // that include calls to them.
+  // It is the same for all instances of a component.
+  static methodToExprsMap;
   // This is a map from properties to expressions that refer to them.
-  // It is the sma for all instances of a component.
-  // This map cannot be private.
+  // It is the same for all instances of a component.
   static propToExprsMap;
   static template = null;
   // This is true while the batchSet method is running.
@@ -394,12 +396,12 @@ class u extends at {
   }
   attributeChangedCallback(t, e, s) {
     t === "disabled" && this.#E();
-    const o = u.getPropName(t);
-    if (!this.#a(o) && this.#c(o)) {
-      const i = this.#x(o, s);
-      this[o] = i;
-      const n = this.#d[o];
-      n && this.setFormValue(n, String(i)), this.propertyChangedCallback(o, e, s);
+    const i = d.getPropName(t);
+    if (!this.#a(i) && this.#c(i)) {
+      const o = this.#v(i, s);
+      this[i] = o;
+      const n = this.#d[i];
+      n && this.setFormValue(n, String(o)), this.propertyChangedCallback(i, e, s);
     }
   }
   // This applies multiple property changes and only updates
@@ -413,13 +415,13 @@ class u extends at {
       for (const h of f)
         s.add(h);
     }
-    const o = this.#t.propToComputedMap, i = /* @__PURE__ */ new Set(), n = {};
+    const i = this.#t.propToComputedMap, o = /* @__PURE__ */ new Set(), n = {};
     for (const c of Object.keys(t)) {
-      const a = o.get(c) || [];
+      const a = i.get(c) || [];
       for (const [f, h] of a)
-        i.add(f), n[f] = h;
+        o.add(f), n[f] = h;
     }
-    for (const c of i) {
+    for (const c of o) {
       const a = n[c];
       this.#f(c, this.#o(a));
       const f = e.get(c) ?? [];
@@ -428,7 +430,7 @@ class u extends at {
     }
     for (; ; ) {
       let c = !1;
-      for (const a of i) {
+      for (const a of o) {
         const f = n[a], h = this.#o(f), l = this[a];
         JSON.stringify(h) !== JSON.stringify(l) && (this.#f(a, h), c = !0);
       }
@@ -458,24 +460,24 @@ class u extends at {
   }
   #O() {
     const t = this.#t, { properties: e } = t;
-    for (const [s, { computed: o }] of Object.entries(e))
-      o && this.#f(s, this.#o(o));
+    for (const [s, { computed: i }] of Object.entries(e))
+      i && this.#f(s, this.#o(i));
   }
   #N() {
     const t = this.#t, { observedAttributes: e, properties: s } = t;
-    for (const [o, i] of Object.entries(s))
-      i.computed || this.#w(o, i, e);
-    for (const [o, i] of Object.entries(s))
-      i.computed && this.#w(o, i, e);
+    for (const [i, o] of Object.entries(s))
+      o.computed || this.#w(i, o, e);
+    for (const [i, o] of Object.entries(s))
+      o.computed && this.#w(i, o, e);
   }
   #w(t, e, s) {
     if (t === "class" || t === "style")
       throw new g(`"${t}" is a reserved property`);
-    const o = u.getAttrName(t), i = this.hasAttribute(o);
-    e.required && !i && this.#e(this, o, "is a required attribute");
+    const i = d.getAttrName(t), o = this.hasAttribute(i);
+    e.required && !o && this.#e(this, i, "is a required attribute");
     let n = e.value;
     this.hasOwnProperty(t) && (n = this[t], delete this[t]);
-    const { type: c } = e, a = c === Boolean ? n || i : s.includes(o) && i ? this.#C(t, o) : n ?? U(e), f = "#" + t;
+    const { type: c } = e, a = c === Boolean ? n || o : s.includes(i) && o ? this.#C(t, i) : n ?? U(e), f = "#" + t;
     this[f] = a, e.computed && this.#k(t, e), Object.defineProperty(this, t, {
       enumerable: !0,
       get() {
@@ -490,10 +492,10 @@ class u extends at {
         const l = this[f];
         if (h === l) return;
         this.#W(t, c, h), this[f] = h;
-        const m = this.#r.get(t);
-        m && it(m.state, m.stateProp, h), this.#_(t, c, h, o), this.#p || (this.#F(t), this.#v(t)), this.#I(t, h);
-        const x = this.#d[t];
-        x && this.setFormValue(x, String(h)), this.propertyChangedCallback(t, l, h), e.dispatch && this.dispatch("change", {
+        const u = this.#r.get(t);
+        u && it(u.state, u.stateProp, h), this.#_(t, c, h, i), this.#p || (this.#F(t), this.#x(t)), this.#I(t, h);
+        const v = this.#d[t];
+        v && this.setFormValue(v, String(h)), this.propertyChangedCallback(t, l, h), e.dispatch && this.dispatch("change", {
           tagName: this.localName,
           property: t,
           oldValue: l,
@@ -527,29 +529,29 @@ class u extends at {
     return `display: ${t ? e : "none"}`;
   }
   #L(t) {
-    const e = t instanceof u;
+    const e = t instanceof d;
     for (const s of t.getAttributeNames()) {
-      const o = t.getAttribute(s), i = this.#S(t, o);
-      if (i) {
-        const n = this[i];
-        n === void 0 && this.#l(t, s, i);
+      const i = t.getAttribute(s), o = this.#S(t, i);
+      if (o) {
+        const n = this[o];
+        n === void 0 && this.#l(t, s, o);
         let [c, a] = s.split(":");
-        const f = u.getPropName(c), h = this.#a(i);
-        e && t.#a(f) || (t[f] = n), c === "value" && (a ? (t["on" + a] === void 0 && this.#e(t, s, "refers to an unsupported event name"), t.setAttribute(c, this[i])) : a = "change"), e && !h && t.#g.set(
-          u.getPropName(c),
-          i
+        const f = d.getPropName(c), h = this.#a(o);
+        e && t.#a(f) || (t[f] = n), c === "value" && (a ? (t["on" + a] === void 0 && this.#e(t, s, "refers to an unsupported event name"), t.setAttribute(c, this[o])) : a = "change"), e && !h && t.#g.set(
+          d.getPropName(c),
+          o
         );
       }
-      this.#h(o, t, s);
+      this.#h(i, t, s);
     }
   }
   #T(t) {
     for (const e of t) {
-      const s = this.#o(e), o = this.#s.get(e) ?? [], i = /* @__PURE__ */ new Set();
-      for (const n of o) {
+      const s = this.#o(e), i = this.#s.get(e) ?? [], o = /* @__PURE__ */ new Set();
+      for (const n of i) {
         const c = n instanceof HTMLElement || n instanceof CSSStyleRule ? n : n.element;
         if (c instanceof HTMLElement && !c.isConnected) {
-          i.add(n);
+          o.add(n);
           continue;
         }
         if (n instanceof HTMLElement)
@@ -559,8 +561,8 @@ class u extends at {
           a instanceof CSSStyleRule ? a.style.setProperty(f, s) : k(a, f, s);
         }
       }
-      if (i.size > 0) {
-        const n = o.filter((c) => !i.has(c));
+      if (o.size > 0) {
+        const n = i.filter((c) => !o.has(c));
         n.length === 0 ? this.#s.delete(e) : this.#s.set(e, n);
       }
     }
@@ -575,8 +577,8 @@ class u extends at {
   #j(t) {
     const { localName: e } = t;
     if (e === "style") {
-      const { sheet: s } = t, o = s?.cssRules ?? [], i = Array.from(o);
-      for (const n of i)
+      const { sheet: s } = t, i = s?.cssRules ?? [], o = Array.from(i);
+      for (const n of o)
         if (n.constructor === CSSStyleRule) {
           const c = Array.from(n.style);
           for (const a of c)
@@ -589,17 +591,17 @@ class u extends at {
       let s = "";
       if (S(t)) {
         this.#h(t.textContent, t);
-        const o = t.textContent?.match(lt);
-        o && (s = o[1]);
+        const i = t.textContent?.match(lt);
+        i && (s = i[1]);
       } else {
-        const o = Array.from(t.childNodes).find(
-          (i) => i.nodeType === Node.COMMENT_NODE
+        const i = Array.from(t.childNodes).find(
+          (o) => o.nodeType === Node.COMMENT_NODE
         );
-        o && (s = o.textContent?.trim() ?? "");
+        i && (s = i.textContent?.trim() ?? "");
       }
       if (s) {
-        const o = this.#S(t, s);
-        o && S(t) ? t.textContent = this[o] : this.#h(s, t);
+        const i = this.#S(t, s);
+        i && S(t) ? t.textContent = this[i] : this.#h(s, t);
       }
     }
   }
@@ -625,9 +627,9 @@ class u extends at {
       e[c.trim()] = a.trim();
     }
     this.#d = e, this.#i = new FormData(), this.#b = this.attachInternals(), this.#b.setFormValue(this.#i);
-    const o = Object.keys(this.#t.properties), i = this.#m;
-    for (const n of o)
-      i[n] = this[n];
+    const i = Object.keys(this.#t.properties), o = this.#m;
+    for (const n of i)
+      o[n] = this[n];
   }
   formResetCallback() {
     const t = this.#m;
@@ -642,22 +644,22 @@ class u extends at {
   }
   static getPropName(t) {
     let e = this.attrToPropMap.get(t);
-    return e || (e = t.replace(/-([a-z])/g, (s, o) => o.toUpperCase()), this.attrToPropMap.set(t, e)), e;
+    return e || (e = t.replace(/-([a-z])/g, (s, i) => i.toUpperCase()), this.attrToPropMap.set(t, e)), e;
   }
   #H(t, e, s) {
     if (s.length !== 1) return;
-    const [o] = s;
-    if (!L.test(o)) return;
-    const i = B(t) || S(t);
+    const [i] = s;
+    if (!L.test(i)) return;
+    const o = B(t) || S(t);
     let [n, c] = (e ?? "").split(":");
-    if (!(i && n === "value" || S(t))) return;
+    if (!(o && n === "value" || S(t))) return;
     c ? t["on" + c] === void 0 && this.#e(t, e, "refers to an unsupported event name") : c = "change";
-    const f = A(o);
+    const f = A(i);
     t.addEventListener(c, (h) => {
       const { target: l } = h;
       if (!l) return;
-      const m = l.value, { type: x } = this.#t.properties[f];
-      this[f] = x === Number ? H(m) : m, this.#v(f);
+      const u = l.value, { type: v } = this.#t.properties[f];
+      this[f] = v === Number ? H(u) : u, this.#x(f);
     });
   }
   #n(t) {
@@ -685,7 +687,7 @@ class u extends at {
     );
   }
   static get observedAttributes() {
-    const t = Object.entries(this.properties || {}).filter(([e, s]) => !s.computed).map(([e]) => u.getAttrName(e));
+    const t = Object.entries(this.properties || {}).filter(([e, s]) => !s.computed).map(([e]) => d.getAttrName(e));
     return t.includes("disabled") || t.push("disabled"), t;
   }
   // Subclasses can override this to add functionality.
@@ -696,20 +698,20 @@ class u extends at {
     const s = A(e);
     return this[s] === void 0 && this.#l(t, "", s), s;
   }
-  #v(t) {
+  #x(t) {
     const e = this.#t.propToExprsMap.get(t) || [];
     this.#T(e);
   }
   #k(t, e) {
-    const s = this.#t, o = s.propToComputedMap;
-    function i(a, f) {
-      let h = o.get(a);
-      h || (h = [], o.set(a, h)), h.push([t, f]);
+    const s = this.#t, i = s.propToComputedMap;
+    function o(a, f) {
+      let h = i.get(a);
+      h || (h = [], i.set(a, h)), h.push([t, f]);
     }
     const { computed: n } = e, c = n.match(j) || [];
     for (const a of c) {
       const f = A(a);
-      this[f] === void 0 && this.#l(null, t, f), typeof this[f] != "function" && i(f, n);
+      this[f] === void 0 && this.#l(null, t, f), typeof this[f] != "function" && o(f, n);
     }
     for (const a of n.matchAll(K)) {
       const f = a[1];
@@ -718,7 +720,7 @@ class u extends at {
           `property ${t} computed calls non-method ${f}`
         );
       for (const [h, l] of Object.entries(s.properties))
-        l.usedBy?.includes(f) && i(h, n);
+        l.usedBy?.includes(f) && o(h, n);
     }
   }
   #f(t, e) {
@@ -733,17 +735,17 @@ class u extends at {
   // in attribute values or the text content of elements!
   #h(t, e, s = void 0) {
     if (!t) return;
-    const o = this.#y(e, s, t);
-    if (!o) {
+    const i = this.#y(e, s, t);
+    if (!i) {
       const a = t.replaceAll("this..", "this.");
       s ? k(e, s, a) : "textContent" in e && (e.textContent = a);
       return;
     }
-    const i = this.#t;
-    o.forEach((a) => {
+    const o = this.#t;
+    i.forEach((a) => {
       const f = A(a);
       if (typeof this[f] == "function") return;
-      const h = i.propToExprsMap;
+      const h = o.propToExprsMap;
       let l = h.get(f);
       l || (l = [], h.set(f, l)), l.includes(t) || l.push(t);
     });
@@ -752,11 +754,11 @@ class u extends at {
         const l = h instanceof HTMLElement || h instanceof CSSStyleRule ? h : h.element;
         l instanceof CSSStyleRule || l.isConnected || this.#s.set(
           a,
-          f.filter((m) => m !== h)
+          f.filter((u) => u !== h)
         );
       }
     let n = this.#s.get(t);
-    n || (n = [], this.#s.set(t, n)), n.push(s ? { element: e, attrName: s } : e), e instanceof HTMLElement && this.#H(e, s, o);
+    n || (n = [], this.#s.set(t, n)), n.push(s ? { element: e, attrName: s } : e), e instanceof HTMLElement && this.#H(e, s, i);
     const c = this.#o(t);
     s ? k(e, s, c) : this.#P(e, c);
   }
@@ -772,34 +774,34 @@ class u extends at {
     throw new g('Import Wrec from "wrec/ssr" to use the ssr method.');
   }
   #e(t, e, s) {
-    const o = t instanceof HTMLElement ? t.localName : "CSS rule";
+    const i = t instanceof HTMLElement ? t.localName : "CSS rule";
     throw new g(
-      `component ${this.#t.elementName}` + (t ? `, element "${o}"` : "") + (e ? `, attribute "${e}"` : "") + ` ${s}`
+      `component ${this.#t.elementName}` + (t ? `, element "${i}"` : "") + (e ? `, attribute "${e}"` : "") + ` ${s}`
     );
   }
   #l(t, e, s) {
     this.#e(t, e, `refers to missing property "${s}"`);
   }
   #C(t, e) {
-    return this.#x(t, this.getAttribute(e));
+    return this.#v(t, this.getAttribute(e));
   }
-  #x(t, e) {
+  #v(t, e) {
     if (e?.match(j)) return e;
-    const o = this.#t.properties[t], { type: i, values: n } = o;
-    if (i || this.#e(null, t, "does not specify its type"), e === null)
-      return i === Boolean ? !1 : U(o);
-    if (i === String) {
+    const i = this.#t.properties[t], { type: o, values: n } = i;
+    if (o || this.#e(null, t, "does not specify its type"), e === null)
+      return o === Boolean ? !1 : U(i);
+    if (o === String) {
       if (n && !n.includes(e)) {
         const c = n.map((a) => `"${a}"`).join(", ");
         this.#e(null, t, `must be one of ${c}`);
       }
       return e;
     }
-    if (i === Number) return H(e);
-    if (i === Boolean) {
+    if (o === Number) return H(e);
+    if (o === Boolean) {
       if (e === "true") return !0;
       if (e === "false" || e === "null") return !1;
-      const c = u.getAttrName(t);
+      const c = d.getAttrName(t);
       return e && e !== c && this.#e(
         null,
         t,
@@ -809,78 +811,80 @@ class u extends at {
   }
   // Updates the matching attribute for a property.
   // VS Code thinks this is never called, but it is called by #defineProp.
-  #_(t, e, s, o) {
+  #_(t, e, s, i) {
     if (I(s) && !this.#a(t)) {
-      const i = e === Boolean ? this.hasAttribute(o) : this.#C(t, o);
-      s !== i && ot(this, o || t, s);
+      const o = e === Boolean ? this.hasAttribute(i) : this.#C(t, i);
+      s !== o && ot(this, i || t, s);
     }
   }
   // Updates all computed properties that reference this property.
   // VS Code thinks this is never called, but it is called by #defineProp.
   #F(t) {
     const s = this.#t.propToComputedMap.get(t) || [];
-    for (const [o, i] of s)
-      this.#f(o, this.#o(i));
+    for (const [i, o] of s)
+      this.#f(i, this.#o(o));
   }
   #P(t, e) {
     if (e === void 0) return;
     const s = t instanceof HTMLElement;
     Array.isArray(e) && (e = e.join(""));
-    const o = typeof e;
-    o !== "string" && o !== "number" && this.#e(
+    const i = typeof e;
+    i !== "string" && i !== "number" && this.#e(
       t,
       void 0,
       " computed content is not a string or number"
     );
-    const i = String(e);
+    const o = String(e);
     if (t instanceof HTMLElement && S(t))
-      t.value = i;
-    else if (s && o === "string" && i.trim().startsWith("<")) {
-      const n = rt(i);
+      t.value = o;
+    else if (s && i === "string" && o.trim().startsWith("<")) {
+      const n = rt(o);
       t.innerHTML = n, this.#$(t), this.#M(t);
-    } else s && (t.textContent = i);
+    } else s && (t.textContent = o);
   }
   // Update corresponding parent web component property if bound to one.
   // VS Code thinks this is never called, but it is called by #defineProp.
   #I(t, e) {
     const s = this.#g.get(t);
     if (!s) return;
-    const o = this.getRootNode();
-    if (!(o instanceof ShadowRoot)) return;
-    const { host: i } = o;
-    if (!i) return;
-    const n = i;
+    const i = this.getRootNode();
+    if (!(i instanceof ShadowRoot)) return;
+    const { host: o } = i;
+    if (!o) return;
+    const n = o;
     n[s] = e;
   }
   // This adds expressions to the expressions arrays in propToExprsMap
   // that contain calls to methods listed the usedBy array or each property.
   #B() {
-    let t;
+    const t = this.#t;
     function e() {
-      t = /* @__PURE__ */ new Map();
-      const i = Array.from(this.#s.keys());
-      for (const n of i)
-        for (const c of n.matchAll(K)) {
-          const a = c[1];
-          let f = t.get(a);
-          f || (f = [], t.set(a, f)), f.includes(n) || f.push(n);
+      const o = /* @__PURE__ */ new Map();
+      t.methodToExprsMap = o;
+      const n = Array.from(this.#s.keys());
+      for (const c of n)
+        for (const a of c.matchAll(K)) {
+          const f = a[1];
+          let h = o.get(f);
+          h || (h = [], o.set(f, h)), h.includes(c) || h.push(c);
         }
     }
-    const { properties: s, propToExprsMap: o } = this.#t;
-    for (const [i, n] of Object.entries(s)) {
+    const { properties: s, propToExprsMap: i } = t;
+    for (const [o, n] of Object.entries(s)) {
       const { usedBy: c } = n;
       if (!c) continue;
-      t || e.call(this);
-      let a = o.get(i);
-      a || (a = [], o.set(i, a));
-      for (const f of c) {
-        if (typeof this[f] != "function")
+      t.methodToExprsMap || e.call(this);
+      const { methodToExprsMap: a } = t;
+      let f = i.get(o);
+      f || (f = [], i.set(o, f));
+      for (const h of c) {
+        if (typeof this[h] != "function")
           throw new g(
-            `property ${i} usedBy contains non-method ${f}`
+            `property ${o} usedBy contains non-method ${h}`
           );
-        const h = t.get(f) || [];
-        for (const l of h)
-          a.includes(l) || a.push(l);
+        const l = a.get(h) || [];
+        for (const u of l)
+          f.includes(u) || f.push(u);
       }
     }
   }
@@ -896,10 +900,10 @@ class u extends at {
         e[s] = s;
     }
     this.#V(t, e);
-    for (const [s, o] of Object.entries(e))
-      if (this.#c(o)) {
-        const i = q(t, s);
-        i !== void 0 && (this[o] = i), this.#r.set(o, { state: t, stateProp: s });
+    for (const [s, i] of Object.entries(e))
+      if (this.#c(i)) {
+        const o = q(t, s);
+        o !== void 0 && (this[i] = o), this.#r.set(i, { state: t, stateProp: s });
       }
     t.addListener(this, e);
   }
@@ -911,7 +915,7 @@ class u extends at {
           this.#A();
           continue;
         }
-        if (!t.has(u.getPropName(e))) {
+        if (!t.has(d.getPropName(e))) {
           if (e === "name") {
             this.#A();
             continue;
@@ -921,19 +925,19 @@ class u extends at {
       }
   }
   #y(t, e, s) {
-    const o = s.match(j);
-    if (o)
-      return o.forEach((i) => {
-        const n = A(i);
+    const i = s.match(j);
+    if (i)
+      return i.forEach((o) => {
+        const n = A(o);
         this[n] === void 0 && this.#l(t, e, n);
-      }), o;
+      }), i;
   }
   #V(t, e) {
-    for (const [s, o] of Object.entries(e)) {
-      let i = q(t, s);
-      i === void 0 && this.#e(this, void 0, `invalid state path "${s}"`), i = this[o], this.#c(o) || this.#e(
+    for (const [s, i] of Object.entries(e)) {
+      let o = q(t, s);
+      o === void 0 && this.#e(this, void 0, `invalid state path "${s}"`), o = this[i], this.#c(i) || this.#e(
         null,
-        o,
+        i,
         "refers to missing property in useState map"
       );
     }
@@ -941,44 +945,44 @@ class u extends at {
   // When type is an array, this can't validate the type of the array elements.
   // This is called by #defineProp.
   #W(t, e, s) {
-    const { values: o } = this.#t.properties[t];
-    if (o) {
+    const { values: i } = this.#t.properties[t];
+    if (i) {
       let n;
-      e !== String ? n = "declares allowed values, but its type is not String" : typeof s != "string" ? n = `value is a ${typeof s}, but type is String` : o.includes(s) || (n = `must be one of ${o.map((a) => `"${a}"`).join(", ")}`), n && this.#e(null, t, n);
+      e !== String ? n = "declares allowed values, but its type is not String" : typeof s != "string" ? n = `value is a ${typeof s}, but type is String` : i.includes(s) || (n = `must be one of ${i.map((a) => `"${a}"`).join(", ")}`), n && this.#e(null, t, n);
     }
     if (s instanceof e) return;
-    let i = typeof s;
-    if (i === "object") {
+    let o = typeof s;
+    if (o === "object") {
       const { constructor: n } = s;
-      i = n.name, n !== e && this.#e(
+      o = n.name, n !== e && this.#e(
         null,
         t,
-        `was set to a ${i}, but must be a ${e.name}`
+        `was set to a ${o}, but must be a ${e.name}`
       );
     }
-    i !== e.name.toLowerCase() && this.#e(
+    o !== e.name.toLowerCase() && this.#e(
       null,
       t,
-      `was set to a ${i}, but must be a ${e.name}`
+      `was set to a ${o}, but must be a ${e.name}`
     );
   }
   #$(t) {
     const e = Array.from(t.querySelectorAll("*"));
     for (const s of e) {
-      const o = [];
-      for (const i of Array.from(s.attributes)) {
-        const n = i.name;
+      const i = [];
+      for (const o of Array.from(s.attributes)) {
+        const n = o.name;
         if (n.startsWith("on")) {
           let c = n.slice(2);
           c = c[0].toLowerCase() + c.slice(1).toLowerCase();
-          const a = i.value;
+          const a = o.value;
           this.#y(s, n, a);
           let f;
-          typeof this[a] == "function" ? f = (h) => this[a](h) : (this.#y(s, n, a), f = () => this.#o(a)), s.addEventListener(c, f), o.push(n);
+          typeof this[a] == "function" ? f = (h) => this[a](h) : (this.#y(s, n, a), f = () => this.#o(a)), s.addEventListener(c, f), i.push(n);
         }
       }
-      for (const i of o)
-        s.removeAttribute(i);
+      for (const o of i)
+        s.removeAttribute(o);
     }
   }
 }
@@ -987,12 +991,12 @@ function Mt(r, ...t) {
   for (; ; ) {
     const s = ft.exec(e);
     if (!s) break;
-    const o = s[2];
-    if (tt.test(o)) {
-      const i = s[1];
-      if (!i.startsWith("--")) {
-        const n = `--${i}: ${o};
-      ${i}: var(--${i})`;
+    const i = s[2];
+    if (tt.test(i)) {
+      const o = s[1];
+      if (!o.startsWith("--")) {
+        const n = `--${o}: ${i};
+      ${o}: var(--${o})`;
         e = st(e, s.index, s[0].length, n);
       }
     }
@@ -1004,16 +1008,16 @@ function At(r, ...t) {
   for (; ; ) {
     const s = pt.exec(e);
     if (!s || s[1] === "style") break;
-    const o = bt(s[2]);
-    if (tt.test(o)) {
-      const i = `<!-- ${o.trim()} -->`, n = s.index + s[0].indexOf(">") + 1;
-      e = st(e, n, o.length, i);
+    const i = bt(s[2]);
+    if (tt.test(i)) {
+      const o = `<!-- ${i.trim()} -->`, n = s.index + s[0].indexOf(">") + 1;
+      e = st(e, n, i.length, o);
     }
   }
   return e;
 }
 export {
-  u as Wrec,
+  d as Wrec,
   _ as WrecState,
   Tt as createElement,
   Mt as css,
