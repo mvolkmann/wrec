@@ -4,8 +4,12 @@ type LooseObject = Record<string, unknown>;
 
 class SortableTable extends Wrec {
   static properties = {
-    data: {type: Array<LooseObject>},
-    descending: {type: Boolean, dispatch: true, usedBy: ['makeHeadings']},
+    data: {type: Array<LooseObject>, usedBy: ['sort']},
+    descending: {
+      type: Boolean,
+      dispatch: true,
+      usedBy: ['makeHeadings', 'sort']
+    },
     headings: {type: String, usedBy: ['makeHeadings']},
     properties: {type: String, value: ''},
     propertyArray: {
@@ -14,11 +18,15 @@ class SortableTable extends Wrec {
       usedBy: ['makeHeadings', 'makeRows']
     },
     sortedData: {
-      computed: 'this.sort(this.data, this.sortProperty, this.descending)',
       type: Array<LooseObject>,
+      computed: 'this.sort()',
       usedBy: ['makeRows']
     },
-    sortProperty: {type: String, dispatch: true, usedBy: ['makeHeadings']}
+    sortProperty: {
+      type: String,
+      dispatch: true,
+      usedBy: ['makeHeadings', 'sort']
+    }
   };
 
   static css = css`
@@ -126,7 +134,8 @@ class SortableTable extends Wrec {
     `;
   }
 
-  sort(data: LooseObject[], sortProperty: string, descending: boolean) {
+  sort() {
+    const {data, sortProperty, descending} = this;
     if (!sortProperty) return data;
 
     return data.toSorted((a: LooseObject, b: LooseObject) => {
