@@ -12,16 +12,8 @@ class ColorPicker extends Wrec {
     color: {
       type: String,
       computed: '`rgb(${this.red}, ${this.green}, ${this.blue})`'
-      //computed: 'this.getColor()',
-      //uses: 'red,green,blue'
     }
   };
-
-  /*
-  getColor() {
-    return `rgb(${this.red},${this.green},${this.blue})`;
-  }
-  */
 
   static css = css`
     :host {
