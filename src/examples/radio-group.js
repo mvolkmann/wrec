@@ -17,7 +17,7 @@ class RadioGroup extends Wrec {
   static properties = {
     labels: {type: String, usedBy: ['makeButtons']},
     legend: {type: String},
-    name: {type: String},
+    name: {type: String, usedBy: ['makeButtons']},
     value: {type: String},
     values: {type: String, usedBy: ['makeButtons']}
   };

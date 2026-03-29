@@ -34,6 +34,8 @@
     "dev": "vite",
     "build": "vite build",
     "clean": "rm -rf dist",
+    "check-usedby": "node scripts/infer-used-by.mjs --check",
+    "infer-usedby": "node scripts/infer-used-by.mjs --write",
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "node port-check.js && playwright test",
