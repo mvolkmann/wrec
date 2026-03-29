@@ -5,7 +5,7 @@ type LooseObject = Record<string, unknown>;
 class SortableTable extends Wrec {
   static properties = {
     data: {type: Array<LooseObject>},
-    descending: {type: Boolean, dispatch: true},
+    descending: {type: Boolean, dispatch: true, usedBy: ['makeHeadings']},
     headings: {type: String, usedBy: ['makeHeadings']},
     properties: {type: String, value: ''},
     propertyArray: {
@@ -18,7 +18,7 @@ class SortableTable extends Wrec {
       type: Array<LooseObject>,
       usedBy: ['makeRows']
     },
-    sortProperty: {type: String, dispatch: true}
+    sortProperty: {type: String, dispatch: true, usedBy: ['makeHeadings']}
   };
 
   static css = css`
@@ -109,6 +109,8 @@ class SortableTable extends Wrec {
   }
 
   makeTh(heading: string, property: string) {
+    const sortIndicator =
+      property !== this.sortProperty ? '' : this.descending ? '▼' : '▲';
     return html`
       <th
         aria-sort="this.getAriaSort('${property}', this.sortProperty, this.descending)"
@@ -117,10 +119,7 @@ class SortableTable extends Wrec {
       >
         <button type="button" onClick="this.updateSort('${property}')">
           <span>${heading}</span>
-          <span class="sort-indicator">
-            this.sortIndicator(this.sortProperty, this.descending,
-            '${property}')
-          </span>
+          <span class="sort-indicator">${sortIndicator}</span>
         </button>
       </th>
     `;
@@ -148,11 +147,6 @@ class SortableTable extends Wrec {
             : 0;
       return descending ? -compare : compare;
     });
-  }
-
-  sortIndicator(sortProperty: string, descending: boolean, property: string) {
-    if (property !== sortProperty) return '';
-    return descending ? '▼' : '▲';
   }
 
   updateSort(property: string) {
