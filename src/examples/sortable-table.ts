@@ -151,4 +151,4 @@ class SortableTable extends Wrec {
   }
 }
 
-customElements.define('sortable-table', SortableTable);
+SortableTable.define('sortable-table');
