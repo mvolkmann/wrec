@@ -76,13 +76,9 @@ class SortableTable extends Wrec {
     <slot name="footnote"></slot>
   `;
 
-  getAriaSort(
-    property: string,
-    sortProperty: string,
-    descending: boolean
-  ): string | undefined {
-    return property === sortProperty
-      ? descending
+  getAriaSort(property: string): string | undefined {
+    return property === this.sortProperty
+      ? this.descending
         ? 'descending'
         : 'ascending'
       : undefined;
@@ -98,10 +94,7 @@ class SortableTable extends Wrec {
   }
 
   makeRows() {
-    const {propertyArray, sortedData} = this;
-    return sortedData.map((obj: LooseObject) =>
-      this.makeTr(obj, propertyArray)
-    );
+    return this.sortedData.map((obj: LooseObject) => this.makeTr(obj));
   }
 
   makeTd(value: unknown) {
@@ -109,11 +102,17 @@ class SortableTable extends Wrec {
   }
 
   makeTh(heading: string, property: string) {
+    const ariaSort =
+      property !== this.sortProperty
+        ? undefined
+        : this.descending
+          ? 'descending'
+          : 'ascending';
     const sortIndicator =
       property !== this.sortProperty ? '' : this.descending ? '▼' : '▲';
     return html`
       <th
-        aria-sort="this.getAriaSort('${property}', this.sortProperty, this.descending)"
+        ${ariaSort ? `aria-sort="${ariaSort}"` : ''}
         data-property="${property}"
         title="${`sort by ${heading}`}"
       >
@@ -125,10 +124,12 @@ class SortableTable extends Wrec {
     `;
   }
 
-  makeTr(obj: LooseObject, propertyArray: string[]) {
+  makeTr(obj: LooseObject) {
     return html`
       <tr>
-        ${propertyArray.map(propName => this.makeTd(obj[propName])).join('')}
+        ${this.propertyArray
+          .map((propName: string) => this.makeTd(obj[propName]))
+          .join('')}
       </tr>
     `;
   }
