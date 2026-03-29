@@ -60,27 +60,27 @@ function sortIndicator(
   return descending ? '▼' : '▲';
 }
 
-class SortableTable extends Wrec {
+class SortableTable2 extends Wrec {
   static context = {getAriaSort, makeTd, makeTr, makeTrs, sort, sortIndicator};
 
   static properties = {
     data: {type: Array<LooseObject>},
-    descending: {type: Boolean, dispatch: true},
-    headings: {type: String},
+    descending: {type: Boolean, dispatch: true, usedBy: ['makeThs']},
+    headings: {type: String, usedBy: ['makeThs']},
     properties: {type: String, value: ''},
     propertyArray: {
       type: Array<string>,
-      computed: "this.properties.split(',')"
+      computed: "this.properties.split(',')",
+      usedBy: ['makeThs']
     },
     sortedData: {
       computed: 'sort(this.data, this.sortProperty, this.descending)',
       type: Array<LooseObject>
     },
-    sortProperty: {type: String, dispatch: true},
+    sortProperty: {type: String, dispatch: true, usedBy: ['makeThs']},
     ths: {
       computed: 'this.makeThs()',
-      type: String,
-      uses: 'headings, propertyArray, sortProperty, descending'
+      type: String
     }
   };
 
@@ -175,4 +175,4 @@ class SortableTable extends Wrec {
   }
 }
 
-customElements.define('sortable-table', SortableTable);
+customElements.define('sortable-table2', SortableTable2);

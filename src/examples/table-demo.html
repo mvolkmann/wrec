@@ -9,7 +9,7 @@
     </style>
     <script src="table-manual.js" type="module"></script>
     <script src="sortable-table.js" type="module"></script>
-    <!-- <script src="sortable-table2.js" type="module"></script> -->
+    <script src="sortable-table2.js" type="module"></script>
     <script type="module">
       const propNames = ['name', 'age', 'occupation'];
       const headings = ['Name', 'Age', 'Occupation'];
@@ -35,6 +35,9 @@
         sortableTable.batchSet({headings: 'Age,Name', properties: 'age,name'});
         button.remove();
       });
+
+      //const sortableTable2 = document.querySelector('sortable-table2');
+      //sortableTable2.data = data;
     </script>
   </head>
   <body>
@@ -45,5 +48,12 @@
       properties="name,age,occupation"
     ></sortable-table>
     <div><button>Batch Set</button></div>
+    <!--
+    <hr />
+    <sortable-table2
+      headings="Name,Age,Occupation"
+      properties="name,age,occupation"
+    ></sortable-table2>
+    -->
   </body>
 </html>

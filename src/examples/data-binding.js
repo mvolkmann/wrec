@@ -6,14 +6,9 @@ const capitalize = str =>
 class DataBinding extends Wrec {
   static properties = {
     color: {type: String},
-    colors: {type: String, required: true},
+    colors: {type: String, required: true, usedBy: ['getLabels']},
     enabled: {type: Boolean, value: true},
-    labels: {
-      type: String,
-      //computed: "this.colors.split(',').map(color => this.capitalize(color)).join(',')",
-      computed: 'this.getLabels()',
-      uses: 'colors'
-    },
+    labels: {type: String, computed: 'this.getLabels()'},
     size: {type: Number, value: 18}
   };
 

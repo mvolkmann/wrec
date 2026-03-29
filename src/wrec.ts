@@ -63,6 +63,7 @@ const CSS_PROPERTY_RE = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g;
 const FIRST_CHAR = 'a-zA-Z_$';
 const OTHER_CHAR = FIRST_CHAR + '0-9';
 const IDENTIFIER = `[${FIRST_CHAR}][${OTHER_CHAR}]*`;
+const CALL_RE = new RegExp(`this\\.(${IDENTIFIER})\\s*\\(`, 'g');
 const HTML_COMMENT_TEXT_RE = /<!--\s*(.*?)\s*-->/;
 const HTML_ELEMENT_TEXT_RE = /<(\w+)(?:\s[^>]*)?>((?:[^<]|<(?!\w))*?)<\/\1>/g;
 const REF_RE = new RegExp(`^this\\.${IDENTIFIER}$`);
@@ -1018,8 +1019,8 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
   }
 
   #registerComputedProp(propName: string, config: StringToAny) {
-    const {computed, uses} = config;
-    const map = this.#ctor.propToComputedMap!;
+    const ctor = this.#ctor;
+    const map = ctor.propToComputedMap!;
 
     function register(referencedProp: string, expr: string) {
       let computes = map.get(referencedProp);
@@ -1032,6 +1033,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
       computes.push([propName, expr]);
     }
 
+    const {computed} = config;
     const matches = computed.match(REFS_RE) || [];
     for (const match of matches) {
       const referencedProp = getPropName(match);
@@ -1043,9 +1045,18 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
       }
     }
 
-    if (uses) {
-      for (const use of uses.split(',')) {
-        register(use.trim(), computed);
+    for (const match of computed.matchAll(CALL_RE)) {
+      const methodName = match[1];
+      if (typeof this[methodName] !== 'function') {
+        throw new WrecError(
+          `property ${propName} computed calls non-method ${methodName}`
+        );
+      }
+
+      for (const [propName, config] of Object.entries(ctor.properties)) {
+        if (config.usedBy?.includes(methodName)) {
+          register(propName, computed);
+        }
       }
     }
   }
@@ -1292,7 +1303,6 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
     function buildMap(this: Wrec) {
       methodToExprsMap = new Map<string, string[]>();
       const allExprs = Array.from(this.#exprToRefsMap.keys());
-      const CALL_RE = new RegExp(`this\\.(${IDENTIFIER})\\s*\\(`, 'g');
       for (const expr of allExprs) {
         for (const match of expr.matchAll(CALL_RE)) {
           const methodName = match[1];
@@ -1326,8 +1336,9 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
       // For each method that uses the property ...
       for (const method of usedBy) {
         if (typeof this[method] !== 'function') {
-          const message = `property ${propName} usedBy contains non-method ${method}`;
-          throw new WrecError(message);
+          throw new WrecError(
+            `property ${propName} usedBy contains non-method ${method}`
+          );
         }
 
         // For each expressions that calls the method ...
