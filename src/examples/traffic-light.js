@@ -17,7 +17,7 @@ class TrafficLight extends Wrec {
       value: 'stop',
       values: ['stop', 'yield', 'go'],
       dispatch: true,
-      usedBy: ['classes']
+      usedBy: 'classes'
     }
   };
 

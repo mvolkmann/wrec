@@ -4,9 +4,9 @@ class SelectList extends Wrec {
   static formAssociated = true;
 
   static properties = {
-    labels: {type: String, usedBy: ['makeOptions']},
+    labels: {type: String, usedBy: 'makeOptions'},
     value: {type: String},
-    values: {type: String, usedBy: ['makeOptions']}
+    values: {type: String, usedBy: 'makeOptions'}
   };
 
   static html = html`

@@ -65,19 +65,19 @@ class SortableTable2 extends Wrec {
 
   static properties = {
     data: {type: Array<LooseObject>},
-    descending: {type: Boolean, dispatch: true, usedBy: ['makeThs']},
-    headings: {type: String, usedBy: ['makeThs']},
+    descending: {type: Boolean, dispatch: true, usedBy: 'makeThs'},
+    headings: {type: String, usedBy: 'makeThs'},
     properties: {type: String, value: ''},
     propertyArray: {
       type: Array<string>,
       computed: "this.properties.split(',')",
-      usedBy: ['makeThs']
+      usedBy: 'makeThs'
     },
     sortedData: {
       computed: 'sort(this.data, this.sortProperty, this.descending)',
       type: Array<LooseObject>
     },
-    sortProperty: {type: String, dispatch: true, usedBy: ['makeThs']},
+    sortProperty: {type: String, dispatch: true, usedBy: 'makeThs'},
     ths: {
       computed: 'this.makeThs()',
       type: String

@@ -42,9 +42,7 @@ for (const target of targets) {
   }
 
   if (!/\.(js|ts)$/.test(target) || /\.d\.ts$/.test(target)) {
-    console.error(
-      `Unsupported file type: ${path.relative(cwd, target)}`
-    );
+    console.error(`Unsupported file type: ${path.relative(cwd, target)}`);
     process.exit(1);
   }
 }
@@ -398,6 +396,9 @@ function getMethodUsages(classNode, propertyNames) {
 }
 
 function createUsedByProperty(methodNames, quote) {
+  if (methodNames.length === 1) {
+    return `usedBy: ${quote}${methodNames[0]}${quote}`;
+  }
   return `usedBy: [${methodNames.map(name => `${quote}${name}${quote}`).join(', ')}]`;
 }
 
@@ -567,7 +568,7 @@ for (const file of files) {
   changedCount++;
   if (dry) {
     for (const edit of edits.toReversed()) {
-      const match = edit.text.match(/usedBy:\s*\[[^\]]*\]/);
+      const match = edit.text.match(/usedBy:\s*(?:['"][^'"]*['"]|\[[^\]]*\])/);
       const suggestion = match ? match[0] : 'remove usedBy';
       console.log(`${edit.propName} - ${suggestion}`);
     }

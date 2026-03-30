@@ -4,13 +4,13 @@ type LooseObject = Record<string, unknown>;
 
 class SortableTable extends Wrec {
   static properties = {
-    data: {type: Array<LooseObject>, usedBy: ['sort']},
+    data: {type: Array<LooseObject>, usedBy: 'sort'},
     descending: {
       type: Boolean,
       dispatch: true,
       usedBy: ['makeHeadings', 'sort']
     },
-    headings: {type: String, usedBy: ['makeHeadings']},
+    headings: {type: String, usedBy: 'makeHeadings'},
     properties: {type: String, value: ''},
     propertyArray: {
       type: Array<string>,
@@ -20,7 +20,7 @@ class SortableTable extends Wrec {
     sortedData: {
       type: Array<LooseObject>,
       computed: 'this.sort()',
-      usedBy: ['makeRows']
+      usedBy: 'makeRows'
     },
     sortProperty: {
       type: String,

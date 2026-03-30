@@ -13,7 +13,7 @@ type PropertyConfig = {
   dispatch?: boolean;
   required?: boolean;
   type: AnyClass;
-  usedBy?: string[];
+  usedBy?: string | string[];
   value?: any;
   values?: string[];
 };
@@ -236,6 +236,9 @@ function updateValue(
     }
   }
 }
+
+const usedByArray = (usedBy?: string | string[]) =>
+  typeof usedBy === 'string' ? [usedBy] : usedBy;
 
 // Waits for all custom elements used in a template to be defined.
 async function waitForDefines(
@@ -1058,7 +1061,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
       }
 
       for (const [propName, config] of Object.entries(ctor.properties)) {
-        if (config.usedBy?.includes(methodName)) {
+        if (usedByArray(config.usedBy)?.includes(methodName)) {
           register(propName, computed);
         }
       }
@@ -1321,7 +1324,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
     // contains a "usedBy" property ...
     const {properties, propToExprsMap} = ctor;
     for (const [propName, config] of Object.entries(properties)) {
-      const {usedBy} = config;
+      const usedBy = usedByArray(config.usedBy);
       if (!usedBy) continue;
 
       if (!ctor.methodToExprsMap) buildMap.call(this);

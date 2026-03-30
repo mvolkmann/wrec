@@ -15,11 +15,11 @@ class RadioGroup extends Wrec {
   static formAssociated = true;
 
   static properties = {
-    labels: {type: String, usedBy: ['makeButtons']},
+    labels: {type: String, usedBy: 'makeButtons'},
     legend: {type: String},
     name: {type: String},
     value: {type: String},
-    values: {type: String, usedBy: ['makeButtons']}
+    values: {type: String, usedBy: 'makeButtons'}
   };
 
   static css = css`

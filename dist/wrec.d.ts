@@ -22,7 +22,7 @@ declare type PropertyConfig = {
     dispatch?: boolean;
     required?: boolean;
     type: AnyClass;
-    usedBy?: string[];
+    usedBy?: string | string[];
     value?: any;
     values?: string[];
 };
