@@ -26,16 +26,18 @@
       "import": "./dist/wrec-ssr.es.js"
     }
   },
+  "bin": {
+    "wrec-usedby": "./scripts/used-by.js"
+  },
   "files": [
     "dist",
+    "scripts/used-by.js",
     "README.md"
   ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "clean": "rm -rf dist",
-    "check-usedby": "node scripts/infer-used-by.mjs --check",
-    "infer-usedby": "node scripts/infer-used-by.mjs --write",
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "node port-check.js && playwright test",
@@ -48,11 +50,11 @@
     "get-port": "^7.1.0",
     "node-html-parser": "^7.1.0",
     "oxlint": "^1.51.0",
-    "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vite-plugin-dts": "^4.5.4"
   },
   "dependencies": {
+    "typescript": "^5.9.3",
     "xss": "^1.0.15"
   }
 }

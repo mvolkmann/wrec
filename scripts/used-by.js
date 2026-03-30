@@ -10,14 +10,9 @@ const check = args.includes('--check');
 const verbose = args.includes('--verbose');
 const inputPaths = args.filter(arg => !arg.startsWith('--'));
 
-if (write && check) {
-  console.error('Use either --write or --check, not both.');
-  process.exit(1);
-}
-
 if (inputPaths.length !== 1) {
   console.error(
-    'Specify a single source file, e.g. node scripts/infer-used-by.mjs --write src/examples/radio-group.js'
+    'Specify a single source file, e.g. npx wrec-usedby src/examples/radio-group.js'
   );
   process.exit(1);
 }
@@ -73,7 +68,39 @@ function hasStaticModifier(node) {
   );
 }
 
-function extendsWrec(node) {
+function getWrecNames(sourceFile) {
+  const names = new Set(['Wrec']);
+
+  for (const statement of sourceFile.statements) {
+    if (
+      !ts.isImportDeclaration(statement) ||
+      !statement.importClause ||
+      !ts.isStringLiteral(statement.moduleSpecifier)
+    ) {
+      continue;
+    }
+
+    const moduleName = statement.moduleSpecifier.text;
+    const isWrecModule =
+      moduleName === 'wrec' ||
+      moduleName === 'wrec/ssr' ||
+      moduleName.endsWith('/wrec') ||
+      moduleName.endsWith('/wrec-ssr');
+    if (!isWrecModule) continue;
+
+    const namedBindings = statement.importClause.namedBindings;
+    if (!namedBindings || !ts.isNamedImports(namedBindings)) continue;
+
+    for (const element of namedBindings.elements) {
+      const importedName = element.propertyName?.text ?? element.name.text;
+      if (importedName === 'Wrec') names.add(element.name.text);
+    }
+  }
+
+  return names;
+}
+
+function extendsWrec(node, wrecNames) {
   return Boolean(
     node.heritageClauses?.some(
       clause =>
@@ -82,7 +109,7 @@ function extendsWrec(node) {
           type =>
             ts.isExpressionWithTypeArguments(type) &&
             ts.isIdentifier(type.expression) &&
-            type.expression.text === 'Wrec'
+            wrecNames.has(type.expression.text)
         )
     )
   );
@@ -276,9 +303,10 @@ function buildConfigText(sourceFile, member, methodNames) {
 
 function transformSourceFile(sourceFile) {
   const edits = [];
+  const wrecNames = getWrecNames(sourceFile);
 
   for (const node of sourceFile.statements) {
-    if (!ts.isClassDeclaration(node) || !extendsWrec(node)) continue;
+    if (!ts.isClassDeclaration(node) || !extendsWrec(node, wrecNames)) continue;
 
     let propertiesObject = null;
     for (const member of node.members) {
