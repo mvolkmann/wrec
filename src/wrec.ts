@@ -408,7 +408,6 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
       this[propName] = value;
       const formKey = this.#formAssoc[propName];
       if (formKey) this.setFormValue(formKey, String(value));
-      this.propertyChangedCallback(propName, oldValue, newValue);
     }
   }
 
