@@ -29,6 +29,26 @@ if (inputPaths.length !== 1) {
 const cwd = process.cwd();
 const targets = inputPaths.map(file => path.resolve(cwd, file));
 
+for (const target of targets) {
+  if (!fs.existsSync(target)) {
+    console.error(`File not found: ${path.relative(cwd, target)}`);
+    process.exit(1);
+  }
+
+  const stat = fs.statSync(target);
+  if (!stat.isFile()) {
+    console.error(`Not a file: ${path.relative(cwd, target)}`);
+    process.exit(1);
+  }
+
+  if (!/\.(js|ts)$/.test(target) || /\.d\.ts$/.test(target)) {
+    console.error(
+      `Unsupported file type: ${path.relative(cwd, target)}`
+    );
+    process.exit(1);
+  }
+}
+
 function collectFiles(startPath, files = []) {
   if (!fs.existsSync(startPath)) return files;
 
@@ -169,6 +189,49 @@ function getTemplateCalledMethods(classNode) {
   return methodNames;
 }
 
+function getComputedCalledMethods(classNode) {
+  const methodNames = new Set();
+  const CALL_RE = /this\.([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
+
+  for (const member of classNode.members) {
+    if (
+      !ts.isPropertyDeclaration(member) ||
+      !hasStaticModifier(member) ||
+      getNameText(member.name) !== 'properties' ||
+      !member.initializer ||
+      !ts.isObjectLiteralExpression(member.initializer)
+    ) {
+      continue;
+    }
+
+    for (const property of member.initializer.properties) {
+      if (
+        !ts.isPropertyAssignment(property) ||
+        !ts.isObjectLiteralExpression(property.initializer)
+      ) {
+        continue;
+      }
+
+      for (const configProperty of property.initializer.properties) {
+        if (
+          !ts.isPropertyAssignment(configProperty) ||
+          getNameText(configProperty.name) !== 'computed'
+        ) {
+          continue;
+        }
+
+        if (!ts.isStringLiteralLike(configProperty.initializer)) continue;
+        const computed = configProperty.initializer.text;
+        for (const match of computed.matchAll(CALL_RE)) {
+          methodNames.add(match[1]);
+        }
+      }
+    }
+  }
+
+  return methodNames;
+}
+
 function getMethodUsages(classNode, propertyNames) {
   const methodInfo = new Map();
   for (const member of classNode.members) {
@@ -186,6 +249,32 @@ function getMethodUsages(classNode, propertyNames) {
       const props = new Set();
       const calledMethods = new Set();
       const isPrivate = ts.isPrivateIdentifier(member.name);
+
+      function addBindingName(name) {
+        if (ts.isIdentifier(name)) {
+          props.add(name.text);
+        } else if (ts.isObjectBindingPattern(name)) {
+          addObjectBindingProps(name);
+        }
+      }
+
+      function addObjectBindingProps(bindingPattern) {
+        for (const element of bindingPattern.elements) {
+          if (element.dotDotDotToken) continue;
+
+          if (element.propertyName) {
+            const name = getNameText(element.propertyName);
+            if (name) props.add(name);
+            continue;
+          }
+
+          if (ts.isIdentifier(element.name)) {
+            props.add(element.name.text);
+          } else if (ts.isObjectBindingPattern(element.name)) {
+            addObjectBindingProps(element.name);
+          }
+        }
+      }
 
       function visit(child) {
         if (
@@ -214,6 +303,34 @@ function getMethodUsages(classNode, propertyNames) {
           ) {
             calledMethods.add(name);
           }
+        } else if (
+          ts.isVariableDeclaration(child) &&
+          child.initializer &&
+          child.initializer.kind === ts.SyntaxKind.ThisKeyword
+        ) {
+          if (ts.isObjectBindingPattern(child.name)) {
+            addObjectBindingProps(child.name);
+          } else {
+            addBindingName(child.name);
+          }
+        } else if (
+          ts.isBinaryExpression(child) &&
+          child.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+          child.right.kind === ts.SyntaxKind.ThisKeyword
+        ) {
+          if (ts.isObjectLiteralExpression(child.left)) {
+            for (const property of child.left.properties) {
+              if (
+                ts.isShorthandPropertyAssignment(property) ||
+                ts.isPropertyAssignment(property)
+              ) {
+                const name = getNameText(property.name);
+                if (name) props.add(name);
+              }
+            }
+          } else if (ts.isObjectBindingPattern(child.left)) {
+            addObjectBindingProps(child.left);
+          }
         }
 
         ts.forEachChild(child, visit);
@@ -224,7 +341,10 @@ function getMethodUsages(classNode, propertyNames) {
     }
   }
 
-  const htmlMethods = getTemplateCalledMethods(classNode);
+  const entryMethods = new Set([
+    ...getTemplateCalledMethods(classNode),
+    ...getComputedCalledMethods(classNode)
+  ]);
   const memo = new Map();
 
   function getTransitiveProps(methodName, seen = new Set()) {
@@ -248,7 +368,7 @@ function getMethodUsages(classNode, propertyNames) {
   }
 
   const propToMethods = new Map();
-  for (const methodName of htmlMethods) {
+  for (const methodName of entryMethods) {
     const info = methodInfo.get(methodName);
     if (!info || info.isPrivate) continue;
 
