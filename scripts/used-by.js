@@ -429,7 +429,7 @@ function buildConfigText(sourceFile, member, methodNames, quote) {
     configObject.end
   );
   const multiline = original.includes('\n');
-  if (!multiline) return `{${existingTexts.join(', ')}}`;
+  if (!multiline) return `{ ${existingTexts.join(', ')} }`;
 
   const memberIndent = getIndent(text, member.getStart(sourceFile));
   const firstExisting = existingMembers[0];
