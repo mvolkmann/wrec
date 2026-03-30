@@ -97,8 +97,9 @@ function hasStaticModifier(node) {
   );
 }
 
-function getWrecNames(sourceFile) {
+function getWrecImportInfo(sourceFile) {
   const names = new Set(['Wrec']);
+  let quote = "'";
 
   for (const statement of sourceFile.statements) {
     if (
@@ -122,11 +123,18 @@ function getWrecNames(sourceFile) {
 
     for (const element of namedBindings.elements) {
       const importedName = element.propertyName?.text ?? element.name.text;
-      if (importedName === 'Wrec') names.add(element.name.text);
+      if (importedName === 'Wrec') {
+        names.add(element.name.text);
+
+        const moduleText = statement.moduleSpecifier.getText(sourceFile);
+        if (moduleText.startsWith('"') || moduleText.startsWith("'")) {
+          quote = moduleText[0];
+        }
+      }
     }
   }
 
-  return names;
+  return {names, quote};
 }
 
 function extendsWrec(node, wrecNames) {
@@ -389,8 +397,8 @@ function getMethodUsages(classNode, propertyNames) {
   return propToMethods;
 }
 
-function createUsedByProperty(methodNames) {
-  return `usedBy: [${methodNames.map(name => `'${name}'`).join(', ')}]`;
+function createUsedByProperty(methodNames, quote) {
+  return `usedBy: [${methodNames.map(name => `${quote}${name}${quote}`).join(', ')}]`;
 }
 
 function getIndent(text, pos) {
@@ -399,7 +407,7 @@ function getIndent(text, pos) {
   return match ? match[0] : '';
 }
 
-function buildConfigText(sourceFile, member, methodNames) {
+function buildConfigText(sourceFile, member, methodNames, quote) {
   const {text} = sourceFile;
   const configObject = member.initializer;
   const existingMembers = configObject.properties.filter(
@@ -413,7 +421,7 @@ function buildConfigText(sourceFile, member, methodNames) {
     text.slice(property.getStart(sourceFile), property.end).trim()
   );
   if (methodNames.length > 0)
-    existingTexts.push(createUsedByProperty(methodNames));
+    existingTexts.push(createUsedByProperty(methodNames, quote));
 
   const original = text.slice(
     configObject.getStart(sourceFile),
@@ -432,10 +440,12 @@ function buildConfigText(sourceFile, member, methodNames) {
 
 function transformSourceFile(sourceFile) {
   const edits = [];
-  const wrecNames = getWrecNames(sourceFile);
+  const {names: wrecNames, quote} = getWrecImportInfo(sourceFile);
+  let foundWrecSubclass = false;
 
   for (const node of sourceFile.statements) {
     if (!ts.isClassDeclaration(node) || !extendsWrec(node, wrecNames)) continue;
+    foundWrecSubclass = true;
 
     let propertiesObject = null;
     for (const member of node.members) {
@@ -484,7 +494,7 @@ function transformSourceFile(sourceFile) {
       const needsUsedBy = methodNames.length > 0;
       if (!hadUsedBy && !needsUsedBy) continue;
 
-      const nextText = buildConfigText(sourceFile, member, methodNames);
+      const nextText = buildConfigText(sourceFile, member, methodNames, quote);
       const currentText = sourceFile.text.slice(
         configObject.getStart(sourceFile),
         configObject.end
@@ -501,8 +511,22 @@ function transformSourceFile(sourceFile) {
     }
   }
 
+  if (!foundWrecSubclass) {
+    return {
+      changed: false,
+      edits: [],
+      foundWrecSubclass: false,
+      text: sourceFile.text
+    };
+  }
+
   if (edits.length === 0) {
-    return {changed: false, edits: [], text: sourceFile.text};
+    return {
+      changed: false,
+      edits: [],
+      foundWrecSubclass: true,
+      text: sourceFile.text
+    };
   }
 
   let nextSource = sourceFile.text;
@@ -512,7 +536,7 @@ function transformSourceFile(sourceFile) {
       nextSource.slice(0, edit.start) + edit.text + nextSource.slice(edit.end);
   }
 
-  return {changed: true, edits, text: nextSource};
+  return {changed: true, edits, foundWrecSubclass: true, text: nextSource};
 }
 
 let changedCount = 0;
@@ -528,7 +552,16 @@ for (const file of files) {
     scriptKind
   );
 
-  const {changed, edits, text: nextText} = transformSourceFile(sourceFile);
+  const {
+    changed,
+    edits,
+    foundWrecSubclass,
+    text: nextText
+  } = transformSourceFile(sourceFile);
+  if (!foundWrecSubclass) {
+    console.error('No class extending Wrec was found.');
+    process.exit(1);
+  }
   if (!changed) continue;
 
   changedCount++;
