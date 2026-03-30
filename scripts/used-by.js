@@ -5,10 +5,19 @@ import path from 'node:path';
 import ts from 'typescript';
 
 const args = process.argv.slice(2);
-const write = args.includes('--write');
-const check = args.includes('--check');
+const dry = args.includes('--dry');
 const verbose = args.includes('--verbose');
 const inputPaths = args.filter(arg => !arg.startsWith('--'));
+
+if (args.includes('--write')) {
+  console.error('--write is no longer supported; writing is now the default.');
+  process.exit(1);
+}
+
+if (args.includes('--check')) {
+  console.error('Use --dry instead of --check.');
+  process.exit(1);
+}
 
 if (inputPaths.length !== 1) {
   console.error(
@@ -403,22 +412,20 @@ for (const file of files) {
   if (!changed) continue;
 
   changedCount++;
-  if (write) {
-    fs.writeFileSync(file, nextText);
-  } else {
+  if (dry) {
     for (const edit of edits.toReversed()) {
       const match = edit.text.match(/usedBy:\s*\[[^\]]*\]/);
       const suggestion = match ? match[0] : 'remove usedBy';
       console.log(`${edit.propName} - ${suggestion}`);
     }
+  } else {
+    fs.writeFileSync(file, nextText);
   }
-  if (verbose && write) console.log('updated');
+  if (verbose && !dry) console.log('updated');
 }
 
-if (check && changedCount > 0) process.exit(1);
+if (dry && changedCount > 0) process.exit(1);
 
-if (!write && !check && changedCount === 0) {
+if (dry && changedCount === 0) {
   console.log('usedBy is already up to date.');
-} else if (!write && !check) {
-  console.log(`${changedCount} file(s) would be updated. Re-run with --write.`);
 }
