@@ -1,3 +1,4 @@
+// This file was created to test for use of reserved properties.
 import {html, Wrec} from '../wrec';
 
 class ReservedProperties extends Wrec {

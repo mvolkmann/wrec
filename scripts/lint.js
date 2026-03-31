@@ -162,15 +162,21 @@ function analyzeExpression(
 
         node.arguments.forEach((argument, index) => {
           let parameterSymbol = parameters[index];
+          let isRestArgument =
+            Boolean(isRest) &&
+            parameters.length > 0 &&
+            index >= parameters.length - 1;
           if (!parameterSymbol && isRest && parameters.length > 0) {
             parameterSymbol = parameters[parameters.length - 1];
           }
           if (!parameterSymbol) return;
 
           const argumentType = checker.getTypeAtLocation(argument);
-          const parameterType = checker.getTypeOfSymbolAtLocation(
+          const parameterType = getParameterType(
+            checker,
             parameterSymbol,
-            declaration ?? classNode
+            declaration ?? classNode,
+            isRestArgument
           );
           if (!checker.isTypeAssignableTo(argumentType, parameterType)) {
             findings.incompatibleArguments.push({
@@ -559,28 +565,86 @@ function fail(message) {
   process.exit(1);
 }
 
-function formatReport(filePath, supportedProps, allExpressions, findings) {
+function findWrecFiles(rootDir, onMatch) {
+  const walk = currentDir => {
+    const entries = fs
+      .readdirSync(currentDir, {withFileTypes: true})
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    for (const entry of entries) {
+      const fullPath = path.join(currentDir, entry.name);
+
+      if (entry.isDirectory()) {
+        walk(fullPath);
+        continue;
+      }
+
+      if (!entry.isFile()) continue;
+      if (!fullPath.endsWith('.js') && !fullPath.endsWith('.ts')) continue;
+      if (isWrecComponentFile(fullPath)) onMatch(fullPath);
+    }
+  };
+
+  walk(rootDir);
+}
+
+function formatReport(
+  filePath,
+  supportedProps,
+  allExpressions,
+  findings,
+  options = {}
+) {
+  const {
+    fileLabel = filePath,
+    showFileHeader = true,
+    showDetailsForCleanFile = true,
+    showNoIssuesMessage = true
+  } = options;
   const lines = [];
 
-  lines.push(`file: ${filePath}`);
-  lines.push('properties:');
-  if (supportedProps.size === 0) {
-    lines.push('  none');
-  } else {
-    for (const [name, info] of [...supportedProps.entries()].sort(([a], [b]) =>
-      a.localeCompare(b)
-    )) {
-      lines.push(`  ${name}: ${info.typeText}`);
-    }
-  }
+  const hasIssues =
+    findings.duplicateProperties.length > 0 ||
+    findings.reservedProperties.length > 0 ||
+    findings.invalidUsedByReferences.length > 0 ||
+    findings.invalidComputedProperties.length > 0 ||
+    findings.invalidValuesConfigurations.length > 0 ||
+    findings.invalidDefaultValues.length > 0 ||
+    findings.invalidFormAssocValues.length > 0 ||
+    findings.invalidUseStateMaps.length > 0 ||
+    findings.missingFormAssociatedProperty.length > 0 ||
+    findings.missingTypeProperties.length > 0 ||
+    findings.undefinedProperties.length > 0 ||
+    findings.undefinedContextFunctions.length > 0 ||
+    findings.undefinedMethods.length > 0 ||
+    findings.incompatibleArguments.length > 0 ||
+    findings.invalidEventHandlers.length > 0 ||
+    findings.unsupportedHtmlAttributes.length > 0 ||
+    findings.unsupportedEventNames.length > 0 ||
+    findings.typeErrors.length > 0;
 
-  lines.push('expressions:');
-  if (allExpressions.length === 0) {
-    lines.push('  none');
-  } else {
-    allExpressions.forEach(expr => {
-      lines.push(`  [${expr.kind}]${formatLocation(expr.location)} ${expr.text}`);
-    });
+  if (showFileHeader) lines.push(`file: ${fileLabel}`);
+
+  if (hasIssues || showDetailsForCleanFile) {
+    lines.push('properties:');
+    if (supportedProps.size === 0) {
+      lines.push('  none');
+    } else {
+      for (const [name, info] of [...supportedProps.entries()].sort(([a], [b]) =>
+        a.localeCompare(b)
+      )) {
+        lines.push(`  ${name}: ${info.typeText}`);
+      }
+    }
+
+    lines.push('expressions:');
+    if (allExpressions.length === 0) {
+      lines.push('  none');
+    } else {
+      allExpressions.forEach(expr => {
+        lines.push(`  [${expr.kind}]${formatLocation(expr.location)} ${expr.text}`);
+      });
+    }
   }
 
   if (findings.duplicateProperties.length > 0) {
@@ -684,32 +748,12 @@ function formatReport(filePath, supportedProps, allExpressions, findings) {
     );
   }
 
-  const hasIssues =
-    findings.duplicateProperties.length > 0 ||
-    findings.reservedProperties.length > 0 ||
-    findings.invalidUsedByReferences.length > 0 ||
-    findings.invalidComputedProperties.length > 0 ||
-    findings.invalidValuesConfigurations.length > 0 ||
-    findings.invalidDefaultValues.length > 0 ||
-    findings.invalidFormAssocValues.length > 0 ||
-    findings.invalidUseStateMaps.length > 0 ||
-    findings.missingFormAssociatedProperty.length > 0 ||
-    findings.missingTypeProperties.length > 0 ||
-    findings.undefinedProperties.length > 0 ||
-    findings.undefinedContextFunctions.length > 0 ||
-    findings.undefinedMethods.length > 0 ||
-    findings.incompatibleArguments.length > 0 ||
-    findings.invalidEventHandlers.length > 0 ||
-    findings.unsupportedHtmlAttributes.length > 0 ||
-    findings.unsupportedEventNames.length > 0 ||
-    findings.typeErrors.length > 0;
-
   if (findings.unsupportedEventNames.length > 0) {
     lines.push('unsupported event names:');
     findings.unsupportedEventNames.forEach(message => lines.push(`  ${message}`));
   }
 
-  if (!hasIssues) lines.push('no issues found');
+  if (!hasIssues && showNoIssuesMessage) lines.push('no issues found');
 
   return `${lines.join('\n')}\n`;
 }
@@ -745,14 +789,15 @@ function formatLocation(location) {
   return `:${location.line + 1}:${location.character + 1}`;
 }
 
-function getArgPath() {
+function getArgPaths() {
   const [, , filePath, ...rest] = process.argv;
-  if (!filePath || rest.length > 0) {
-    fail('usage: node scripts/wrec-lint.js <file.js|file.ts>');
+  if (rest.length > 0) {
+    fail('usage: node scripts/wrec-lint.js [file.js|file.ts]');
   }
 
   try {
-    return validateFilePath(filePath);
+    if (filePath) return [validateFilePath(filePath)];
+    return findWrecFiles(process.cwd());
   } catch (error) {
     fail(error instanceof Error ? error.message : String(error));
   }
@@ -802,6 +847,20 @@ function getPropertyTypeText(checker, sourceFile, expression) {
 
   const type = checker.getTypeAtLocation(expression);
   return checker.typeToString(type);
+}
+
+function getParameterType(checker, parameterSymbol, location, isRestArgument) {
+  const parameterType = checker.getTypeOfSymbolAtLocation(
+    parameterSymbol,
+    location
+  );
+  if (!isRestArgument) return parameterType;
+  if (!checker.isArrayType(parameterType) && !checker.isTupleType(parameterType)) {
+    return parameterType;
+  }
+
+  const typeArguments = checker.getTypeArguments(parameterType);
+  return typeArguments[0] ?? parameterType;
 }
 
 function getStringOrStringArrayLiteral(property) {
@@ -911,6 +970,14 @@ function isNumericLikeType(type) {
   });
 }
 
+function isWrecComponentFile(filePath) {
+  const sourceText = fs.readFileSync(filePath, 'utf8');
+  const program = createProgram(filePath, sourceText);
+  const sourceFile = program.getSourceFile(filePath);
+  if (!sourceFile) return false;
+  return Boolean(findWrecClass(sourceFile, program.getTypeChecker()));
+}
+
 function isStaticMember(node) {
   return ts.canHaveModifiers(node)
     ? ts
@@ -940,7 +1007,7 @@ function requiresContextFunction(symbol, sourceFile) {
   });
 }
 
-export function lintSource(filePath, sourceText) {
+export function lintSource(filePath, sourceText, options = {}) {
   const baseProgram = createProgram(filePath, sourceText);
   const sourceFile = baseProgram.getSourceFile(filePath);
   if (!sourceFile) throw new Error(`unable to parse ${filePath}`);
@@ -1075,16 +1142,42 @@ export function lintSource(filePath, sourceText) {
   findings.unsupportedHtmlAttributes.sort();
   findings.unsupportedEventNames.sort();
 
-  return formatReport(filePath, supportedProps, allExpressions, findings);
+  return formatReport(filePath, supportedProps, allExpressions, findings, options);
 }
 
-export function lintFile(filePath) {
+export function lintFile(filePath, options = {}) {
   const resolved = validateFilePath(filePath);
-  return lintSource(resolved, fs.readFileSync(resolved, 'utf8'));
+  return lintSource(resolved, fs.readFileSync(resolved, 'utf8'), options);
 }
 
 function main() {
-  process.stdout.write(lintFile(getArgPath()));
+  const [, , filePath, ...rest] = process.argv;
+  if (rest.length > 0) {
+    fail('usage: node scripts/wrec-lint.js [file.js|file.ts]');
+  }
+
+  if (filePath) {
+    process.stdout.write(
+      lintFile(validateFilePath(filePath), {
+        showFileHeader: false
+      })
+    );
+    return;
+  }
+
+  const rootDir = process.cwd();
+  let previousHadIssues = false;
+  findWrecFiles(rootDir, matchedFile => {
+    const report = lintFile(matchedFile, {
+      fileLabel: path.relative(rootDir, matchedFile) || path.basename(matchedFile),
+      showDetailsForCleanFile: false,
+      showNoIssuesMessage: false
+    });
+    const currentHasIssues = report.trim().includes('\n');
+    if (previousHadIssues) process.stdout.write('\n');
+    process.stdout.write(report);
+    previousHadIssues = currentHasIssues;
+  });
 }
 
 function toUserFacingExpression(text) {

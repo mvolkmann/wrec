@@ -125,6 +125,22 @@ describe('lint.js', () => {
     );
   });
 
+  test('does not report incompatible arguments for rest-parameter methods like console.log', () => {
+    const output = runLint(`
+      import {html, Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          moving: {type: Boolean, value: true}
+        };
+
+        static html = html\`<button onClick="console.log('moving =', this.moving)">Log</button>\`;
+      }
+    `);
+
+    expect(output).not.toContain('incompatible arguments:');
+  });
+
   test('reports invalid event handler references', () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
