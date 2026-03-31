@@ -48,7 +48,7 @@ export declare abstract class Wrec extends HTMLElementBase implements ChangeList
     [key: string]: any;
     static define(elementName: string): void;
     constructor();
-    attributeChangedCallback(attrName: string, oldValue: string | null, newValue: string | null): void;
+    attributeChangedCallback(attrName: string, _oldValue: string | null, newValue: string | null): void;
     batchSet(changes: StringToAny): void;
     private static buildHTML;
     changed(_statePath: string, componentProp: string, newValue: unknown): void;
