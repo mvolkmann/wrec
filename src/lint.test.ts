@@ -123,7 +123,7 @@ describe('lint.js', () => {
     expect(output).toContain('  "missingHandler" is not a defined instance method');
   });
 
-  test('reports invalid usedBy references', () => {
+  test('reports invalid single-string usedBy references', () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -137,6 +137,34 @@ describe('lint.js', () => {
     expect(output).toContain('invalid usedBy references:');
     expect(output).toContain(
       '  property "count" usedBy references missing method "missingMethod"'
+    );
+  });
+
+  test('reports invalid array usedBy references and ignores valid ones', () => {
+    const output = runLint(`
+      import {Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        updateCount() {}
+        renderCount() {}
+
+        static properties = {
+          goodSingle: {type: Number, usedBy: 'updateCount'},
+          goodArray: {type: Number, usedBy: ['updateCount', 'renderCount']},
+          badArray: {type: Number, usedBy: ['updateCount', 'missingMethod']}
+        };
+      }
+    `);
+
+    expect(output).toContain('invalid usedBy references:');
+    expect(output).toContain(
+      '  property "badArray" usedBy references missing method "missingMethod"'
+    );
+    expect(output).not.toContain(
+      'property "goodSingle" usedBy references missing method'
+    );
+    expect(output).not.toContain(
+      'property "goodArray" usedBy references missing method'
     );
   });
 

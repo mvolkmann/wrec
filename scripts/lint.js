@@ -653,6 +653,19 @@ function getPropertyTypeText(checker, sourceFile, expression) {
   return checker.typeToString(type);
 }
 
+function getStringOrStringArrayLiteral(property) {
+  if (!property || !ts.isPropertyAssignment(property)) return undefined;
+
+  if (
+    ts.isStringLiteral(property.initializer) ||
+    ts.isNoSubstitutionTemplateLiteral(property.initializer)
+  ) {
+    return [property.initializer.text];
+  }
+
+  return getStringArrayLiteral(property);
+}
+
 function getTemplateLiteralText(template) {
   if (ts.isNoSubstitutionTemplateLiteral(template)) return template.text;
 
@@ -1010,10 +1023,7 @@ function validatePropertyConfigs(
       typeProp && ts.isPropertyAssignment(typeProp) ? typeProp.initializer : undefined;
 
     if (usedByProp && ts.isPropertyAssignment(usedByProp)) {
-      const methods = ts.isStringLiteral(usedByProp.initializer) ||
-        ts.isNoSubstitutionTemplateLiteral(usedByProp.initializer)
-        ? [usedByProp.initializer.text]
-        : getStringArrayLiteral(usedByProp);
+      const methods = getStringOrStringArrayLiteral(usedByProp);
 
       if (methods) {
         for (const methodName of methods) {
