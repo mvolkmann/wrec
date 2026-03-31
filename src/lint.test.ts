@@ -60,6 +60,21 @@ describe('lint.js', () => {
     expect(output).toContain('  class');
   });
 
+  test('reports missing type properties in property configurations', () => {
+    const output = runLint(`
+      import {Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          count: {value: 1}
+        };
+      }
+    `);
+
+    expect(output).toContain('missing type properties:');
+    expect(output).toContain('  property "count" does not specify a type');
+  });
+
   test('reports undefined properties and methods', () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
@@ -121,6 +136,19 @@ describe('lint.js', () => {
 
     expect(output).toContain('invalid event handler references:');
     expect(output).toContain('  "missingHandler" is not a defined instance method');
+  });
+
+  test('reports unsupported html attributes', () => {
+    const output = runLint(`
+      import {html, Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static html = html\`<div bogus="x"></div>\`;
+      }
+    `);
+
+    expect(output).toContain('unsupported html attributes:');
+    expect(output).toContain('  div attribute "bogus" is not supported');
   });
 
   test('reports unsupported event names in value bindings', () => {
@@ -215,6 +243,10 @@ describe('lint.js', () => {
       import {html, Wrec} from '${wrecImportPath}';
 
       class Fixture extends Wrec {
+        static properties = {
+          value: {type: String, value: 'x'}
+        };
+
         static html = html\`<child-widget form-assoc="value"></child-widget>\`;
       }
     `);
@@ -222,6 +254,25 @@ describe('lint.js', () => {
     expect(output).toContain('invalid form-assoc values:');
     expect(output).toContain(
       '  form-assoc="value" is invalid; expected "property:field" or a comma-separated list of them'
+    );
+  });
+
+  test('reports form-assoc mappings to missing component properties', () => {
+    const output = runLint(`
+      import {html, Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          value: {type: String, value: 'x'}
+        };
+
+        static html = html\`<child-widget form-assoc="missing:value"></child-widget>\`;
+      }
+    `);
+
+    expect(output).toContain('invalid form-assoc values:');
+    expect(output).toContain(
+      '  form-assoc="missing:value" refers to missing component property "missing"'
     );
   });
 
@@ -324,6 +375,28 @@ describe('lint.js', () => {
     expect(output).toContain('type errors:');
     expect(output).toContain(
       'this.count * this.label: right operand "this.label" has type string, but arithmetic operators require number'
+    );
+  });
+
+  test('reports useState maps to missing component properties', () => {
+    const output = runLint(`
+      import {Wrec, WrecState} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          count: {type: Number, value: 1}
+        };
+
+        connectState() {
+          const state = new WrecState({total: 1});
+          this.useState(state, {total: 'missingProp'});
+        }
+      }
+    `);
+
+    expect(output).toContain('invalid useState map entries:');
+    expect(output).toContain(
+      '  useState maps state property "total" to missing component property "missingProp"'
     );
   });
 

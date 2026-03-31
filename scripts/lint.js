@@ -6,14 +6,17 @@
 // - invalid default values
 // - invalid form-assoc values
 // - invalid event handler references
+// - invalid useState map entries
 // - invalid usedBy references
 // - invalid values configurations
 // - missing formAssociated property
+// - missing type properties in property configurations
 // - reserved property names
 // - undefined context functions called in expressions
 // - undefined instance methods called in expressions
 // - undefined properties accessed in expressions
 // - incompatible method arguments
+// - unsupported HTML attributes in html templates
 // - unsupported event names
 // - arithmetic type errors in expressions
 
@@ -26,6 +29,43 @@ import {parse} from 'node-html-parser';
 const CSS_PROPERTY_RE = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g;
 const REFS_TEST_RE = /this\.[a-zA-Z_$][\w$]*(\.[a-zA-Z_$][\w$]*)*/;
 const IDENTIFIER_RE = /^[A-Za-z_$][\w$]*$/;
+const HTML_GLOBAL_ATTRIBUTES = new Set([
+  'aria-label',
+  'class',
+  'disabled',
+  'hidden',
+  'id',
+  'part',
+  'role',
+  'slot',
+  'style',
+  'tabindex',
+  'title'
+]);
+const HTML_TAG_ATTRIBUTES = new Map([
+  ['a', new Set(['href', 'rel', 'target'])],
+  ['button', new Set(['name', 'type', 'value'])],
+  ['div', new Set([])],
+  ['fieldset', new Set(['name'])],
+  ['form', new Set(['action', 'method', 'name'])],
+  ['img', new Set(['alt', 'height', 'src', 'width'])],
+  ['input', new Set(['checked', 'max', 'min', 'name', 'placeholder', 'step', 'type', 'value'])],
+  ['label', new Set(['for'])],
+  ['legend', new Set([])],
+  ['li', new Set(['value'])],
+  ['option', new Set(['label', 'selected', 'value'])],
+  ['p', new Set([])],
+  ['select', new Set(['multiple', 'name', 'value'])],
+  ['span', new Set([])],
+  ['table', new Set([])],
+  ['tbody', new Set([])],
+  ['td', new Set(['colspan', 'rowspan'])],
+  ['textarea', new Set(['name', 'placeholder', 'rows', 'value'])],
+  ['th', new Set(['colspan', 'rowspan', 'scope'])],
+  ['thead', new Set([])],
+  ['tr', new Set([])],
+  ['ul', new Set([])]
+]);
 const THIS_CALL_RE = /this\.([A-Za-z_$][\w$]*)\s*\(/g;
 const THIS_REF_RE = /this\.([A-Za-z_$][\w$]*)(\.[A-Za-z_$][\w$]*)*/g;
 const PLACEHOLDER_PREFIX = '__WREC_PLACEHOLDER__';
@@ -253,6 +293,43 @@ function collectHelperExpressions(augmentedSourceFile) {
   return helpers;
 }
 
+function collectUseStateMapErrors(classNode, supportedProps, findings) {
+  function visit(node) {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      ts.isThis(node.expression.expression) &&
+      node.expression.name.text === 'useState'
+    ) {
+      const mapArg = node.arguments[1];
+      if (mapArg && ts.isObjectLiteralExpression(mapArg)) {
+        for (const property of mapArg.properties) {
+          if (!ts.isPropertyAssignment(property)) continue;
+          const statePath = getMemberName(property);
+          if (
+            !statePath ||
+            (!ts.isStringLiteral(property.initializer) &&
+              !ts.isNoSubstitutionTemplateLiteral(property.initializer))
+          ) {
+            continue;
+          }
+
+          const componentProp = property.initializer.text;
+          if (!supportedProps.has(componentProp)) {
+            findings.invalidUseStateMaps.push(
+              `useState maps state property "${statePath}" to missing component property "${componentProp}"`
+            );
+          }
+        }
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(classNode);
+}
+
 function createProgram(filePath, sourceText) {
   const defaultHost = ts.createCompilerHost({}, true);
   const compilerOptions = {
@@ -413,7 +490,7 @@ function extractProperties(sourceFile, checker, classNode) {
   };
 }
 
-function extractTemplateExpressions(classNode, findings) {
+function extractTemplateExpressions(classNode, findings, supportedProps) {
   const expressions = [];
 
   for (const member of classNode.members) {
@@ -471,7 +548,7 @@ function extractTemplateExpressions(classNode, findings) {
     }
 
     const root = parse(rendered, {comment: true});
-    walkHtmlNode(root, expressions, findings);
+    walkHtmlNode(root, expressions, findings, supportedProps);
   }
 
   return expressions;
@@ -554,6 +631,11 @@ function formatReport(filePath, supportedProps, allExpressions, findings) {
     );
   }
 
+  if (findings.missingTypeProperties.length > 0) {
+    lines.push('missing type properties:');
+    findings.missingTypeProperties.forEach(message => lines.push(`  ${message}`));
+  }
+
   if (findings.undefinedProperties.length > 0) {
     lines.push('undefined properties:');
     findings.undefinedProperties.forEach(name => lines.push(`  ${name}`));
@@ -574,6 +656,11 @@ function formatReport(filePath, supportedProps, allExpressions, findings) {
     findings.invalidEventHandlers.forEach(message => lines.push(`  ${message}`));
   }
 
+  if (findings.invalidUseStateMaps.length > 0) {
+    lines.push('invalid useState map entries:');
+    findings.invalidUseStateMaps.forEach(message => lines.push(`  ${message}`));
+  }
+
   if (findings.incompatibleArguments.length > 0) {
     lines.push('incompatible arguments:');
     findings.incompatibleArguments.forEach(finding => {
@@ -590,6 +677,13 @@ function formatReport(filePath, supportedProps, allExpressions, findings) {
     });
   }
 
+  if (findings.unsupportedHtmlAttributes.length > 0) {
+    lines.push('unsupported html attributes:');
+    findings.unsupportedHtmlAttributes.forEach(message =>
+      lines.push(`  ${message}`)
+    );
+  }
+
   const hasIssues =
     findings.duplicateProperties.length > 0 ||
     findings.reservedProperties.length > 0 ||
@@ -598,12 +692,15 @@ function formatReport(filePath, supportedProps, allExpressions, findings) {
     findings.invalidValuesConfigurations.length > 0 ||
     findings.invalidDefaultValues.length > 0 ||
     findings.invalidFormAssocValues.length > 0 ||
+    findings.invalidUseStateMaps.length > 0 ||
     findings.missingFormAssociatedProperty.length > 0 ||
+    findings.missingTypeProperties.length > 0 ||
     findings.undefinedProperties.length > 0 ||
     findings.undefinedContextFunctions.length > 0 ||
     findings.undefinedMethods.length > 0 ||
     findings.incompatibleArguments.length > 0 ||
     findings.invalidEventHandlers.length > 0 ||
+    findings.unsupportedHtmlAttributes.length > 0 ||
     findings.unsupportedEventNames.length > 0 ||
     findings.typeErrors.length > 0;
 
@@ -718,6 +815,10 @@ function getStringOrStringArrayLiteral(property) {
   }
 
   return getStringArrayLiteral(property);
+}
+
+function getSupportedHtmlAttributes(tagName) {
+  return HTML_TAG_ATTRIBUTES.get(tagName.toLowerCase());
 }
 
 function getTemplateLiteralText(template) {
@@ -865,17 +966,24 @@ export function lintSource(filePath, sourceText) {
     invalidDefaultValues: [],
     invalidEventHandlers: [],
     invalidFormAssocValues: [],
+    invalidUseStateMaps: [],
     invalidUsedByReferences: [],
     invalidValuesConfigurations: [],
     missingFormAssociatedProperty: [],
+    missingTypeProperties: [],
     reservedProperties,
     typeErrors: [],
     undefinedContextFunctions: [],
     undefinedMethods: [],
     undefinedProperties: [],
+    unsupportedHtmlAttributes: [],
     unsupportedEventNames: []
   };
-  const templateExprs = extractTemplateExpressions(classNode, findings);
+  const templateExprs = extractTemplateExpressions(
+    classNode,
+    findings,
+    supportedProps
+  );
   const allExpressions = [...templateExprs, ...computedExprs];
 
   if (allMethods.has('formAssociatedCallback') && !formAssociated) {
@@ -913,6 +1021,7 @@ export function lintSource(filePath, sourceText) {
     allMethods,
     findings
   );
+  collectUseStateMapErrors(classNode, supportedProps, findings);
 
   allExpressions.forEach(expr => {
     if (
@@ -953,14 +1062,17 @@ export function lintSource(filePath, sourceText) {
   findings.invalidDefaultValues.sort();
   findings.invalidEventHandlers.sort();
   findings.invalidFormAssocValues.sort();
+  findings.invalidUseStateMaps.sort();
   findings.invalidUsedByReferences.sort();
   findings.invalidValuesConfigurations.sort();
   findings.missingFormAssociatedProperty.sort();
+  findings.missingTypeProperties.sort();
   findings.reservedProperties.sort();
   findings.typeErrors.sort((a, b) => a.expression.localeCompare(b.expression));
   findings.undefinedContextFunctions.sort();
   findings.undefinedMethods.sort();
   findings.undefinedProperties.sort();
+  findings.unsupportedHtmlAttributes.sort();
   findings.unsupportedEventNames.sort();
 
   return formatReport(filePath, supportedProps, allExpressions, findings);
@@ -1089,6 +1201,12 @@ function validatePropertyConfigs(
     const typeExpression =
       typeProp && ts.isPropertyAssignment(typeProp) ? typeProp.initializer : undefined;
 
+    if (!typeExpression) {
+      findings.missingTypeProperties.push(
+        `property "${propName}" does not specify a type`
+      );
+    }
+
     if (usedByProp && ts.isPropertyAssignment(usedByProp)) {
       const methods = getStringOrStringArrayLiteral(usedByProp);
 
@@ -1209,6 +1327,41 @@ function validateFormAssocAttribute(attrName, attrValue, findings) {
   }
 }
 
+function validateFormAssocPropertyMappings(attrName, attrValue, findings, supportedProps) {
+  if (attrName !== 'form-assoc') return;
+
+  const pairs = attrValue.split(',');
+  for (const pair of pairs) {
+    const [propName] = pair.split(':').map(part => part.trim());
+    if (!propName) continue;
+    if (!supportedProps.has(propName)) {
+      findings.invalidFormAssocValues.push(
+        `form-assoc="${attrValue}" refers to missing component property "${propName}"`
+      );
+    }
+  }
+}
+
+function validateHtmlAttribute(node, attrName, findings) {
+  if (attrName.startsWith('aria-') || attrName.startsWith('data-')) return;
+  if (attrName.startsWith('on')) return;
+  if (attrName === 'form-assoc') return;
+
+  const [baseAttrName] = attrName.split(':');
+  if (HTML_GLOBAL_ATTRIBUTES.has(baseAttrName)) return;
+
+  const tagName = (node.rawTagName || node.tagName || '').toLowerCase();
+  if (!tagName || tagName.includes('-')) return;
+
+  const supported = getSupportedHtmlAttributes(tagName);
+  if (!supported) return;
+  if (supported.has(baseAttrName)) return;
+
+  findings.unsupportedHtmlAttributes.push(
+    `${tagName} attribute "${attrName}" is not supported`
+  );
+}
+
 function validateValueBindingEvent(node, attrName, findings) {
   const [realAttrName, eventName] = attrName.split(':');
   if (realAttrName !== 'value' || !eventName) return;
@@ -1220,11 +1373,18 @@ function validateValueBindingEvent(node, attrName, findings) {
   );
 }
 
-function walkHtmlNode(node, expressions, findings) {
+function walkHtmlNode(node, expressions, findings, supportedProps) {
   if (node.nodeType === 1) {
     for (const [attrName, attrValue] of Object.entries(node.attributes)) {
       if (!attrValue) continue;
       validateFormAssocAttribute(attrName, attrValue, findings);
+      validateFormAssocPropertyMappings(
+        attrName,
+        attrValue,
+        findings,
+        supportedProps
+      );
+      validateHtmlAttribute(node, attrName, findings);
       validateValueBindingEvent(node, attrName, findings);
       if (
         REFS_TEST_RE.test(attrValue) ||
@@ -1258,7 +1418,7 @@ function walkHtmlNode(node, expressions, findings) {
   }
 
   for (const child of node.childNodes ?? []) {
-    walkHtmlNode(child, expressions, findings);
+    walkHtmlNode(child, expressions, findings, supportedProps);
   }
 }
 
