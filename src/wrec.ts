@@ -396,7 +396,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
 
   attributeChangedCallback(
     attrName: string,
-    oldValue: string | null,
+    _oldValue: string | null,
     newValue: string | null
   ) {
     if (attrName === 'disabled') this.#disableOrEnable();

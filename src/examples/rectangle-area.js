@@ -21,6 +21,12 @@ class RectangleArea extends Wrec {
     <number-slider label="Height" value="this.height"></number-slider>
     <div class="area">Area: <span>this.area</span></div>
   `;
+
+  propertyChangedCallback(propName, oldValue, newValue) {
+    console.log(
+      `propertyChangedCallback: ${propName} changed from ${oldValue} to ${newValue}`
+    );
+  }
 }
 
 RectangleArea.define('rectangle-area');
