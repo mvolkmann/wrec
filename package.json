@@ -27,11 +27,13 @@
     }
   },
   "bin": {
+    "wrec-lint": "./scripts/lint.js",
     "wrec-usedby": "./scripts/used-by.js"
   },
   "files": [
     "dist",
     "scripts/used-by.js",
+    "scripts/lint.js",
     "README.md"
   ],
   "scripts": {
