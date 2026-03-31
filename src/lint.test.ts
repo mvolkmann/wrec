@@ -113,6 +113,82 @@ describe('lint.js', () => {
     expect(output).toContain('  "missingHandler" is not a defined instance method');
   });
 
+  test('reports invalid usedBy references', () => {
+    const output = runLint(`
+      import {Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          count: {type: Number, usedBy: 'missingMethod'}
+        };
+      }
+    `);
+
+    expect(output).toContain('invalid usedBy references:');
+    expect(output).toContain(
+      '  property "count" usedBy references missing method "missingMethod"'
+    );
+  });
+
+  test('reports invalid computed property references and non-method calls', () => {
+    const output = runLint(`
+      import {Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          count: {type: Number, value: 1},
+          label: {type: String, value: 'x'},
+          badRef: {type: Number, computed: 'this.missingProp + 1'},
+          badCall: {type: Number, computed: 'this.label()'}
+        };
+      }
+    `);
+
+    expect(output).toContain('invalid computed properties:');
+    expect(output).toContain(
+      '  property "badRef" computed references missing property "missingProp"'
+    );
+    expect(output).toContain(
+      '  property "badCall" computed calls non-method instance member "label"'
+    );
+  });
+
+  test('reports invalid values configurations and invalid defaults', () => {
+    const output = runLint(`
+      import {Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          wrongValuesType: {
+            type: Number,
+            values: ['1', '2']
+          },
+          wrongDefaultType: {
+            type: Number,
+            value: 'x'
+          },
+          wrongDefaultValue: {
+            type: String,
+            values: ['small', 'medium'],
+            value: 'large'
+          }
+        };
+      }
+    `);
+
+    expect(output).toContain('invalid values configurations:');
+    expect(output).toContain(
+      '  property "wrongValuesType" uses values, but its type is not String'
+    );
+
+    expect(output).toContain('invalid default values:');
+    expect(output).toContain('property "wrongDefaultType" default value has type');
+    expect(output).toContain('but declared type is number');
+    expect(output).toContain(
+      '  property "wrongDefaultValue" default value "large" is not in values'
+    );
+  });
+
   test('reports arithmetic type errors', () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';

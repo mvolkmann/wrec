@@ -1,5 +1,19 @@
 #!/usr/bin/env node
 
+// This linter checks Wrec components for:
+// - duplicate property names
+// - reserved property names
+// - invalid usedBy references
+// - invalid computed property references and non-method calls
+// - invalid values configurations
+// - invalid default values
+// - undefined properties accessed in expressions
+// - undefined context functions called in expressions
+// - undefined instance methods called in expressions
+// - invalid event handler references
+// - incompatible method arguments
+// - arithmetic type errors in expressions
+
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
@@ -8,6 +22,8 @@ import {parse} from 'node-html-parser';
 const CSS_PROPERTY_RE = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g;
 const REFS_TEST_RE = /this\.[a-zA-Z_$][\w$]*(\.[a-zA-Z_$][\w$]*)*/;
 const IDENTIFIER_RE = /^[A-Za-z_$][\w$]*$/;
+const THIS_CALL_RE = /this\.([A-Za-z_$][\w$]*)\s*\(/g;
+const THIS_REF_RE = /this\.([A-Za-z_$][\w$]*)(\.[A-Za-z_$][\w$]*)*/g;
 const PLACEHOLDER_PREFIX = '__WREC_PLACEHOLDER__';
 const RESERVED_PROPERTY_NAMES = new Set(['class', 'style']);
 const WREC_REF_NAME = '__wrec';
@@ -270,6 +286,7 @@ function createProgram(filePath, sourceText) {
 
 function extractProperties(sourceFile, checker, classNode) {
   const duplicateProperties = [];
+  const propertyEntries = [];
   const reservedProperties = [];
   const supportedProps = new Map();
   const computedExprs = [];
@@ -317,6 +334,7 @@ function extractProperties(sourceFile, checker, classNode) {
       }
 
       const config = property.initializer;
+      propertyEntries.push({config, propName});
       const typeProp = getObjectProperty(config, 'type');
       const computedProp = getObjectProperty(config, 'computed');
 
@@ -355,6 +373,7 @@ function extractProperties(sourceFile, checker, classNode) {
     computedExprs,
     contextKeys,
     duplicateProperties,
+    propertyEntries,
     reservedProperties
   };
 }
@@ -498,6 +517,20 @@ function getObjectProperty(objectLiteral, key) {
     const name = getMemberName(property);
     if (name === key) return property;
   }
+}
+
+function getStringArrayLiteral(property) {
+  if (!property || !ts.isPropertyAssignment(property)) return undefined;
+  if (!ts.isArrayLiteralExpression(property.initializer)) return undefined;
+
+  const values = [];
+  for (const element of property.initializer.elements) {
+    if (!ts.isStringLiteral(element) && !ts.isNoSubstitutionTemplateLiteral(element)) {
+      return undefined;
+    }
+    values.push(element.text);
+  }
+  return values;
 }
 
 function getPropertyTypeText(checker, sourceFile, expression) {
@@ -644,6 +677,7 @@ function main() {
     computedExprs,
     contextKeys,
     duplicateProperties,
+    propertyEntries,
     reservedProperties
   } = extractProperties(
     sourceFile,
@@ -679,13 +713,25 @@ function main() {
   const findings = {
     duplicateProperties,
     incompatibleArguments: [],
+    invalidComputedProperties: [],
+    invalidDefaultValues: [],
     invalidEventHandlers: [],
+    invalidUsedByReferences: [],
+    invalidValuesConfigurations: [],
     reservedProperties,
     typeErrors: [],
     undefinedContextFunctions: [],
     undefinedMethods: [],
     undefinedProperties: []
   };
+
+  validatePropertyConfigs(
+    checker,
+    supportedProps,
+    propertyEntries,
+    allMethods,
+    findings
+  );
 
   allExpressions.forEach(expr => {
     if (
@@ -722,7 +768,11 @@ function main() {
       a.methodName.localeCompare(b.methodName) ||
       a.parameterName.localeCompare(b.parameterName)
   );
+  findings.invalidComputedProperties.sort();
+  findings.invalidDefaultValues.sort();
   findings.invalidEventHandlers.sort();
+  findings.invalidUsedByReferences.sort();
+  findings.invalidValuesConfigurations.sort();
   findings.reservedProperties.sort();
   findings.typeErrors.sort((a, b) => a.expression.localeCompare(b.expression));
   findings.undefinedContextFunctions.sort();
@@ -732,6 +782,10 @@ function main() {
   const hasIssues =
     findings.duplicateProperties.length > 0 ||
     findings.reservedProperties.length > 0 ||
+    findings.invalidUsedByReferences.length > 0 ||
+    findings.invalidComputedProperties.length > 0 ||
+    findings.invalidValuesConfigurations.length > 0 ||
+    findings.invalidDefaultValues.length > 0 ||
     findings.undefinedProperties.length > 0 ||
     findings.undefinedContextFunctions.length > 0 ||
     findings.undefinedMethods.length > 0 ||
@@ -770,6 +824,34 @@ function main() {
   if (findings.reservedProperties.length > 0) {
     console.log('reserved property names:');
     findings.reservedProperties.forEach(name => console.log(`  ${name}`));
+  }
+
+  if (findings.invalidUsedByReferences.length > 0) {
+    console.log('invalid usedBy references:');
+    findings.invalidUsedByReferences.forEach(message =>
+      console.log(`  ${message}`)
+    );
+  }
+
+  if (findings.invalidComputedProperties.length > 0) {
+    console.log('invalid computed properties:');
+    findings.invalidComputedProperties.forEach(message =>
+      console.log(`  ${message}`)
+    );
+  }
+
+  if (findings.invalidValuesConfigurations.length > 0) {
+    console.log('invalid values configurations:');
+    findings.invalidValuesConfigurations.forEach(message =>
+      console.log(`  ${message}`)
+    );
+  }
+
+  if (findings.invalidDefaultValues.length > 0) {
+    console.log('invalid default values:');
+    findings.invalidDefaultValues.forEach(message =>
+      console.log(`  ${message}`)
+    );
   }
 
   if (findings.undefinedProperties.length > 0) {
@@ -815,6 +897,172 @@ function main() {
 
 function toUserFacingExpression(text) {
   return text.replaceAll(WREC_REF_NAME, 'this');
+}
+
+function typeExpressionKind(expression) {
+  if (!expression) return undefined;
+  if (ts.isIdentifier(expression)) return expression.text;
+  return undefined;
+}
+
+function validateComputedProperty(
+  propName,
+  computedText,
+  supportedProps,
+  classMethods,
+  findings
+) {
+  for (const match of computedText.matchAll(THIS_REF_RE)) {
+    const referencedName = match[1];
+    if (!supportedProps.has(referencedName) && !classMethods.has(referencedName)) {
+      findings.invalidComputedProperties.push(
+        `property "${propName}" computed references missing property "${referencedName}"`
+      );
+    }
+  }
+
+  for (const match of computedText.matchAll(THIS_CALL_RE)) {
+    const methodName = match[1];
+    if (!classMethods.has(methodName)) {
+      findings.invalidComputedProperties.push(
+        `property "${propName}" computed calls non-method instance member "${methodName}"`
+      );
+    }
+  }
+}
+
+function validateDefaultValue(checker, typeExpression, valueExpression) {
+  if (!typeExpression || !valueExpression) return undefined;
+
+  const typeKind = typeExpressionKind(typeExpression);
+  const valueType = checker.getTypeAtLocation(valueExpression);
+  const typeName = typeKind ?? typeExpression.getText();
+  const valueTypeName = checker.typeToString(valueType);
+
+  if (typeKind === 'String') {
+    if (!(valueType.flags & (ts.TypeFlags.String | ts.TypeFlags.StringLiteral))) {
+      return {typeName: 'string', valueTypeName};
+    }
+    return undefined;
+  }
+
+  if (typeKind === 'Number') {
+    if (!(valueType.flags & (ts.TypeFlags.Number | ts.TypeFlags.NumberLiteral))) {
+      return {typeName: 'number', valueTypeName};
+    }
+    return undefined;
+  }
+
+  if (typeKind === 'Boolean') {
+    if (!(valueType.flags & (ts.TypeFlags.Boolean | ts.TypeFlags.BooleanLiteral))) {
+      return {typeName: 'boolean', valueTypeName};
+    }
+    return undefined;
+  }
+
+  if (typeKind === 'Array') {
+    if (!checker.isArrayType(valueType) && !checker.isTupleType(valueType)) {
+      return {typeName: 'array', valueTypeName};
+    }
+    return undefined;
+  }
+
+  if (typeKind === 'Object') {
+    const isObjectLike =
+      Boolean(valueType.flags & ts.TypeFlags.Object) &&
+      !checker.isArrayType(valueType) &&
+      !checker.isTupleType(valueType);
+    if (!isObjectLike) {
+      return {typeName: 'object', valueTypeName};
+    }
+  }
+
+  return undefined;
+}
+
+function validatePropertyConfigs(
+  checker,
+  supportedProps,
+  propertyEntries,
+  classMethods,
+  findings
+) {
+  for (const {config, propName} of propertyEntries) {
+    const typeProp = getObjectProperty(config, 'type');
+    const usedByProp = getObjectProperty(config, 'usedBy');
+    const computedProp = getObjectProperty(config, 'computed');
+    const valueProp = getObjectProperty(config, 'value');
+    const valuesProp = getObjectProperty(config, 'values');
+
+    const typeExpression =
+      typeProp && ts.isPropertyAssignment(typeProp) ? typeProp.initializer : undefined;
+
+    if (usedByProp && ts.isPropertyAssignment(usedByProp)) {
+      const methods = ts.isStringLiteral(usedByProp.initializer) ||
+        ts.isNoSubstitutionTemplateLiteral(usedByProp.initializer)
+        ? [usedByProp.initializer.text]
+        : getStringArrayLiteral(usedByProp);
+
+      if (methods) {
+        for (const methodName of methods) {
+          if (!classMethods.has(methodName)) {
+            findings.invalidUsedByReferences.push(
+              `property "${propName}" usedBy references missing method "${methodName}"`
+            );
+          }
+        }
+      }
+    }
+
+    if (
+      computedProp &&
+      ts.isPropertyAssignment(computedProp) &&
+      (ts.isStringLiteral(computedProp.initializer) ||
+        ts.isNoSubstitutionTemplateLiteral(computedProp.initializer))
+    ) {
+      validateComputedProperty(
+        propName,
+        computedProp.initializer.text,
+        supportedProps,
+        classMethods,
+        findings
+      );
+    }
+
+    const values = getStringArrayLiteral(valuesProp);
+    if (values) {
+      if (typeExpressionKind(typeExpression) !== 'String') {
+        findings.invalidValuesConfigurations.push(
+          `property "${propName}" uses values, but its type is not String`
+        );
+      }
+
+      if (
+        valueProp &&
+        ts.isPropertyAssignment(valueProp) &&
+        (ts.isStringLiteral(valueProp.initializer) ||
+          ts.isNoSubstitutionTemplateLiteral(valueProp.initializer)) &&
+        !values.includes(valueProp.initializer.text)
+      ) {
+        findings.invalidDefaultValues.push(
+          `property "${propName}" default value "${valueProp.initializer.text}" is not in values`
+        );
+      }
+    }
+
+    if (valueProp && ts.isPropertyAssignment(valueProp)) {
+      const mismatch = validateDefaultValue(
+        checker,
+        typeExpression,
+        valueProp.initializer
+      );
+      if (mismatch) {
+        findings.invalidDefaultValues.push(
+          `property "${propName}" default value has type ${mismatch.valueTypeName}, but declared type is ${mismatch.typeName}`
+        );
+      }
+    }
+  }
 }
 
 function typeNodeFromConstructorExpression(expression) {
