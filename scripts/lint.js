@@ -9,9 +9,25 @@ const CSS_PROPERTY_RE = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g;
 const REFS_TEST_RE = /this\.[a-zA-Z_$][\w$]*(\.[a-zA-Z_$][\w$]*)*/;
 const IDENTIFIER_RE = /^[A-Za-z_$][\w$]*$/;
 const PLACEHOLDER_PREFIX = '__WREC_PLACEHOLDER__';
+const RESERVED_PROPERTY_NAMES = new Set(['class', 'style']);
 const WREC_REF_NAME = '__wrec';
 
-function analyzeExpression(expressionNode, checker, classNode, findings) {
+function analyzeExpression(
+  expressionNode,
+  checker,
+  classNode,
+  findings,
+  metadata
+) {
+  if (metadata.eventHandler && ts.isIdentifier(expressionNode)) {
+    if (!metadata.classMethods.has(expressionNode.text)) {
+      uniquePush(
+        findings.invalidEventHandlers,
+        `"${expressionNode.text}" is not a defined instance method`
+      );
+    }
+  }
+
   function visit(node) {
     if (ts.isPropertyAccessExpression(node) && isWrecRooted(node.expression)) {
       const ownerType = checker.getTypeAtLocation(node.expression);
@@ -29,8 +45,12 @@ function analyzeExpression(expressionNode, checker, classNode, findings) {
     if (ts.isCallExpression(node)) {
       const callee = node.expression;
       if (ts.isIdentifier(callee)) {
-        const symbol = checker.getSymbolAtLocation(callee);
-        if (!symbol) uniquePush(findings.undefinedMethods, callee.text);
+        if (!metadata.contextKeys.has(callee.text)) {
+          const symbol = checker.getSymbolAtLocation(callee);
+          if (!symbol || requiresContextFunction(symbol, metadata.sourceFile)) {
+            uniquePush(findings.undefinedContextFunctions, callee.text);
+          }
+        }
       } else if (
         ts.isPropertyAccessExpression(callee) &&
         isWrecRooted(callee.expression)
@@ -249,6 +269,8 @@ function createProgram(filePath, sourceText) {
 }
 
 function extractProperties(sourceFile, checker, classNode) {
+  const duplicateProperties = [];
+  const reservedProperties = [];
   const supportedProps = new Map();
   const computedExprs = [];
   let contextKeys = [];
@@ -282,6 +304,16 @@ function extractProperties(sourceFile, checker, classNode) {
       const propName = getMemberName(property);
       if (!propName || !ts.isObjectLiteralExpression(property.initializer)) {
         continue;
+      }
+
+      if (supportedProps.has(propName) && !duplicateProperties.includes(propName)) {
+        duplicateProperties.push(propName);
+      }
+      if (
+        RESERVED_PROPERTY_NAMES.has(propName) &&
+        !reservedProperties.includes(propName)
+      ) {
+        reservedProperties.push(propName);
       }
 
       const config = property.initializer;
@@ -318,7 +350,13 @@ function extractProperties(sourceFile, checker, classNode) {
     }
   }
 
-  return {supportedProps, computedExprs, contextKeys};
+  return {
+    supportedProps,
+    computedExprs,
+    contextKeys,
+    duplicateProperties,
+    reservedProperties
+  };
 }
 
 function extractTemplateExpressions(classNode) {
@@ -348,6 +386,7 @@ function extractTemplateExpressions(classNode) {
             .getLineAndCharacterOfPosition(span.expression.getStart());
           expressions.push({
             context: 'static',
+            eventHandler: false,
             kind: tag,
             text: trimmed,
             location
@@ -367,6 +406,7 @@ function extractTemplateExpressions(classNode) {
         if (value && REFS_TEST_RE.test(value)) {
           expressions.push({
             context: 'instance',
+            eventHandler: false,
             kind: 'css',
             text: value,
             location: null
@@ -520,6 +560,15 @@ function getTypeSyntaxText(sourceFile, expression) {
   return undefined;
 }
 
+function isImportLikeDeclaration(node) {
+  return (
+    ts.isImportClause(node) ||
+    ts.isImportEqualsDeclaration(node) ||
+    ts.isImportSpecifier(node) ||
+    ts.isNamespaceImport(node)
+  );
+}
+
 function isArithmeticOperator(kind) {
   return (
     kind === ts.SyntaxKind.AsteriskToken ||
@@ -570,6 +619,14 @@ function isWrecRooted(expression) {
   return false;
 }
 
+function requiresContextFunction(symbol, sourceFile) {
+  const declarations = symbol.declarations ?? [];
+  return declarations.some(declaration => {
+    if (isImportLikeDeclaration(declaration)) return true;
+    return declaration.getSourceFile() === sourceFile;
+  });
+}
+
 function main() {
   const filePath = getArgPath();
   const sourceText = fs.readFileSync(filePath, 'utf8');
@@ -582,7 +639,13 @@ function main() {
   const classNode = findWrecClass(sourceFile, checker);
   if (!classNode) fail('file must define a subclass of Wrec');
 
-  const {supportedProps, computedExprs, contextKeys} = extractProperties(
+  const {
+    supportedProps,
+    computedExprs,
+    contextKeys,
+    duplicateProperties,
+    reservedProperties
+  } = extractProperties(
     sourceFile,
     checker,
     classNode
@@ -614,35 +677,66 @@ function main() {
 
   const helperExpressions = collectHelperExpressions(augmentedSourceFile);
   const findings = {
+    duplicateProperties,
     incompatibleArguments: [],
+    invalidEventHandlers: [],
+    reservedProperties,
     typeErrors: [],
+    undefinedContextFunctions: [],
     undefinedMethods: [],
     undefinedProperties: []
   };
 
-  helperExpressions.forEach(expressionNode => {
+  allExpressions.forEach(expr => {
+    if (
+      expr.eventHandler &&
+      IDENTIFIER_RE.test(expr.text) &&
+      !allMethods.has(expr.text)
+    ) {
+      uniquePush(
+        findings.invalidEventHandlers,
+        `"${expr.text}" is not a defined instance method`
+      );
+    }
+  });
+
+  helperExpressions.forEach((expressionNode, index) => {
     if (!expressionNode) return;
     analyzeExpression(
       expressionNode,
       augmentedChecker,
       augmentedClassNode,
-      findings
+      findings,
+      {
+        classMethods: allMethods,
+        contextKeys: new Set(contextKeys),
+        eventHandler: allExpressions[index]?.eventHandler ?? false,
+        sourceFile: augmentedSourceFile
+      }
     );
   });
 
+  findings.duplicateProperties.sort();
   findings.incompatibleArguments.sort(
     (a, b) =>
       a.methodName.localeCompare(b.methodName) ||
       a.parameterName.localeCompare(b.parameterName)
   );
+  findings.invalidEventHandlers.sort();
+  findings.reservedProperties.sort();
   findings.typeErrors.sort((a, b) => a.expression.localeCompare(b.expression));
+  findings.undefinedContextFunctions.sort();
   findings.undefinedMethods.sort();
   findings.undefinedProperties.sort();
 
   const hasIssues =
+    findings.duplicateProperties.length > 0 ||
+    findings.reservedProperties.length > 0 ||
     findings.undefinedProperties.length > 0 ||
+    findings.undefinedContextFunctions.length > 0 ||
     findings.undefinedMethods.length > 0 ||
     findings.incompatibleArguments.length > 0 ||
+    findings.invalidEventHandlers.length > 0 ||
     findings.typeErrors.length > 0;
 
   console.log(`file: ${filePath}`);
@@ -668,14 +762,34 @@ function main() {
     });
   }
 
+  if (findings.duplicateProperties.length > 0) {
+    console.log('duplicate properties:');
+    findings.duplicateProperties.forEach(name => console.log(`  ${name}`));
+  }
+
+  if (findings.reservedProperties.length > 0) {
+    console.log('reserved property names:');
+    findings.reservedProperties.forEach(name => console.log(`  ${name}`));
+  }
+
   if (findings.undefinedProperties.length > 0) {
     console.log('undefined properties:');
     findings.undefinedProperties.forEach(name => console.log(`  ${name}`));
   }
 
+  if (findings.undefinedContextFunctions.length > 0) {
+    console.log('undefined context functions:');
+    findings.undefinedContextFunctions.forEach(name => console.log(`  ${name}`));
+  }
+
   if (findings.undefinedMethods.length > 0) {
     console.log('undefined methods:');
     findings.undefinedMethods.forEach(name => console.log(`  ${name}`));
+  }
+
+  if (findings.invalidEventHandlers.length > 0) {
+    console.log('invalid event handler references:');
+    findings.invalidEventHandlers.forEach(message => console.log(`  ${message}`));
   }
 
   if (findings.incompatibleArguments.length > 0) {
@@ -750,6 +864,7 @@ function walkHtmlNode(node, expressions) {
       ) {
         expressions.push({
           context: 'instance',
+          eventHandler: attrName.startsWith('on'),
           kind: 'html',
           text: attrValue.trim(),
           location: null
@@ -766,6 +881,7 @@ function walkHtmlNode(node, expressions) {
     if (text && REFS_TEST_RE.test(text)) {
       expressions.push({
         context: 'instance',
+        eventHandler: false,
         kind: 'html',
         text,
         location: null
