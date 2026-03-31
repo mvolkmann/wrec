@@ -92,6 +92,7 @@ const SUPPORTED_EVENT_NAMES = new Set([
   'paste'
 ]);
 const WREC_REF_NAME = '__wrec';
+const componentPropertyCache = new Map();
 
 function analyzeExpression(
   expressionNode,
@@ -299,6 +300,51 @@ function collectHelperExpressions(augmentedSourceFile) {
   return helpers;
 }
 
+function collectWrecClasses(sourceFile) {
+  const classes = [];
+
+  function visit(node) {
+    if (ts.isClassDeclaration(node) && node.name) {
+      const heritage = node.heritageClauses?.find(
+        clause => clause.token === ts.SyntaxKind.ExtendsKeyword
+      );
+      const typeNode = heritage?.types[0];
+      if (
+        typeNode &&
+        ts.isIdentifier(typeNode.expression) &&
+        typeNode.expression.text === 'Wrec'
+      ) {
+        classes.push(node);
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return classes;
+}
+
+function findDefinedTagNames(sourceFile) {
+  const tagNames = new Map();
+
+  function visit(node) {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      node.expression.name.text === 'define' &&
+      ts.isIdentifier(node.expression.expression) &&
+      node.arguments.length > 0 &&
+      ts.isStringLiteral(node.arguments[0])
+    ) {
+      tagNames.set(node.expression.expression.text, node.arguments[0].text);
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return tagNames;
+}
+
 function collectUseStateMapErrors(classNode, supportedProps, findings) {
   function visit(node) {
     if (
@@ -496,7 +542,7 @@ function extractProperties(sourceFile, checker, classNode) {
   };
 }
 
-function extractTemplateExpressions(classNode, findings, supportedProps) {
+function extractTemplateExpressions(classNode, findings, componentPropertyMaps) {
   const expressions = [];
 
   for (const member of classNode.members) {
@@ -554,7 +600,7 @@ function extractTemplateExpressions(classNode, findings, supportedProps) {
     }
 
     const root = parse(rendered, {comment: true});
-    walkHtmlNode(root, expressions, findings, supportedProps);
+    walkHtmlNode(root, expressions, findings, componentPropertyMaps);
   }
 
   return expressions;
@@ -756,6 +802,54 @@ function formatReport(
   if (!hasIssues && showNoIssuesMessage) lines.push('no issues found');
 
   return `${lines.join('\n')}\n`;
+}
+
+function getComponentPropertyMaps(filePath, sourceText, seen = new Set()) {
+  const resolved = path.resolve(filePath);
+  if (componentPropertyCache.has(resolved)) {
+    return componentPropertyCache.get(resolved);
+  }
+  if (seen.has(resolved)) return new Map();
+  seen.add(resolved);
+
+  const text = sourceText ?? fs.readFileSync(resolved, 'utf8');
+  const program = createProgram(resolved, text);
+  const sourceFile = program.getSourceFile(resolved);
+  if (!sourceFile) return new Map();
+
+  const checker = program.getTypeChecker();
+  const tagNames = findDefinedTagNames(sourceFile);
+  const propertyMaps = new Map();
+
+  for (const classNode of collectWrecClasses(sourceFile)) {
+    const tagName = classNode.name ? tagNames.get(classNode.name.text) : undefined;
+    if (!tagName) continue;
+    const {supportedProps} = extractProperties(sourceFile, checker, classNode);
+    propertyMaps.set(tagName, new Set(supportedProps.keys()));
+  }
+
+  for (const statement of sourceFile.statements) {
+    if (
+      !ts.isImportDeclaration(statement) ||
+      !ts.isStringLiteral(statement.moduleSpecifier)
+    ) {
+      continue;
+    }
+
+    const importPath = resolveImportPath(
+      path.dirname(resolved),
+      statement.moduleSpecifier.text
+    );
+    if (!importPath) continue;
+
+    const importedMaps = getComponentPropertyMaps(importPath, undefined, seen);
+    for (const [tagName, props] of importedMaps.entries()) {
+      if (!propertyMaps.has(tagName)) propertyMaps.set(tagName, props);
+    }
+  }
+
+  componentPropertyCache.set(resolved, propertyMaps);
+  return propertyMaps;
 }
 
 function findWrecClass(sourceFile, checker) {
@@ -1007,6 +1101,20 @@ function requiresContextFunction(symbol, sourceFile) {
   });
 }
 
+function resolveImportPath(baseDir, importPath) {
+  if (!importPath.startsWith('.')) return undefined;
+
+  const candidates = [
+    path.resolve(baseDir, importPath),
+    path.resolve(baseDir, `${importPath}.js`),
+    path.resolve(baseDir, `${importPath}.ts`),
+    path.resolve(baseDir, importPath, 'index.js'),
+    path.resolve(baseDir, importPath, 'index.ts')
+  ];
+
+  return candidates.find(candidate => fs.existsSync(candidate));
+}
+
 export function lintSource(filePath, sourceText, options = {}) {
   const baseProgram = createProgram(filePath, sourceText);
   const sourceFile = baseProgram.getSourceFile(filePath);
@@ -1015,6 +1123,7 @@ export function lintSource(filePath, sourceText, options = {}) {
   const checker = baseProgram.getTypeChecker();
   const classNode = findWrecClass(sourceFile, checker);
   if (!classNode) throw new Error('file must define a subclass of Wrec');
+  const componentPropertyMaps = getComponentPropertyMaps(filePath, sourceText);
 
   const {
     supportedProps,
@@ -1049,7 +1158,7 @@ export function lintSource(filePath, sourceText, options = {}) {
   const templateExprs = extractTemplateExpressions(
     classNode,
     findings,
-    supportedProps
+    componentPropertyMaps
   );
   const allExpressions = [...templateExprs, ...computedExprs];
 
@@ -1420,8 +1529,17 @@ function validateFormAssocAttribute(attrName, attrValue, findings) {
   }
 }
 
-function validateFormAssocPropertyMappings(attrName, attrValue, findings, supportedProps) {
+function validateFormAssocPropertyMappings(
+  node,
+  attrName,
+  attrValue,
+  findings,
+  componentPropertyMaps
+) {
   if (attrName !== 'form-assoc') return;
+  const tagName = (node.rawTagName || node.tagName || '').toLowerCase();
+  const supportedProps = componentPropertyMaps.get(tagName);
+  if (!supportedProps) return;
 
   const pairs = attrValue.split(',');
   for (const pair of pairs) {
@@ -1466,16 +1584,17 @@ function validateValueBindingEvent(node, attrName, findings) {
   );
 }
 
-function walkHtmlNode(node, expressions, findings, supportedProps) {
+function walkHtmlNode(node, expressions, findings, componentPropertyMaps) {
   if (node.nodeType === 1) {
     for (const [attrName, attrValue] of Object.entries(node.attributes)) {
       if (!attrValue) continue;
       validateFormAssocAttribute(attrName, attrValue, findings);
       validateFormAssocPropertyMappings(
+        node,
         attrName,
         attrValue,
         findings,
-        supportedProps
+        componentPropertyMaps
       );
       validateHtmlAttribute(node, attrName, findings);
       validateValueBindingEvent(node, attrName, findings);
@@ -1511,7 +1630,7 @@ function walkHtmlNode(node, expressions, findings, supportedProps) {
   }
 
   for (const child of node.childNodes ?? []) {
-    walkHtmlNode(child, expressions, findings, supportedProps);
+    walkHtmlNode(child, expressions, findings, componentPropertyMaps);
   }
 }
 

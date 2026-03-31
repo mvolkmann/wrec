@@ -278,12 +278,18 @@ describe('lint.js', () => {
       import {html, Wrec} from '${wrecImportPath}';
 
       class Fixture extends Wrec {
+        static html = html\`<child-widget form-assoc="missing:value"></child-widget>\`;
+      }
+
+      class ChildWidget extends Wrec {
+        static formAssociated = true;
+
         static properties = {
           value: {type: String, value: 'x'}
         };
-
-        static html = html\`<child-widget form-assoc="missing:value"></child-widget>\`;
       }
+
+      ChildWidget.define('child-widget');
     `);
 
     expect(output).toContain('invalid form-assoc values:');
