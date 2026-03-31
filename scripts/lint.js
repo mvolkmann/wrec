@@ -2,17 +2,17 @@
 
 // This linter checks Wrec components for:
 // - duplicate property names
-// - reserved property names
-// - invalid usedBy references
 // - invalid computed property references and non-method calls
-// - invalid values configurations
 // - invalid default values
 // - invalid form-assoc values
+// - invalid event handler references
+// - invalid usedBy references
+// - invalid values configurations
 // - missing formAssociated property
-// - undefined properties accessed in expressions
+// - reserved property names
 // - undefined context functions called in expressions
 // - undefined instance methods called in expressions
-// - invalid event handler references
+// - undefined properties accessed in expressions
 // - incompatible method arguments
 // - unsupported event names
 // - arithmetic type errors in expressions
