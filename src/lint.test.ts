@@ -31,6 +31,30 @@ afterEach(() => {
 });
 
 describe('lint.js', () => {
+  test('reports no issues found for a valid component', () => {
+    const output = runLint(`
+      import {html, Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          count: {type: Number, value: 1},
+          label: {type: String, value: 'ok'}
+        };
+
+        static html = html\`
+          <div>\${42}</div>
+          <div>this.label</div>
+        \`;
+      }
+    `);
+
+    expect(output).toContain('no issues found');
+    expect(output).not.toContain('undefined properties:');
+    expect(output).not.toContain('undefined methods:');
+    expect(output).not.toContain('incompatible arguments:');
+    expect(output).not.toContain('type errors:');
+  });
+
   test('reports duplicate and reserved property names', () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
@@ -189,6 +213,37 @@ describe('lint.js', () => {
     );
   });
 
+  test('reports default-value mismatches for boolean, array, and object properties', () => {
+    const output = runLint(`
+      import {Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          badBoolean: {
+            type: Boolean,
+            value: 'true'
+          },
+          badArray: {
+            type: Array,
+            value: 7
+          },
+          badObject: {
+            type: Object,
+            value: 'oops'
+          }
+        };
+      }
+    `);
+
+    expect(output).toContain('invalid default values:');
+    expect(output).toContain('property "badBoolean" default value has type');
+    expect(output).toContain('but declared type is boolean');
+    expect(output).toContain('property "badArray" default value has type');
+    expect(output).toContain('but declared type is array');
+    expect(output).toContain('property "badObject" default value has type');
+    expect(output).toContain('but declared type is object');
+  });
+
   test('reports arithmetic type errors', () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
@@ -207,5 +262,44 @@ describe('lint.js', () => {
     expect(output).toContain(
       'this.count * this.label: right operand "this.label" has type string, but arithmetic operators require number'
     );
+  });
+
+  test('reports arithmetic type errors for invalid left operands', () => {
+    const output = runLint(`
+      import {html, Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          count: {type: Number, value: 1},
+          label: {type: String, value: 'x'}
+        };
+
+        static html = html\`<div>this.label * this.count</div>\`;
+      }
+    `);
+
+    expect(output).toContain('type errors:');
+    expect(output).toContain(
+      'this.label * this.count: left operand "this.label" has type string, but arithmetic operators require number'
+    );
+  });
+
+  test('reports multiple undefined methods in one section without numbering', () => {
+    const output = runLint(`
+      import {html, Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static html = html\`
+          <div>\${this.firstMissing()}</div>
+          <div>\${this.secondMissing()}</div>
+        \`;
+      }
+    `);
+
+    expect(output).toContain('undefined methods:');
+    expect(output).toContain('  firstMissing');
+    expect(output).toContain('  secondMissing');
+    expect(output).not.toContain('1. firstMissing');
+    expect(output).not.toContain('2. secondMissing');
   });
 });
