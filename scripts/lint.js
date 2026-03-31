@@ -1262,9 +1262,18 @@ function walkHtmlNode(node, expressions, findings) {
   }
 }
 
-const isCliEntry =
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+const isCliEntry = (() => {
+  if (!process.argv[1]) return false;
+
+  try {
+    return (
+      fs.realpathSync(process.argv[1]) ===
+      fs.realpathSync(fileURLToPath(import.meta.url))
+    );
+  } catch {
+    return path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+  }
+})();
 
 if (isCliEntry) {
   try {
