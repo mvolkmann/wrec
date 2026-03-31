@@ -7,11 +7,14 @@
 // - invalid computed property references and non-method calls
 // - invalid values configurations
 // - invalid default values
+// - invalid form-assoc values
+// - missing formAssociated property
 // - undefined properties accessed in expressions
 // - undefined context functions called in expressions
 // - undefined instance methods called in expressions
 // - invalid event handler references
 // - incompatible method arguments
+// - unsupported event names
 // - arithmetic type errors in expressions
 
 import fs from 'node:fs';
@@ -27,6 +30,27 @@ const THIS_CALL_RE = /this\.([A-Za-z_$][\w$]*)\s*\(/g;
 const THIS_REF_RE = /this\.([A-Za-z_$][\w$]*)(\.[A-Za-z_$][\w$]*)*/g;
 const PLACEHOLDER_PREFIX = '__WREC_PLACEHOLDER__';
 const RESERVED_PROPERTY_NAMES = new Set(['class', 'style']);
+const SUPPORTED_EVENT_NAMES = new Set([
+  'blur',
+  'change',
+  'click',
+  'dblclick',
+  'focus',
+  'focusin',
+  'focusout',
+  'input',
+  'keydown',
+  'keypress',
+  'keyup',
+  'mousedown',
+  'mouseenter',
+  'mouseleave',
+  'mousemove',
+  'mouseout',
+  'mouseover',
+  'mouseup',
+  'paste'
+]);
 const WREC_REF_NAME = '__wrec';
 
 function analyzeExpression(
@@ -287,6 +311,7 @@ function createProgram(filePath, sourceText) {
 
 function extractProperties(sourceFile, checker, classNode) {
   const duplicateProperties = [];
+  let formAssociated = false;
   const propertyEntries = [];
   const reservedProperties = [];
   const supportedProps = new Map();
@@ -307,6 +332,14 @@ function extractProperties(sourceFile, checker, classNode) {
       contextKeys = member.initializer.properties
         .map(property => getMemberName(property))
         .filter(Boolean);
+      continue;
+    }
+
+    if (
+      name === 'formAssociated' &&
+      member.initializer.kind === ts.SyntaxKind.TrueKeyword
+    ) {
+      formAssociated = true;
       continue;
     }
 
@@ -374,12 +407,13 @@ function extractProperties(sourceFile, checker, classNode) {
     computedExprs,
     contextKeys,
     duplicateProperties,
+    formAssociated,
     propertyEntries,
     reservedProperties
   };
 }
 
-function extractTemplateExpressions(classNode) {
+function extractTemplateExpressions(classNode, findings) {
   const expressions = [];
 
   for (const member of classNode.members) {
@@ -437,7 +471,7 @@ function extractTemplateExpressions(classNode) {
     }
 
     const root = parse(rendered, {comment: true});
-    walkHtmlNode(root, expressions);
+    walkHtmlNode(root, expressions, findings);
   }
 
   return expressions;
@@ -508,6 +542,18 @@ function formatReport(filePath, supportedProps, allExpressions, findings) {
     findings.invalidDefaultValues.forEach(message => lines.push(`  ${message}`));
   }
 
+  if (findings.invalidFormAssocValues.length > 0) {
+    lines.push('invalid form-assoc values:');
+    findings.invalidFormAssocValues.forEach(message => lines.push(`  ${message}`));
+  }
+
+  if (findings.missingFormAssociatedProperty.length > 0) {
+    lines.push('missing formAssociated property:');
+    findings.missingFormAssociatedProperty.forEach(message =>
+      lines.push(`  ${message}`)
+    );
+  }
+
   if (findings.undefinedProperties.length > 0) {
     lines.push('undefined properties:');
     findings.undefinedProperties.forEach(name => lines.push(`  ${name}`));
@@ -551,12 +597,20 @@ function formatReport(filePath, supportedProps, allExpressions, findings) {
     findings.invalidComputedProperties.length > 0 ||
     findings.invalidValuesConfigurations.length > 0 ||
     findings.invalidDefaultValues.length > 0 ||
+    findings.invalidFormAssocValues.length > 0 ||
+    findings.missingFormAssociatedProperty.length > 0 ||
     findings.undefinedProperties.length > 0 ||
     findings.undefinedContextFunctions.length > 0 ||
     findings.undefinedMethods.length > 0 ||
     findings.incompatibleArguments.length > 0 ||
     findings.invalidEventHandlers.length > 0 ||
+    findings.unsupportedEventNames.length > 0 ||
     findings.typeErrors.length > 0;
+
+  if (findings.unsupportedEventNames.length > 0) {
+    lines.push('unsupported event names:');
+    findings.unsupportedEventNames.forEach(message => lines.push(`  ${message}`));
+  }
 
   if (!hasIssues) lines.push('no issues found');
 
@@ -799,12 +853,36 @@ export function lintSource(filePath, sourceText) {
     computedExprs,
     contextKeys,
     duplicateProperties,
+    formAssociated,
     propertyEntries,
     reservedProperties
   } = extractProperties(sourceFile, checker, classNode);
   const allMethods = collectClassMethods(classNode);
-  const templateExprs = extractTemplateExpressions(classNode);
+  const findings = {
+    duplicateProperties,
+    incompatibleArguments: [],
+    invalidComputedProperties: [],
+    invalidDefaultValues: [],
+    invalidEventHandlers: [],
+    invalidFormAssocValues: [],
+    invalidUsedByReferences: [],
+    invalidValuesConfigurations: [],
+    missingFormAssociatedProperty: [],
+    reservedProperties,
+    typeErrors: [],
+    undefinedContextFunctions: [],
+    undefinedMethods: [],
+    undefinedProperties: [],
+    unsupportedEventNames: []
+  };
+  const templateExprs = extractTemplateExpressions(classNode, findings);
   const allExpressions = [...templateExprs, ...computedExprs];
+
+  if (allMethods.has('formAssociatedCallback') && !formAssociated) {
+    findings.missingFormAssociatedProperty.push(
+      'formAssociatedCallback is defined, but static formAssociated is not true'
+    );
+  }
 
   const augmentedSource = buildAugmentedSource(
     sourceFile,
@@ -827,20 +905,6 @@ export function lintSource(filePath, sourceText) {
   }
 
   const helperExpressions = collectHelperExpressions(augmentedSourceFile);
-  const findings = {
-    duplicateProperties,
-    incompatibleArguments: [],
-    invalidComputedProperties: [],
-    invalidDefaultValues: [],
-    invalidEventHandlers: [],
-    invalidUsedByReferences: [],
-    invalidValuesConfigurations: [],
-    reservedProperties,
-    typeErrors: [],
-    undefinedContextFunctions: [],
-    undefinedMethods: [],
-    undefinedProperties: []
-  };
 
   validatePropertyConfigs(
     checker,
@@ -888,13 +952,16 @@ export function lintSource(filePath, sourceText) {
   findings.invalidComputedProperties.sort();
   findings.invalidDefaultValues.sort();
   findings.invalidEventHandlers.sort();
+  findings.invalidFormAssocValues.sort();
   findings.invalidUsedByReferences.sort();
   findings.invalidValuesConfigurations.sort();
+  findings.missingFormAssociatedProperty.sort();
   findings.reservedProperties.sort();
   findings.typeErrors.sort((a, b) => a.expression.localeCompare(b.expression));
   findings.undefinedContextFunctions.sort();
   findings.undefinedMethods.sort();
   findings.undefinedProperties.sort();
+  findings.unsupportedEventNames.sort();
 
   return formatReport(filePath, supportedProps, allExpressions, findings);
 }
@@ -1124,10 +1191,41 @@ function uniquePush(array, value) {
   if (!array.includes(value)) array.push(value);
 }
 
-function walkHtmlNode(node, expressions) {
+function validateFormAssocAttribute(attrName, attrValue, findings) {
+  if (attrName !== 'form-assoc') return;
+
+  const pairs = attrValue.split(',');
+  for (const pair of pairs) {
+    const trimmed = pair.trim();
+    const [propName, fieldName, ...rest] = trimmed.split(':').map(part =>
+      part.trim()
+    );
+    if (!trimmed || rest.length > 0 || !propName || !fieldName) {
+      findings.invalidFormAssocValues.push(
+        `form-assoc="${attrValue}" is invalid; expected "property:field" or a comma-separated list of them`
+      );
+      return;
+    }
+  }
+}
+
+function validateValueBindingEvent(node, attrName, findings) {
+  const [realAttrName, eventName] = attrName.split(':');
+  if (realAttrName !== 'value' || !eventName) return;
+  if (SUPPORTED_EVENT_NAMES.has(eventName)) return;
+
+  const tagName = node.rawTagName || node.tagName || 'element';
+  findings.unsupportedEventNames.push(
+    `${tagName} attribute "${attrName}" refers to an unsupported event name "${eventName}"`
+  );
+}
+
+function walkHtmlNode(node, expressions, findings) {
   if (node.nodeType === 1) {
     for (const [attrName, attrValue] of Object.entries(node.attributes)) {
       if (!attrValue) continue;
+      validateFormAssocAttribute(attrName, attrValue, findings);
+      validateValueBindingEvent(node, attrName, findings);
       if (
         REFS_TEST_RE.test(attrValue) ||
         (attrName.startsWith('on') && IDENTIFIER_RE.test(attrValue))
@@ -1160,7 +1258,7 @@ function walkHtmlNode(node, expressions) {
   }
 
   for (const child of node.childNodes ?? []) {
-    walkHtmlNode(child, expressions);
+    walkHtmlNode(child, expressions, findings);
   }
 }
 

@@ -123,6 +123,25 @@ describe('lint.js', () => {
     expect(output).toContain('  "missingHandler" is not a defined instance method');
   });
 
+  test('reports unsupported event names in value bindings', () => {
+    const output = runLint(`
+      import {html, Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          count: {type: Number, value: 1}
+        };
+
+        static html = html\`<input value:monkey="this.count" />\`;
+      }
+    `);
+
+    expect(output).toContain('unsupported event names:');
+    expect(output).toContain(
+      '  input attribute "value:monkey" refers to an unsupported event name "monkey"'
+    );
+  });
+
   test('reports invalid single-string usedBy references', () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
@@ -188,6 +207,36 @@ describe('lint.js', () => {
     );
     expect(output).toContain(
       '  property "badCall" computed calls non-method instance member "label"'
+    );
+  });
+
+  test('reports invalid form-assoc values', () => {
+    const output = runLint(`
+      import {html, Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static html = html\`<child-widget form-assoc="value"></child-widget>\`;
+      }
+    `);
+
+    expect(output).toContain('invalid form-assoc values:');
+    expect(output).toContain(
+      '  form-assoc="value" is invalid; expected "property:field" or a comma-separated list of them'
+    );
+  });
+
+  test('reports missing formAssociated property when formAssociatedCallback is defined', () => {
+    const output = runLint(`
+      import {Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        formAssociatedCallback() {}
+      }
+    `);
+
+    expect(output).toContain('missing formAssociated property:');
+    expect(output).toContain(
+      '  formAssociatedCallback is defined, but static formAssociated is not true'
     );
   });
 
