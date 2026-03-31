@@ -16,6 +16,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 import ts from 'typescript';
 import {parse} from 'node-html-parser';
 
@@ -447,6 +448,121 @@ function fail(message) {
   process.exit(1);
 }
 
+function formatReport(filePath, supportedProps, allExpressions, findings) {
+  const lines = [];
+
+  lines.push(`file: ${filePath}`);
+  lines.push('properties:');
+  if (supportedProps.size === 0) {
+    lines.push('  none');
+  } else {
+    for (const [name, info] of [...supportedProps.entries()].sort(([a], [b]) =>
+      a.localeCompare(b)
+    )) {
+      lines.push(`  ${name}: ${info.typeText}`);
+    }
+  }
+
+  lines.push('expressions:');
+  if (allExpressions.length === 0) {
+    lines.push('  none');
+  } else {
+    allExpressions.forEach(expr => {
+      lines.push(`  [${expr.kind}]${formatLocation(expr.location)} ${expr.text}`);
+    });
+  }
+
+  if (findings.duplicateProperties.length > 0) {
+    lines.push('duplicate properties:');
+    findings.duplicateProperties.forEach(name => lines.push(`  ${name}`));
+  }
+
+  if (findings.reservedProperties.length > 0) {
+    lines.push('reserved property names:');
+    findings.reservedProperties.forEach(name => lines.push(`  ${name}`));
+  }
+
+  if (findings.invalidUsedByReferences.length > 0) {
+    lines.push('invalid usedBy references:');
+    findings.invalidUsedByReferences.forEach(message =>
+      lines.push(`  ${message}`)
+    );
+  }
+
+  if (findings.invalidComputedProperties.length > 0) {
+    lines.push('invalid computed properties:');
+    findings.invalidComputedProperties.forEach(message =>
+      lines.push(`  ${message}`)
+    );
+  }
+
+  if (findings.invalidValuesConfigurations.length > 0) {
+    lines.push('invalid values configurations:');
+    findings.invalidValuesConfigurations.forEach(message =>
+      lines.push(`  ${message}`)
+    );
+  }
+
+  if (findings.invalidDefaultValues.length > 0) {
+    lines.push('invalid default values:');
+    findings.invalidDefaultValues.forEach(message => lines.push(`  ${message}`));
+  }
+
+  if (findings.undefinedProperties.length > 0) {
+    lines.push('undefined properties:');
+    findings.undefinedProperties.forEach(name => lines.push(`  ${name}`));
+  }
+
+  if (findings.undefinedContextFunctions.length > 0) {
+    lines.push('undefined context functions:');
+    findings.undefinedContextFunctions.forEach(name => lines.push(`  ${name}`));
+  }
+
+  if (findings.undefinedMethods.length > 0) {
+    lines.push('undefined methods:');
+    findings.undefinedMethods.forEach(name => lines.push(`  ${name}`));
+  }
+
+  if (findings.invalidEventHandlers.length > 0) {
+    lines.push('invalid event handler references:');
+    findings.invalidEventHandlers.forEach(message => lines.push(`  ${message}`));
+  }
+
+  if (findings.incompatibleArguments.length > 0) {
+    lines.push('incompatible arguments:');
+    findings.incompatibleArguments.forEach(finding => {
+      lines.push(
+        `  ${finding.methodName}: argument "${finding.argument}" has type ${finding.argumentType}, but parameter "${finding.parameterName}" expects ${finding.parameterType}`
+      );
+    });
+  }
+
+  if (findings.typeErrors.length > 0) {
+    lines.push('type errors:');
+    findings.typeErrors.forEach(finding => {
+      lines.push(`  ${finding.expression}: ${finding.message}`);
+    });
+  }
+
+  const hasIssues =
+    findings.duplicateProperties.length > 0 ||
+    findings.reservedProperties.length > 0 ||
+    findings.invalidUsedByReferences.length > 0 ||
+    findings.invalidComputedProperties.length > 0 ||
+    findings.invalidValuesConfigurations.length > 0 ||
+    findings.invalidDefaultValues.length > 0 ||
+    findings.undefinedProperties.length > 0 ||
+    findings.undefinedContextFunctions.length > 0 ||
+    findings.undefinedMethods.length > 0 ||
+    findings.incompatibleArguments.length > 0 ||
+    findings.invalidEventHandlers.length > 0 ||
+    findings.typeErrors.length > 0;
+
+  if (!hasIssues) lines.push('no issues found');
+
+  return `${lines.join('\n')}\n`;
+}
+
 function findWrecClass(sourceFile, checker) {
   let found;
 
@@ -484,15 +600,11 @@ function getArgPath() {
     fail('usage: node scripts/wrec-lint.js <file.js|file.ts>');
   }
 
-  const resolved = path.resolve(filePath);
-  const ext = path.extname(resolved);
-  if (ext !== '.js' && ext !== '.ts') {
-    fail('argument must be a path to a .js or .ts file');
+  try {
+    return validateFilePath(filePath);
+  } catch (error) {
+    fail(error instanceof Error ? error.message : String(error));
   }
-  if (!fs.existsSync(resolved)) {
-    fail(`file not found: ${resolved}`);
-  }
-  return resolved;
 }
 
 function getExpressionText(sourceFile, expression) {
@@ -660,17 +772,14 @@ function requiresContextFunction(symbol, sourceFile) {
   });
 }
 
-function main() {
-  const filePath = getArgPath();
-  const sourceText = fs.readFileSync(filePath, 'utf8');
-
+export function lintSource(filePath, sourceText) {
   const baseProgram = createProgram(filePath, sourceText);
   const sourceFile = baseProgram.getSourceFile(filePath);
-  if (!sourceFile) fail(`unable to parse ${filePath}`);
+  if (!sourceFile) throw new Error(`unable to parse ${filePath}`);
 
   const checker = baseProgram.getTypeChecker();
   const classNode = findWrecClass(sourceFile, checker);
-  if (!classNode) fail('file must define a subclass of Wrec');
+  if (!classNode) throw new Error('file must define a subclass of Wrec');
 
   const {
     supportedProps,
@@ -679,13 +788,8 @@ function main() {
     duplicateProperties,
     propertyEntries,
     reservedProperties
-  } = extractProperties(
-    sourceFile,
-    checker,
-    classNode
-  );
+  } = extractProperties(sourceFile, checker, classNode);
   const allMethods = collectClassMethods(classNode);
-  void allMethods;
   const templateExprs = extractTemplateExpressions(classNode);
   const allExpressions = [...templateExprs, ...computedExprs];
 
@@ -698,7 +802,7 @@ function main() {
   );
   const augmentedProgram = createProgram(filePath, augmentedSource);
   const augmentedSourceFile = augmentedProgram.getSourceFile(filePath);
-  if (!augmentedSourceFile) fail(`unable to analyze ${filePath}`);
+  if (!augmentedSourceFile) throw new Error(`unable to analyze ${filePath}`);
 
   const augmentedChecker = augmentedProgram.getTypeChecker();
   const augmentedClassNode = findWrecClass(
@@ -706,7 +810,7 @@ function main() {
     augmentedChecker
   );
   if (!augmentedClassNode) {
-    fail('unable to find Wrec subclass after augmentation');
+    throw new Error('unable to find Wrec subclass after augmentation');
   }
 
   const helperExpressions = collectHelperExpressions(augmentedSourceFile);
@@ -779,120 +883,16 @@ function main() {
   findings.undefinedMethods.sort();
   findings.undefinedProperties.sort();
 
-  const hasIssues =
-    findings.duplicateProperties.length > 0 ||
-    findings.reservedProperties.length > 0 ||
-    findings.invalidUsedByReferences.length > 0 ||
-    findings.invalidComputedProperties.length > 0 ||
-    findings.invalidValuesConfigurations.length > 0 ||
-    findings.invalidDefaultValues.length > 0 ||
-    findings.undefinedProperties.length > 0 ||
-    findings.undefinedContextFunctions.length > 0 ||
-    findings.undefinedMethods.length > 0 ||
-    findings.incompatibleArguments.length > 0 ||
-    findings.invalidEventHandlers.length > 0 ||
-    findings.typeErrors.length > 0;
+  return formatReport(filePath, supportedProps, allExpressions, findings);
+}
 
-  console.log(`file: ${filePath}`);
-  console.log('properties:');
-  if (supportedProps.size === 0) {
-    console.log('  none');
-  } else {
-    for (const [name, info] of [...supportedProps.entries()].sort(([a], [b]) =>
-      a.localeCompare(b)
-    )) {
-      console.log(`  ${name}: ${info.typeText}`);
-    }
-  }
+export function lintFile(filePath) {
+  const resolved = validateFilePath(filePath);
+  return lintSource(resolved, fs.readFileSync(resolved, 'utf8'));
+}
 
-  console.log('expressions:');
-  if (allExpressions.length === 0) {
-    console.log('  none');
-  } else {
-    allExpressions.forEach(expr => {
-      console.log(
-        `  [${expr.kind}]${formatLocation(expr.location)} ${expr.text}`
-      );
-    });
-  }
-
-  if (findings.duplicateProperties.length > 0) {
-    console.log('duplicate properties:');
-    findings.duplicateProperties.forEach(name => console.log(`  ${name}`));
-  }
-
-  if (findings.reservedProperties.length > 0) {
-    console.log('reserved property names:');
-    findings.reservedProperties.forEach(name => console.log(`  ${name}`));
-  }
-
-  if (findings.invalidUsedByReferences.length > 0) {
-    console.log('invalid usedBy references:');
-    findings.invalidUsedByReferences.forEach(message =>
-      console.log(`  ${message}`)
-    );
-  }
-
-  if (findings.invalidComputedProperties.length > 0) {
-    console.log('invalid computed properties:');
-    findings.invalidComputedProperties.forEach(message =>
-      console.log(`  ${message}`)
-    );
-  }
-
-  if (findings.invalidValuesConfigurations.length > 0) {
-    console.log('invalid values configurations:');
-    findings.invalidValuesConfigurations.forEach(message =>
-      console.log(`  ${message}`)
-    );
-  }
-
-  if (findings.invalidDefaultValues.length > 0) {
-    console.log('invalid default values:');
-    findings.invalidDefaultValues.forEach(message =>
-      console.log(`  ${message}`)
-    );
-  }
-
-  if (findings.undefinedProperties.length > 0) {
-    console.log('undefined properties:');
-    findings.undefinedProperties.forEach(name => console.log(`  ${name}`));
-  }
-
-  if (findings.undefinedContextFunctions.length > 0) {
-    console.log('undefined context functions:');
-    findings.undefinedContextFunctions.forEach(name => console.log(`  ${name}`));
-  }
-
-  if (findings.undefinedMethods.length > 0) {
-    console.log('undefined methods:');
-    findings.undefinedMethods.forEach(name => console.log(`  ${name}`));
-  }
-
-  if (findings.invalidEventHandlers.length > 0) {
-    console.log('invalid event handler references:');
-    findings.invalidEventHandlers.forEach(message => console.log(`  ${message}`));
-  }
-
-  if (findings.incompatibleArguments.length > 0) {
-    console.log('incompatible arguments:');
-    findings.incompatibleArguments.forEach(finding => {
-      console.log(
-        `  ${finding.methodName}: argument "${finding.argument}" has type ${finding.argumentType}, but parameter "${finding.parameterName}" expects ${finding.parameterType}`
-      );
-    });
-  }
-
-  if (findings.typeErrors.length > 0) {
-    console.log('type errors:');
-    findings.typeErrors.forEach(finding => {
-      console.log(`  ${finding.expression}: ${finding.message}`);
-    });
-  }
-
-  if (!hasIssues) {
-    console.log('no issues found');
-  }
+function main() {
+  process.stdout.write(lintFile(getArgPath()));
 }
 
 function toUserFacingExpression(text) {
@@ -978,6 +978,18 @@ function validateDefaultValue(checker, typeExpression, valueExpression) {
   }
 
   return undefined;
+}
+
+function validateFilePath(filePath) {
+  const resolved = path.resolve(filePath);
+  const ext = path.extname(resolved);
+  if (ext !== '.js' && ext !== '.ts') {
+    throw new Error('argument must be a path to a .js or .ts file');
+  }
+  if (!fs.existsSync(resolved)) {
+    throw new Error(`file not found: ${resolved}`);
+  }
+  return resolved;
 }
 
 function validatePropertyConfigs(
@@ -1142,4 +1154,14 @@ function walkHtmlNode(node, expressions) {
   }
 }
 
-main();
+const isCliEntry =
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isCliEntry) {
+  try {
+    main();
+  } catch (error) {
+    fail(error instanceof Error ? error.message : String(error));
+  }
+}

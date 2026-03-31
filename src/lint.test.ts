@@ -1,34 +1,20 @@
-import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {execFileSync} from 'node:child_process';
-import {afterEach, describe, expect, test} from 'vitest';
+import {describe, expect, test} from 'vitest';
+import {lintSource} from '../scripts/lint.js';
 
 const repoRoot = path.resolve(import.meta.dirname, '..');
 const wrecImportPath = path
   .join(repoRoot, 'src', 'wrec.ts')
   .replaceAll('\\', '\\\\');
-const tmpDirs: string[] = [];
 
 function runLint(source: string) {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wrec-lint-test-'));
-  tmpDirs.push(tmpDir);
-
-  const fixturePath = path.join(tmpDir, 'lint-fixture.ts');
-  fs.writeFileSync(fixturePath, source, 'utf8');
-
-  return execFileSync('node', ['scripts/lint.js', fixturePath], {
-    cwd: repoRoot,
-    encoding: 'utf8'
-  });
+  const fixturePath = path.join(
+    os.tmpdir(),
+    `wrec-lint-test-${Math.random().toString(36).slice(2)}.ts`
+  );
+  return lintSource(fixturePath, source);
 }
-
-afterEach(() => {
-  while (tmpDirs.length > 0) {
-    const dir = tmpDirs.pop();
-    if (dir) fs.rmSync(dir, {force: true, recursive: true});
-  }
-});
 
 describe('lint.js', () => {
   test('reports no issues found for a valid component', () => {
