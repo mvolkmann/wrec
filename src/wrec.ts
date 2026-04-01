@@ -878,6 +878,13 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
     this.#internals = this.attachInternals();
     this.#internals.setFormValue(this.#formData);
 
+    // Seed the initial associated property values so submitting
+    // without user interaction includes default values.
+    for (const [propName, formKey] of Object.entries(formAssoc)) {
+      const value = this[propName];
+      if (isPrimitive(value)) this.setFormValue(formKey, String(value));
+    }
+
     // Build mapping from property names to their initial values
     // so the containing form can be reset.
     const propNames = Object.keys(this.#ctor.properties);

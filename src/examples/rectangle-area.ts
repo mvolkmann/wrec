@@ -3,7 +3,8 @@ import {css, html, Wrec} from '../wrec';
 class RectangleArea extends Wrec {
   static properties = {
     width: {type: Number, value: 10},
-    height: {type: Number, value: 5}
+    height: {type: Number, value: 5},
+    area: {type: Number, computed: 'this.width * this.height'}
   };
 
   static css = css`
@@ -15,7 +16,7 @@ class RectangleArea extends Wrec {
   static html = html`
     <number-slider label="Width" value="this.width"></number-slider>
     <number-slider label="Height" value="this.height"></number-slider>
-    <div class="area">Area: <span>this.width * this.height</span></div>
+    <div class="area">Area: <span>this.area</span></div>
   `;
 
   propertyChangedCallback(
