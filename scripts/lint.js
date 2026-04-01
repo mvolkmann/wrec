@@ -1,24 +1,24 @@
 #!/usr/bin/env node
 
-// This linter checks Wrec components for:
-// - duplicate property names
-// - invalid computed property references and non-method calls
-// - invalid default values
-// - invalid form-assoc values
-// - invalid event handler references
-// - invalid useState map entries
-// - invalid usedBy references
-// - invalid values configurations
-// - missing formAssociated property
-// - missing type properties in property configurations
-// - reserved property names
-// - undefined context functions called in expressions
-// - undefined instance methods called in expressions
+// This linter checks Wrec components for these issues:
 // - undefined properties accessed in expressions
-// - incompatible method arguments
-// - unsupported HTML attributes in html templates
-// - unsupported event names
+// - undefined instance methods called in expressions
+// - undefined context functions called in expressions
+// - incompatible method arguments in expressions
 // - arithmetic type errors in expressions
+// - invalid computed property references and calls to non-method members
+// - invalid event handler references
+// - unsupported event names
+// - duplicate property names
+// - reserved property names
+// - missing `type` in property configurations
+// - invalid default values
+// - invalid `values` configurations
+// - invalid `usedBy` references
+// - missing `formAssociated` when `formAssociatedCallback` is defined
+// - invalid `form-assoc` values
+// - invalid `useState` map entries
+// - unsupported HTML attributes in templates
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -49,7 +49,19 @@ const HTML_TAG_ATTRIBUTES = new Map([
   ['fieldset', new Set(['name'])],
   ['form', new Set(['action', 'method', 'name'])],
   ['img', new Set(['alt', 'height', 'src', 'width'])],
-  ['input', new Set(['checked', 'max', 'min', 'name', 'placeholder', 'step', 'type', 'value'])],
+  [
+    'input',
+    new Set([
+      'checked',
+      'max',
+      'min',
+      'name',
+      'placeholder',
+      'step',
+      'type',
+      'value'
+    ])
+  ],
   ['label', new Set(['for'])],
   ['legend', new Set([])],
   ['li', new Set(['value'])],
@@ -486,7 +498,10 @@ function extractProperties(sourceFile, checker, classNode) {
         continue;
       }
 
-      if (supportedProps.has(propName) && !duplicateProperties.includes(propName)) {
+      if (
+        supportedProps.has(propName) &&
+        !duplicateProperties.includes(propName)
+      ) {
         duplicateProperties.push(propName);
       }
       if (
@@ -542,7 +557,11 @@ function extractProperties(sourceFile, checker, classNode) {
   };
 }
 
-function extractTemplateExpressions(classNode, findings, componentPropertyMaps) {
+function extractTemplateExpressions(
+  classNode,
+  findings,
+  componentPropertyMaps
+) {
   const expressions = [];
 
   for (const member of classNode.members) {
@@ -645,7 +664,8 @@ function formatReport(
     fileLabel = filePath,
     showFileHeader = true,
     showDetailsForCleanFile = true,
-    showNoIssuesMessage = true
+    showNoIssuesMessage = true,
+    verbose = false
   } = options;
   const lines = [];
 
@@ -671,13 +691,13 @@ function formatReport(
 
   if (showFileHeader) lines.push(`file: ${fileLabel}`);
 
-  if (hasIssues || showDetailsForCleanFile) {
+  if (verbose && (hasIssues || showDetailsForCleanFile)) {
     lines.push('properties:');
     if (supportedProps.size === 0) {
       lines.push('  none');
     } else {
-      for (const [name, info] of [...supportedProps.entries()].sort(([a], [b]) =>
-        a.localeCompare(b)
+      for (const [name, info] of [...supportedProps.entries()].sort(
+        ([a], [b]) => a.localeCompare(b)
       )) {
         lines.push(`  ${name}: ${info.typeText}`);
       }
@@ -688,7 +708,9 @@ function formatReport(
       lines.push('  none');
     } else {
       allExpressions.forEach(expr => {
-        lines.push(`  [${expr.kind}]${formatLocation(expr.location)} ${expr.text}`);
+        lines.push(
+          `  [${expr.kind}]${formatLocation(expr.location)} ${expr.text}`
+        );
       });
     }
   }
@@ -726,12 +748,16 @@ function formatReport(
 
   if (findings.invalidDefaultValues.length > 0) {
     lines.push('invalid default values:');
-    findings.invalidDefaultValues.forEach(message => lines.push(`  ${message}`));
+    findings.invalidDefaultValues.forEach(message =>
+      lines.push(`  ${message}`)
+    );
   }
 
   if (findings.invalidFormAssocValues.length > 0) {
     lines.push('invalid form-assoc values:');
-    findings.invalidFormAssocValues.forEach(message => lines.push(`  ${message}`));
+    findings.invalidFormAssocValues.forEach(message =>
+      lines.push(`  ${message}`)
+    );
   }
 
   if (findings.missingFormAssociatedProperty.length > 0) {
@@ -743,7 +769,9 @@ function formatReport(
 
   if (findings.missingTypeProperties.length > 0) {
     lines.push('missing type properties:');
-    findings.missingTypeProperties.forEach(message => lines.push(`  ${message}`));
+    findings.missingTypeProperties.forEach(message =>
+      lines.push(`  ${message}`)
+    );
   }
 
   if (findings.undefinedProperties.length > 0) {
@@ -763,7 +791,9 @@ function formatReport(
 
   if (findings.invalidEventHandlers.length > 0) {
     lines.push('invalid event handler references:');
-    findings.invalidEventHandlers.forEach(message => lines.push(`  ${message}`));
+    findings.invalidEventHandlers.forEach(message =>
+      lines.push(`  ${message}`)
+    );
   }
 
   if (findings.invalidUseStateMaps.length > 0) {
@@ -796,7 +826,9 @@ function formatReport(
 
   if (findings.unsupportedEventNames.length > 0) {
     lines.push('unsupported event names:');
-    findings.unsupportedEventNames.forEach(message => lines.push(`  ${message}`));
+    findings.unsupportedEventNames.forEach(message =>
+      lines.push(`  ${message}`)
+    );
   }
 
   if (!hasIssues && showNoIssuesMessage) lines.push('no issues found');
@@ -822,7 +854,9 @@ function getComponentPropertyMaps(filePath, sourceText, seen = new Set()) {
   const propertyMaps = new Map();
 
   for (const classNode of collectWrecClasses(sourceFile)) {
-    const tagName = classNode.name ? tagNames.get(classNode.name.text) : undefined;
+    const tagName = classNode.name
+      ? tagNames.get(classNode.name.text)
+      : undefined;
     if (!tagName) continue;
     const {supportedProps} = extractProperties(sourceFile, checker, classNode);
     propertyMaps.set(tagName, new Set(supportedProps.keys()));
@@ -927,7 +961,10 @@ function getStringArrayLiteral(property) {
 
   const values = [];
   for (const element of property.initializer.elements) {
-    if (!ts.isStringLiteral(element) && !ts.isNoSubstitutionTemplateLiteral(element)) {
+    if (
+      !ts.isStringLiteral(element) &&
+      !ts.isNoSubstitutionTemplateLiteral(element)
+    ) {
       return undefined;
     }
     values.push(element.text);
@@ -949,7 +986,10 @@ function getParameterType(checker, parameterSymbol, location, isRestArgument) {
     location
   );
   if (!isRestArgument) return parameterType;
-  if (!checker.isArrayType(parameterType) && !checker.isTupleType(parameterType)) {
+  if (
+    !checker.isArrayType(parameterType) &&
+    !checker.isTupleType(parameterType)
+  ) {
     return parameterType;
   }
 
@@ -1251,7 +1291,13 @@ export function lintSource(filePath, sourceText, options = {}) {
   findings.unsupportedHtmlAttributes.sort();
   findings.unsupportedEventNames.sort();
 
-  return formatReport(filePath, supportedProps, allExpressions, findings, options);
+  return formatReport(
+    filePath,
+    supportedProps,
+    allExpressions,
+    findings,
+    options
+  );
 }
 
 export function lintFile(filePath, options = {}) {
@@ -1260,15 +1306,21 @@ export function lintFile(filePath, options = {}) {
 }
 
 function main() {
-  const [, , filePath, ...rest] = process.argv;
-  if (rest.length > 0) {
+  const args = process.argv.slice(2);
+  const verbose = args.includes('--verbose');
+  const positionalArgs = args.filter(arg => arg !== '--verbose');
+
+  if (positionalArgs.length > 1) {
     fail('usage: node scripts/wrec-lint.js [file.js|file.ts]');
   }
+
+  const [filePath] = positionalArgs;
 
   if (filePath) {
     process.stdout.write(
       lintFile(validateFilePath(filePath), {
-        showFileHeader: false
+        showFileHeader: false,
+        verbose
       })
     );
     return;
@@ -1278,9 +1330,11 @@ function main() {
   let previousHadIssues = false;
   findWrecFiles(rootDir, matchedFile => {
     const report = lintFile(matchedFile, {
-      fileLabel: path.relative(rootDir, matchedFile) || path.basename(matchedFile),
+      fileLabel:
+        path.relative(rootDir, matchedFile) || path.basename(matchedFile),
       showDetailsForCleanFile: false,
-      showNoIssuesMessage: false
+      showNoIssuesMessage: false,
+      verbose
     });
     const currentHasIssues = report.trim().includes('\n');
     if (previousHadIssues) process.stdout.write('\n');
@@ -1308,7 +1362,10 @@ function validateComputedProperty(
 ) {
   for (const match of computedText.matchAll(THIS_REF_RE)) {
     const referencedName = match[1];
-    if (!supportedProps.has(referencedName) && !classMethods.has(referencedName)) {
+    if (
+      !supportedProps.has(referencedName) &&
+      !classMethods.has(referencedName)
+    ) {
       findings.invalidComputedProperties.push(
         `property "${propName}" computed references missing property "${referencedName}"`
       );
@@ -1334,21 +1391,27 @@ function validateDefaultValue(checker, typeExpression, valueExpression) {
   const valueTypeName = checker.typeToString(valueType);
 
   if (typeKind === 'String') {
-    if (!(valueType.flags & (ts.TypeFlags.String | ts.TypeFlags.StringLiteral))) {
+    if (
+      !(valueType.flags & (ts.TypeFlags.String | ts.TypeFlags.StringLiteral))
+    ) {
       return {typeName: 'string', valueTypeName};
     }
     return undefined;
   }
 
   if (typeKind === 'Number') {
-    if (!(valueType.flags & (ts.TypeFlags.Number | ts.TypeFlags.NumberLiteral))) {
+    if (
+      !(valueType.flags & (ts.TypeFlags.Number | ts.TypeFlags.NumberLiteral))
+    ) {
       return {typeName: 'number', valueTypeName};
     }
     return undefined;
   }
 
   if (typeKind === 'Boolean') {
-    if (!(valueType.flags & (ts.TypeFlags.Boolean | ts.TypeFlags.BooleanLiteral))) {
+    if (
+      !(valueType.flags & (ts.TypeFlags.Boolean | ts.TypeFlags.BooleanLiteral))
+    ) {
       return {typeName: 'boolean', valueTypeName};
     }
     return undefined;
@@ -1401,7 +1464,9 @@ function validatePropertyConfigs(
     const valuesProp = getObjectProperty(config, 'values');
 
     const typeExpression =
-      typeProp && ts.isPropertyAssignment(typeProp) ? typeProp.initializer : undefined;
+      typeProp && ts.isPropertyAssignment(typeProp)
+        ? typeProp.initializer
+        : undefined;
 
     if (!typeExpression) {
       findings.missingTypeProperties.push(
@@ -1517,9 +1582,9 @@ function validateFormAssocAttribute(attrName, attrValue, findings) {
   const pairs = attrValue.split(',');
   for (const pair of pairs) {
     const trimmed = pair.trim();
-    const [propName, fieldName, ...rest] = trimmed.split(':').map(part =>
-      part.trim()
-    );
+    const [propName, fieldName, ...rest] = trimmed
+      .split(':')
+      .map(part => part.trim());
     if (!trimmed || rest.length > 0 || !propName || !fieldName) {
       findings.invalidFormAssocValues.push(
         `form-assoc="${attrValue}" is invalid; expected "property:field" or a comma-separated list of them`
