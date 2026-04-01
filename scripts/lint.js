@@ -4,6 +4,7 @@
 // - undefined properties accessed in expressions
 // - undefined instance methods called in expressions
 // - undefined context functions called in expressions
+// - extra arguments passed to methods and context functions
 // - incompatible method arguments in expressions
 // - arithmetic type errors in expressions
 // - invalid computed property references and calls to non-method members
@@ -172,6 +173,17 @@ function analyzeExpression(
             declaration.parameters[declaration.parameters.length - 1]
               .dotDotDotToken
           );
+
+        if (!isRest && node.arguments.length > parameters.length) {
+          node.arguments.slice(parameters.length).forEach((argument, index) => {
+            findings.extraArguments.push({
+              argument: toUserFacingExpression(argument.getText()),
+              argumentIndex: parameters.length + index + 1,
+              methodName: toUserFacingExpression(callee.getText()),
+              parameterCount: parameters.length
+            });
+          });
+        }
 
         node.arguments.forEach((argument, index) => {
           let parameterSymbol = parameters[index];
@@ -683,6 +695,7 @@ function formatReport(
     findings.undefinedProperties.length > 0 ||
     findings.undefinedContextFunctions.length > 0 ||
     findings.undefinedMethods.length > 0 ||
+    findings.extraArguments.length > 0 ||
     findings.incompatibleArguments.length > 0 ||
     findings.invalidEventHandlers.length > 0 ||
     findings.unsupportedHtmlAttributes.length > 0 ||
@@ -799,6 +812,15 @@ function formatReport(
   if (findings.invalidUseStateMaps.length > 0) {
     lines.push('invalid useState map entries:');
     findings.invalidUseStateMaps.forEach(message => lines.push(`  ${message}`));
+  }
+
+  if (findings.extraArguments.length > 0) {
+    lines.push('extra arguments:');
+    findings.extraArguments.forEach(finding => {
+      lines.push(
+        `  ${finding.methodName}: argument ${finding.argumentIndex} "${finding.argument}" exceeds the ${finding.parameterCount}-parameter signature`
+      );
+    });
   }
 
   if (findings.incompatibleArguments.length > 0) {
@@ -1177,6 +1199,7 @@ export function lintSource(filePath, sourceText, options = {}) {
   const allMethods = collectClassMethods(classNode);
   const findings = {
     duplicateProperties,
+    extraArguments: [],
     incompatibleArguments: [],
     invalidComputedProperties: [],
     invalidDefaultValues: [],
@@ -1269,6 +1292,11 @@ export function lintSource(filePath, sourceText, options = {}) {
   });
 
   findings.duplicateProperties.sort();
+  findings.extraArguments.sort(
+    (a, b) =>
+      a.methodName.localeCompare(b.methodName) ||
+      a.argumentIndex - b.argumentIndex
+  );
   findings.incompatibleArguments.sort(
     (a, b) =>
       a.methodName.localeCompare(b.methodName) ||
