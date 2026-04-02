@@ -918,7 +918,9 @@ function getComponentPropertyMaps(filePath, sourceText, seen = new Set()) {
   seen.add(resolved);
 
   const text = sourceText ?? fs.readFileSync(resolved, 'utf8');
-  const scriptKind = resolved.endsWith('.ts') ? ts.ScriptKind.TS : ts.ScriptKind.JS;
+  const scriptKind = resolved.endsWith('.ts')
+    ? ts.ScriptKind.TS
+    : ts.ScriptKind.JS;
   const sourceFile = ts.createSourceFile(
     resolved,
     text,
@@ -961,49 +963,9 @@ function getComponentPropertyMaps(filePath, sourceText, seen = new Set()) {
   return propertyMaps;
 }
 
-function findWrecClass(sourceFile, checker) {
-  let found;
-
-  function visit(node) {
-    if (found) return;
-    if (ts.isClassDeclaration(node) && node.name) {
-      const heritage = node.heritageClauses?.find(
-        clause => clause.token === ts.SyntaxKind.ExtendsKeyword
-      );
-      const typeNode = heritage?.types[0];
-      if (typeNode) {
-        const baseType = checker.getTypeAtLocation(typeNode.expression);
-        const baseSymbol = baseType.symbol ?? baseType.aliasSymbol;
-        if (baseSymbol?.getName() === 'Wrec') {
-          found = node;
-          return;
-        }
-      }
-    }
-    ts.forEachChild(node, visit);
-  }
-
-  visit(sourceFile);
-  return found;
-}
-
 function formatLocation(location) {
   if (!location) return '';
   return `:${location.line + 1}:${location.character + 1}`;
-}
-
-function getArgPaths() {
-  const [, , filePath, ...rest] = process.argv;
-  if (rest.length > 0) {
-    fail('usage: node scripts/wrec-lint.js [file.js|file.ts]');
-  }
-
-  try {
-    if (filePath) return [validateFilePath(filePath)];
-    return findWrecFiles(process.cwd());
-  } catch (error) {
-    fail(error instanceof Error ? error.message : String(error));
-  }
 }
 
 function getExpressionText(sourceFile, expression) {
@@ -1181,7 +1143,9 @@ function isNumericLikeType(type) {
 
 function isWrecComponentFile(filePath) {
   const sourceText = fs.readFileSync(filePath, 'utf8');
-  const scriptKind = filePath.endsWith('.ts') ? ts.ScriptKind.TS : ts.ScriptKind.JS;
+  const scriptKind = filePath.endsWith('.ts')
+    ? ts.ScriptKind.TS
+    : ts.ScriptKind.JS;
   const sourceFile = ts.createSourceFile(
     filePath,
     sourceText,
@@ -1472,7 +1436,6 @@ function validateDefaultValue(checker, typeExpression, valueExpression) {
 
   const typeKind = typeExpressionKind(typeExpression);
   const valueType = checker.getTypeAtLocation(valueExpression);
-  const typeName = typeKind ?? typeExpression.getText();
   const valueTypeName = checker.typeToString(valueType);
 
   if (typeKind === 'String') {
@@ -1753,7 +1716,9 @@ function validateHtmlNesting(node, findings) {
     findings.invalidHtmlNesting.push(
       `<${tagName}> must be nested inside ${[...allowedParents]
         .map(name => `<${name}>`)
-        .join(' or ')}, but parent is ${parentTagName ? `<${parentTagName}>` : 'the document root'}`
+        .join(
+          ' or '
+        )}, but parent is ${parentTagName ? `<${parentTagName}>` : 'the document root'}`
     );
   }
 
