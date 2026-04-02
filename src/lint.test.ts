@@ -151,7 +151,9 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('invalid event handler references:');
-    expect(output).toContain('  "missingHandler" is not a defined instance method');
+    expect(output).toContain(
+      '  "missingHandler" is not a defined instance method'
+    );
   });
 
   test('reports unsupported html attributes', () => {
@@ -165,6 +167,40 @@ describe('lint.js', () => {
 
     expect(output).toContain('unsupported html attributes:');
     expect(output).toContain('  div attribute "bogus" is not supported');
+  });
+
+  test('reports invalid html nesting', () => {
+    const output = runLint(`
+      import {html, Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static html = html\`<table><tr><div>bad</div></tr></table>\`;
+      }
+    `);
+
+    expect(output).toContain('invalid html nesting:');
+    expect(output).toContain('  <div> is not allowed directly inside <tr>');
+  });
+
+  test('does not report invalid html nesting for valid table structure', () => {
+    const output = runLint(`
+      import {html, Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static html = html\`
+          <table>
+            <thead>
+              <tr><th>name</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Mark</td></tr>
+            </tbody>
+          </table>
+        \`;
+      }
+    `);
+
+    expect(output).not.toContain('invalid html nesting:');
   });
 
   test('reports unsupported event names in value bindings', () => {
@@ -342,7 +378,9 @@ describe('lint.js', () => {
     );
 
     expect(output).toContain('invalid default values:');
-    expect(output).toContain('property "wrongDefaultType" default value has type');
+    expect(output).toContain(
+      'property "wrongDefaultType" default value has type'
+    );
     expect(output).toContain('but declared type is number');
     expect(output).toContain(
       '  property "wrongDefaultValue" default value "large" is not in values'

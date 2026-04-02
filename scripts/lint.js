@@ -20,6 +20,7 @@
 // - invalid `form-assoc` values
 // - invalid `useState` map entries
 // - unsupported HTML attributes in templates
+// - invalid HTML element nesting in templates
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -78,6 +79,24 @@ const HTML_TAG_ATTRIBUTES = new Map([
   ['thead', new Set([])],
   ['tr', new Set([])],
   ['ul', new Set([])]
+]);
+const HTML_ALLOWED_PARENTS = new Map([
+  ['legend', new Set(['fieldset'])],
+  ['li', new Set(['ol', 'ul'])],
+  ['option', new Set(['select'])],
+  ['tbody', new Set(['table'])],
+  ['td', new Set(['tr'])],
+  ['th', new Set(['tr'])],
+  ['thead', new Set(['table'])],
+  ['tr', new Set(['table', 'tbody', 'thead'])]
+]);
+const HTML_ALLOWED_CHILDREN = new Map([
+  ['select', new Set(['option'])],
+  ['table', new Set(['tbody', 'thead', 'tr'])],
+  ['tbody', new Set(['tr'])],
+  ['thead', new Set(['tr'])],
+  ['tr', new Set(['td', 'th'])],
+  ['ul', new Set(['li'])]
 ]);
 const THIS_CALL_RE = /this\.([A-Za-z_$][\w$]*)\s*\(/g;
 const THIS_REF_RE = /this\.([A-Za-z_$][\w$]*)(\.[A-Za-z_$][\w$]*)*/g;
@@ -724,6 +743,7 @@ function formatReport(
     findings.extraArguments.length > 0 ||
     findings.incompatibleArguments.length > 0 ||
     findings.invalidEventHandlers.length > 0 ||
+    findings.invalidHtmlNesting.length > 0 ||
     findings.unsupportedHtmlAttributes.length > 0 ||
     findings.unsupportedEventNames.length > 0 ||
     findings.typeErrors.length > 0;
@@ -838,6 +858,11 @@ function formatReport(
   if (findings.invalidUseStateMaps.length > 0) {
     lines.push('invalid useState map entries:');
     findings.invalidUseStateMaps.forEach(message => lines.push(`  ${message}`));
+  }
+
+  if (findings.invalidHtmlNesting.length > 0) {
+    lines.push('invalid html nesting:');
+    findings.invalidHtmlNesting.forEach(message => lines.push(`  ${message}`));
   }
 
   if (findings.extraArguments.length > 0) {
@@ -1238,6 +1263,7 @@ export function lintSource(filePath, sourceText, options = {}) {
     invalidDefaultValues: [],
     invalidEventHandlers: [],
     invalidFormAssocValues: [],
+    invalidHtmlNesting: [],
     invalidUseStateMaps: [],
     invalidUsedByReferences: [],
     invalidValuesConfigurations: [],
@@ -1336,6 +1362,7 @@ export function lintSource(filePath, sourceText, options = {}) {
   findings.invalidDefaultValues.sort();
   findings.invalidEventHandlers.sort();
   findings.invalidFormAssocValues.sort();
+  findings.invalidHtmlNesting.sort();
   findings.invalidUseStateMaps.sort();
   findings.invalidUsedByReferences.sort();
   findings.invalidValuesConfigurations.sort();
@@ -1707,8 +1734,48 @@ function validateValueBindingEvent(node, attrName, findings) {
   );
 }
 
+function getHtmlTagName(node) {
+  const tagName = node.rawTagName || node.tagName;
+  return typeof tagName === 'string' ? tagName.toLowerCase() : '';
+}
+
+function validateHtmlNesting(node, findings) {
+  const tagName = getHtmlTagName(node);
+  if (!tagName || tagName.includes('-')) return;
+
+  const parentNode = node.parentNode?.nodeType === 1 ? node.parentNode : null;
+  const parentTagName = parentNode ? getHtmlTagName(parentNode) : '';
+  const allowedParents = HTML_ALLOWED_PARENTS.get(tagName);
+  if (
+    allowedParents &&
+    (!parentTagName || !allowedParents.has(parentTagName))
+  ) {
+    findings.invalidHtmlNesting.push(
+      `<${tagName}> must be nested inside ${[...allowedParents]
+        .map(name => `<${name}>`)
+        .join(' or ')}, but parent is ${parentTagName ? `<${parentTagName}>` : 'the document root'}`
+    );
+  }
+
+  const allowedChildren = HTML_ALLOWED_CHILDREN.get(tagName);
+  if (!allowedChildren) return;
+
+  for (const child of node.childNodes ?? []) {
+    if (child.nodeType !== 1) continue;
+    const childTagName = getHtmlTagName(child);
+    if (!childTagName || childTagName.includes('-')) continue;
+    if (allowedChildren.has(childTagName)) continue;
+
+    findings.invalidHtmlNesting.push(
+      `<${childTagName}> is not allowed directly inside <${tagName}>`
+    );
+  }
+}
+
 function walkHtmlNode(node, expressions, findings, componentPropertyMaps) {
   if (node.nodeType === 1) {
+    validateHtmlNesting(node, findings);
+
     for (const [attrName, attrValue] of Object.entries(node.attributes)) {
       if (!attrValue) continue;
       validateFormAssocAttribute(attrName, attrValue, findings);
