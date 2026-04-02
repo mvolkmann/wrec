@@ -348,6 +348,32 @@ function collectWrecClasses(sourceFile) {
   return classes;
 }
 
+function collectSupportedPropertyNames(classNode) {
+  const supportedProps = new Set();
+
+  for (const member of classNode.members) {
+    if (!isStaticMember(member)) continue;
+    if (!ts.isPropertyDeclaration(member)) continue;
+
+    const name = getMemberName(member);
+    if (
+      name !== 'properties' ||
+      !member.initializer ||
+      !ts.isObjectLiteralExpression(member.initializer)
+    ) {
+      continue;
+    }
+
+    for (const property of member.initializer.properties) {
+      if (!ts.isPropertyAssignment(property)) continue;
+      const propName = getMemberName(property);
+      if (propName) supportedProps.add(propName);
+    }
+  }
+
+  return supportedProps;
+}
+
 function findDefinedTagNames(sourceFile) {
   const tagNames = new Map();
 
@@ -867,11 +893,14 @@ function getComponentPropertyMaps(filePath, sourceText, seen = new Set()) {
   seen.add(resolved);
 
   const text = sourceText ?? fs.readFileSync(resolved, 'utf8');
-  const program = createProgram(resolved, text);
-  const sourceFile = program.getSourceFile(resolved);
-  if (!sourceFile) return new Map();
-
-  const checker = program.getTypeChecker();
+  const scriptKind = resolved.endsWith('.ts') ? ts.ScriptKind.TS : ts.ScriptKind.JS;
+  const sourceFile = ts.createSourceFile(
+    resolved,
+    text,
+    ts.ScriptTarget.ESNext,
+    true,
+    scriptKind
+  );
   const tagNames = findDefinedTagNames(sourceFile);
   const propertyMaps = new Map();
 
@@ -880,8 +909,7 @@ function getComponentPropertyMaps(filePath, sourceText, seen = new Set()) {
       ? tagNames.get(classNode.name.text)
       : undefined;
     if (!tagName) continue;
-    const {supportedProps} = extractProperties(sourceFile, checker, classNode);
-    propertyMaps.set(tagName, new Set(supportedProps.keys()));
+    propertyMaps.set(tagName, collectSupportedPropertyNames(classNode));
   }
 
   for (const statement of sourceFile.statements) {
@@ -1128,10 +1156,15 @@ function isNumericLikeType(type) {
 
 function isWrecComponentFile(filePath) {
   const sourceText = fs.readFileSync(filePath, 'utf8');
-  const program = createProgram(filePath, sourceText);
-  const sourceFile = program.getSourceFile(filePath);
-  if (!sourceFile) return false;
-  return Boolean(findWrecClass(sourceFile, program.getTypeChecker()));
+  const scriptKind = filePath.endsWith('.ts') ? ts.ScriptKind.TS : ts.ScriptKind.JS;
+  const sourceFile = ts.createSourceFile(
+    filePath,
+    sourceText,
+    ts.ScriptTarget.ESNext,
+    true,
+    scriptKind
+  );
+  return collectWrecClasses(sourceFile).length > 0;
 }
 
 function isStaticMember(node) {
@@ -1183,7 +1216,7 @@ export function lintSource(filePath, sourceText, options = {}) {
   if (!sourceFile) throw new Error(`unable to parse ${filePath}`);
 
   const checker = baseProgram.getTypeChecker();
-  const classNode = findWrecClass(sourceFile, checker);
+  const classNode = collectWrecClasses(sourceFile)[0];
   if (!classNode) throw new Error('file must define a subclass of Wrec');
   const componentPropertyMaps = getComponentPropertyMaps(filePath, sourceText);
 
@@ -1243,10 +1276,7 @@ export function lintSource(filePath, sourceText, options = {}) {
   if (!augmentedSourceFile) throw new Error(`unable to analyze ${filePath}`);
 
   const augmentedChecker = augmentedProgram.getTypeChecker();
-  const augmentedClassNode = findWrecClass(
-    augmentedSourceFile,
-    augmentedChecker
-  );
+  const augmentedClassNode = collectWrecClasses(augmentedSourceFile)[0];
   if (!augmentedClassNode) {
     throw new Error('unable to find Wrec subclass after augmentation');
   }

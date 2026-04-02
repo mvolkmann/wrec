@@ -32,7 +32,7 @@ class ColorDemo extends Wrec {
         max="48"
         min="12"
         value="this.size"
-        form-assoc="value: size"
+        name="size"
       ></number-slider>
       <p>This is a test.</p>
       <button type="submit">Submit</button>
