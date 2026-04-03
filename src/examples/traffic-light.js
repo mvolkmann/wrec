@@ -70,7 +70,7 @@ class TrafficLight extends Wrec {
 
   next() {
     const s = this.state;
-    this.state = s === 'stop' ? 'yield' : s === 'yield' ? 'go' : 'stop';
+    this.state = s === 'stop' ? 'go' : s === 'yield' ? 'stop' : 'yield';
   }
 }
 
