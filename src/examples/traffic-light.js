@@ -61,7 +61,7 @@ class TrafficLight extends Wrec {
 
   static html = html`
     <style></style>
-    <button aria-label="traffic light" onClick="this.next()" type="button">
+    <button aria-label="traffic light" onClick="next" type="button">
       <div class="this.classes('stop')"></div>
       <div class="this.classes('yield')"></div>
       <div class="this.classes('go')"></div>
