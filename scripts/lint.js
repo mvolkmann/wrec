@@ -21,6 +21,7 @@
 // - invalid `useState` map entries
 // - unsupported HTML attributes in templates
 // - invalid HTML element nesting in templates
+// - duplicate ref attribute values
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -677,7 +678,14 @@ function extractTemplateExpressions(
     }
 
     const root = parse(rendered, {comment: true});
-    walkHtmlNode(root, expressions, findings, componentPropertyMaps, supportedProps);
+    walkHtmlNode(
+      root,
+      expressions,
+      findings,
+      componentPropertyMaps,
+      supportedProps,
+      new Set()
+    );
   }
 
   return expressions;
@@ -802,7 +810,9 @@ function formatReport(
 
   if (findings.invalidRefAttributes.length > 0) {
     lines.push('invalid ref attributes:');
-    findings.invalidRefAttributes.forEach(message => lines.push(`  ${message}`));
+    findings.invalidRefAttributes.forEach(message =>
+      lines.push(`  ${message}`)
+    );
   }
 
   if (findings.invalidValuesConfigurations.length > 0) {
@@ -1708,7 +1718,12 @@ function validateValueBindingEvent(node, attrName, findings) {
   );
 }
 
-function validateRefAttribute(attrValue, supportedProps, findings) {
+function validateRefAttribute(
+  attrValue,
+  supportedProps,
+  findings,
+  seenRefProps
+) {
   if (!attrValue) return;
 
   const propName = attrValue.trim();
@@ -1726,7 +1741,17 @@ function validateRefAttribute(attrValue, supportedProps, findings) {
     findings.invalidRefAttributes.push(
       `ref="${attrValue}" refers to property "${propName}" whose type is not HTMLElement`
     );
+    return;
   }
+
+  if (seenRefProps.has(propName)) {
+    findings.invalidRefAttributes.push(
+      `ref="${attrValue}" is a duplicate reference to the property "${propName}"`
+    );
+    return;
+  }
+
+  seenRefProps.add(propName);
 }
 
 function getHtmlTagName(node) {
@@ -1774,7 +1799,8 @@ function walkHtmlNode(
   expressions,
   findings,
   componentPropertyMaps,
-  supportedProps
+  supportedProps,
+  seenRefProps
 ) {
   if (node.nodeType === 1) {
     validateHtmlNesting(node, findings);
@@ -1792,7 +1818,7 @@ function walkHtmlNode(
       validateHtmlAttribute(node, attrName, findings);
       validateValueBindingEvent(node, attrName, findings);
       if (attrName === 'ref') {
-        validateRefAttribute(attrValue, supportedProps, findings);
+        validateRefAttribute(attrValue, supportedProps, findings, seenRefProps);
       }
       if (
         REFS_TEST_RE.test(attrValue) ||
@@ -1831,7 +1857,8 @@ function walkHtmlNode(
       expressions,
       findings,
       componentPropertyMaps,
-      supportedProps
+      supportedProps,
+      seenRefProps
     );
   }
 }

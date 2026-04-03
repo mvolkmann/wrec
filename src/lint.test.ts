@@ -176,6 +176,28 @@ describe('lint.js', () => {
     expect(output).not.toContain('unsupported html attributes:');
   });
 
+  test('reports duplicate ref attributes that target the same property', () => {
+    const output = runLint(`
+      import {html, Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          inputRef: {type: HTMLElement}
+        };
+
+        static html = html\`
+          <input ref="inputRef" />
+          <textarea ref="inputRef"></textarea>
+        \`;
+      }
+    `);
+
+    expect(output).toContain('invalid ref attributes:');
+    expect(output).toContain(
+      '  ref="inputRef" is a duplicate reference to the property "inputRef"'
+    );
+  });
+
   test('reports unsupported html attributes', () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';

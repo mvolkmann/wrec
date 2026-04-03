@@ -62,6 +62,7 @@ export declare abstract class Wrec extends HTMLElementBase implements ChangeList
     static getPropName(attrName: string): string;
     static get observedAttributes(): string[];
     propertyChangedCallback(_propName: string, _oldValue: unknown, _newValue: unknown): void;
+    ready(): void;
     setAttributeSafe(name: string, value: string): void;
     setFormValue(propName: string, value: string): void;
     static ssr(properties?: StringToAny): string;

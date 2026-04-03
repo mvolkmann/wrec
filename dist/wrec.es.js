@@ -413,7 +413,7 @@ const w = class w extends Ct {
     this[e] = s;
   }
   async connectedCallback() {
-    a(this, i, Yt).call(this), a(this, i, _t).call(this), await a(this, i, Bt).call(this), this.hasAttribute("disabled") && a(this, i, ht).call(this), a(this, i, wt).call(this, this.shadowRoot), a(this, i, pt).call(this, this.shadowRoot), a(this, i, Zt).call(this), a(this, i, Dt).call(this);
+    a(this, i, Yt).call(this), a(this, i, _t).call(this), await a(this, i, Bt).call(this), this.hasAttribute("disabled") && a(this, i, ht).call(this), a(this, i, wt).call(this, this.shadowRoot), a(this, i, pt).call(this, this.shadowRoot), a(this, i, Zt).call(this), a(this, i, Dt).call(this), this.ready();
   }
   disconnectedCallback() {
     for (const { state: t } of h(this, P).values())
@@ -485,6 +485,10 @@ const w = class w extends Ct {
   }
   // Subclasses can override this to add functionality.
   propertyChangedCallback(t, e, s) {
+  }
+  // Subclasses can override this to be notified when
+  // the component DOM has been built and made reactive.
+  ready() {
   }
   // This follows the best practice
   // "Do not override author-set, global attributes."
@@ -739,7 +743,7 @@ J = function(t, e, s = void 0) {
   s ? rt(e, s, l) : a(this, i, gt).call(this, e, l);
 }, Jt = function(t, e) {
   const s = e?.trim() ?? "", o = h(this, m).properties[s];
-  o || a(this, i, O).call(this, t, "ref", s), o.type !== Ct && a(this, i, g).call(this, t, "ref", `refers to property "${s}" whose type is not HTMLElement`), this[s] = t;
+  o || a(this, i, O).call(this, t, "ref", s), o.type !== Ct && a(this, i, g).call(this, t, "ref", `refers to property "${s}" whose type is not HTMLElement`), this[s] && a(this, i, g).call(this, t, "ref", `is a duplicate reference to the property "${s}"`), this[s] = t;
 }, g = function(t, e, s) {
   const o = t instanceof HTMLElement ? t.localName : "CSS rule";
   throw new v(
