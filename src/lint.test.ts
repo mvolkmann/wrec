@@ -156,6 +156,26 @@ describe('lint.js', () => {
     );
   });
 
+  test('reports invalid ref attributes', () => {
+    const output = runLint(`
+      import {html, Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          inputRef: {type: String, value: 'bad'}
+        };
+
+        static html = html\`<input ref="inputRef" />\`;
+      }
+    `);
+
+    expect(output).toContain('invalid ref attributes:');
+    expect(output).toContain(
+      '  ref="inputRef" refers to property "inputRef" whose type is not HTMLElement'
+    );
+    expect(output).not.toContain('unsupported html attributes:');
+  });
+
   test('reports unsupported html attributes', () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';

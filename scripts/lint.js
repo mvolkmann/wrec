@@ -617,7 +617,8 @@ function extractProperties(sourceFile, checker, classNode) {
 function extractTemplateExpressions(
   classNode,
   findings,
-  componentPropertyMaps
+  componentPropertyMaps,
+  supportedProps
 ) {
   const expressions = [];
 
@@ -676,7 +677,7 @@ function extractTemplateExpressions(
     }
 
     const root = parse(rendered, {comment: true});
-    walkHtmlNode(root, expressions, findings, componentPropertyMaps);
+    walkHtmlNode(root, expressions, findings, componentPropertyMaps, supportedProps);
   }
 
   return expressions;
@@ -731,6 +732,7 @@ function formatReport(
     findings.reservedProperties.length > 0 ||
     findings.invalidUsedByReferences.length > 0 ||
     findings.invalidComputedProperties.length > 0 ||
+    findings.invalidRefAttributes.length > 0 ||
     findings.invalidValuesConfigurations.length > 0 ||
     findings.invalidDefaultValues.length > 0 ||
     findings.invalidFormAssocValues.length > 0 ||
@@ -796,6 +798,11 @@ function formatReport(
     findings.invalidComputedProperties.forEach(message =>
       lines.push(`  ${message}`)
     );
+  }
+
+  if (findings.invalidRefAttributes.length > 0) {
+    lines.push('invalid ref attributes:');
+    findings.invalidRefAttributes.forEach(message => lines.push(`  ${message}`));
   }
 
   if (findings.invalidValuesConfigurations.length > 0) {
@@ -1228,6 +1235,7 @@ export function lintSource(filePath, sourceText, options = {}) {
     invalidEventHandlers: [],
     invalidFormAssocValues: [],
     invalidHtmlNesting: [],
+    invalidRefAttributes: [],
     invalidUseStateMaps: [],
     invalidUsedByReferences: [],
     invalidValuesConfigurations: [],
@@ -1244,7 +1252,8 @@ export function lintSource(filePath, sourceText, options = {}) {
   const templateExprs = extractTemplateExpressions(
     classNode,
     findings,
-    componentPropertyMaps
+    componentPropertyMaps,
+    supportedProps
   );
   const allExpressions = [...templateExprs, ...computedExprs];
 
@@ -1327,6 +1336,7 @@ export function lintSource(filePath, sourceText, options = {}) {
   findings.invalidEventHandlers.sort();
   findings.invalidFormAssocValues.sort();
   findings.invalidHtmlNesting.sort();
+  findings.invalidRefAttributes.sort();
   findings.invalidUseStateMaps.sort();
   findings.invalidUsedByReferences.sort();
   findings.invalidValuesConfigurations.sort();
@@ -1670,6 +1680,7 @@ function validateHtmlAttribute(node, attrName, findings) {
   if (attrName.startsWith('aria-') || attrName.startsWith('data-')) return;
   if (attrName.startsWith('on')) return;
   if (attrName === 'form-assoc') return;
+  if (attrName === 'ref') return;
 
   const [baseAttrName] = attrName.split(':');
   if (HTML_GLOBAL_ATTRIBUTES.has(baseAttrName)) return;
@@ -1695,6 +1706,27 @@ function validateValueBindingEvent(node, attrName, findings) {
   findings.unsupportedEventNames.push(
     `${tagName} attribute "${attrName}" refers to an unsupported event name "${eventName}"`
   );
+}
+
+function validateRefAttribute(attrValue, supportedProps, findings) {
+  if (!attrValue) return;
+
+  const propName = attrValue.trim();
+  if (!propName) return;
+
+  const propInfo = supportedProps.get(propName);
+  if (!propInfo) {
+    findings.invalidRefAttributes.push(
+      `ref="${attrValue}" refers to missing property "${propName}"`
+    );
+    return;
+  }
+
+  if (propInfo.typeText !== 'HTMLElement') {
+    findings.invalidRefAttributes.push(
+      `ref="${attrValue}" refers to property "${propName}" whose type is not HTMLElement`
+    );
+  }
 }
 
 function getHtmlTagName(node) {
@@ -1737,7 +1769,13 @@ function validateHtmlNesting(node, findings) {
   }
 }
 
-function walkHtmlNode(node, expressions, findings, componentPropertyMaps) {
+function walkHtmlNode(
+  node,
+  expressions,
+  findings,
+  componentPropertyMaps,
+  supportedProps
+) {
   if (node.nodeType === 1) {
     validateHtmlNesting(node, findings);
 
@@ -1753,6 +1791,9 @@ function walkHtmlNode(node, expressions, findings, componentPropertyMaps) {
       );
       validateHtmlAttribute(node, attrName, findings);
       validateValueBindingEvent(node, attrName, findings);
+      if (attrName === 'ref') {
+        validateRefAttribute(attrValue, supportedProps, findings);
+      }
       if (
         REFS_TEST_RE.test(attrValue) ||
         (attrName.startsWith('on') && IDENTIFIER_RE.test(attrValue))
@@ -1785,7 +1826,13 @@ function walkHtmlNode(node, expressions, findings, componentPropertyMaps) {
   }
 
   for (const child of node.childNodes ?? []) {
-    walkHtmlNode(child, expressions, findings, componentPropertyMaps);
+    walkHtmlNode(
+      child,
+      expressions,
+      findings,
+      componentPropertyMaps,
+      supportedProps
+    );
   }
 }
 

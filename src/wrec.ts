@@ -513,6 +513,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
     this.#makeReactive(this.shadowRoot!);
     this.#usedBy();
     this.#computeProps();
+    this.ready();
   }
 
   #computeProps() {
@@ -1035,6 +1036,10 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
     this.#evaluateExpressions(exprs);
   }
 
+  // Subclasses can override this to be notified when
+  // the component DOM has been built and made reactive.
+  ready() {}
+
   #registerComputedProp(propName: string, config: StringToAny) {
     const ctor = this.#ctor;
     const map = ctor.propToComputedMap!;
@@ -1167,6 +1172,13 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
         element,
         'ref',
         `refers to property "${propName}" whose type is not HTMLElement`
+      );
+    }
+    if (this[propName]) {
+      this.#throw(
+        element,
+        'ref',
+        `is a duplicate reference to the property "${propName}"`
       );
     }
     this[propName] = element;
