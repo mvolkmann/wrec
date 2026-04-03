@@ -841,7 +841,7 @@ Zt = function() {
 }, Yt = function() {
   const t = new Set(Object.keys(h(this, m).properties));
   for (const e of this.getAttributeNames())
-    if (!oe.has(e) && !e.startsWith("on")) {
+    if (!oe.has(e) && !e.startsWith("on") && e !== "ref") {
       if (e === "form-assoc") {
         a(this, i, ut).call(this);
         continue;

@@ -1411,6 +1411,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
     for (const attrName of this.getAttributeNames()) {
       if (globalAttributes.has(attrName)) continue;
       if (attrName.startsWith('on')) continue;
+      if (attrName === 'ref') continue;
       if (attrName === 'form-assoc') {
         this.#verifyFormAssociated();
         continue;
