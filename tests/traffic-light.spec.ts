@@ -32,9 +32,9 @@ test('traffic-light next method advances state', async ({
 }) => {
   const component = page.locator('traffic-light');
   await component.evaluate((el: HTMLElement) => (el as any).next());
-  await expectState(component, 'yield');
-  await component.evaluate((el: HTMLElement) => (el as any).next());
   await expectState(component, 'go');
+  await component.evaluate((el: HTMLElement) => (el as any).next());
+  await expectState(component, 'yield');
   await component.evaluate((el: HTMLElement) => (el as any).next());
   await expectState(component, 'stop');
 });

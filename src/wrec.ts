@@ -668,6 +668,10 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
 
     for (const attrName of element.getAttributeNames()) {
       const text = element.getAttribute(attrName);
+      if (attrName === 'ref') {
+        this.#setElementRef(element, text);
+        continue;
+      }
 
       // If the attribute value is a single property reference,
       // configure two-way data binding.
@@ -1152,6 +1156,20 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
     } else {
       this.#updateElementContent(element, value);
     }
+  }
+
+  #setElementRef(element: HTMLElement, text: string | null) {
+    const propName = text?.trim() ?? '';
+    const config = this.#ctor.properties[propName];
+    if (!config) this.#throwInvalidRef(element, 'ref', propName);
+    if (config.type !== HTMLElementBase) {
+      this.#throw(
+        element,
+        'ref',
+        `refers to property "${propName}" whose type is not HTMLElement`
+      );
+    }
+    this[propName] = element;
   }
 
   // This follows the best practice
