@@ -11,15 +11,13 @@ const state = new WrecState('vault', false, {
   labels: getLabels(colors),
   size: 18
 });
-state.addListener(
-  {
-    changed(statePath: string, componentProperty: string, newValue: unknown) {
-      if (componentProperty === 'colors') {
-        state.labels = getLabels(newValue as string);
-      }
+state.subscribe(
+  ({statePath, newValue}) => {
+    if (statePath === 'colors') {
+      state.labels = getLabels(newValue as string);
     }
   },
-  {colors}
+  {paths: ['colors']}
 );
 
 function getLabels(colors: string): string {

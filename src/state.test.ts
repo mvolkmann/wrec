@@ -21,47 +21,32 @@ const myState = new WrecState('vault', false, {
 
 test('listen top-level', () => {
   const newColor = 'blue';
-  const myListener = {
-    changed(
-      statePath: string,
-      componentProperty: string,
-      newValue: unknown,
-      oldValue: unknown,
-      state: WrecState
-    ) {
+  const unsubscribe = myState.subscribe(
+    ({statePath, newValue, oldValue, state}) => {
       expect(statePath).toBe('color');
-      expect(componentProperty).toBe('color');
       expect(newValue).toBe(newColor);
       expect(oldValue).toBe(oldColor);
       expect(state).toBe(myState);
-    }
-  };
-  myState.addListener(myListener, {color: 'color', 'team.leader.name': 'name'});
+    },
+    ['color', 'team.leader.name']
+  );
   myState.color = newColor;
-  myState.removeListener(myListener);
+  unsubscribe();
 });
 
 test('listen nested', () => {
   const newName = 'Mark';
-  const myListener = {
-    changed(
-      statePath: string,
-      componentProperty: string,
-      newValue: unknown,
-      oldValue: unknown,
-      state: WrecState
-    ) {
+  const unsubscribe = myState.subscribe(
+    ({statePath, newValue, oldValue, state}) => {
       expect(statePath).toBe('team.leader.name');
-      expect(componentProperty).toBe('name');
       expect(newValue).toBe(newName);
       expect(oldValue).toBe(oldName);
       expect(state).toBe(myState);
-    }
-  };
-
-  myState.addListener(myListener, {color: 'color', 'team.leader.name': 'name'});
+    },
+    ['color', 'team.leader.name']
+  );
   myState.team.leader.name = newName;
-  myState.removeListener(myListener);
+  unsubscribe();
 });
 
 test('change callback', () => {
@@ -72,21 +57,17 @@ test('change callback', () => {
     state: WrecState;
   }> = [];
 
-  const callback = (
-    statePath: string,
-    newValue: unknown,
-    oldValue: unknown,
-    state: WrecState
-  ) => {
-    calls.push({statePath, newValue, oldValue, state});
-  };
-
-  myState.addChangeCallback(callback, ['color']);
+  const unsubscribe = myState.subscribe(
+    ({statePath, newValue, oldValue, state}) => {
+      calls.push({statePath, newValue, oldValue, state});
+    },
+    ['color']
+  );
   const oldValue = myState.color;
   const newValue = 'green';
   myState.color = newValue;
   myState.team.leader.name = 'Someone Else';
-  myState.removeChangeCallback(callback);
+  unsubscribe();
 
   expect(calls).toEqual([
     {

@@ -23,7 +23,7 @@
         state.name = 'World';
       });
 
-      state.addChangeCallback((statePath, newValue, oldValue) => {
+      state.subscribe(({statePath, newValue, oldValue}) => {
         const msg = `${statePath} changed from ${oldValue} to ${newValue}`;
         console.log('state-demo.html:', msg);
       });

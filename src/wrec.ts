@@ -1,11 +1,9 @@
-import type {ChangeListener} from './wrec-state';
 import {WrecState} from './wrec-state';
 import {getPathValue, setPathValue} from './paths';
 import sanitize from './sanitize-xss';
 
 // When this package is bundled by Vite,
 // the bundle exports everything exported by this file.
-export type {ChangeListener};
 export {WrecState};
 
 type PropertyConfig = {
@@ -20,6 +18,10 @@ type PropertyConfig = {
 type StringToAny = Record<string, any>;
 type StringToString = Record<string, string>;
 type StateBinding = {state: WrecState; stateProp: string};
+type StateSubscription = {
+  map: StringToString;
+  unsubscribe: () => void;
+};
 
 const globalAttributes = new Set([
   'class',
@@ -272,7 +274,9 @@ async function waitForDefines(
   );
 }
 
-export abstract class Wrec extends HTMLElementBase implements ChangeListener {
+// Wrec extends HTMLElementBase instead of HTMLElement because
+// the latter is not available in servers where SSR is desired.
+export abstract class Wrec extends HTMLElementBase {
   // There is one instance of `attrToPropMap`, `properties`, `propToAttrMap`,
   // `propToComputedMap`, and `propToExprsMap` per Wrec subclass,
   // not one for only the Wrec class.
@@ -367,6 +371,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
   // It must be instance-specific because each component instance
   // can bind the same property to a different WrecState/path.
   #propToStateMap = new Map<string, StateBinding>();
+  #stateSubscriptionMap = new Map<WrecState, StateSubscription>();
 
   // This tells TypeScript that it's okay to access properties by string keys.
   [key: string]: any;
@@ -640,14 +645,16 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
   }
 
   disconnectedCallback() {
-    for (const {state} of this.#propToStateMap.values()) {
-      state.removeListener(this);
+    // Unsubscribe from all state updates.
+    for (const {unsubscribe} of this.#stateSubscriptionMap.values()) {
+      unsubscribe();
     }
 
     this.#exprToRefsMap.clear();
     this.#initialValuesMap.clear();
     this.#propToParentPropMap.clear();
     this.#propToStateMap.clear();
+    this.#stateSubscriptionMap.clear();
   }
 
   dispatch(name: string, detail: any) {
@@ -1417,7 +1424,18 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
         this.#propToStateMap.set(componentProp, {state, stateProp});
       }
     }
-    state.addListener(this, map);
+
+    // If there is an existing subscription to the state,
+    // merge the new map of properties to watch with the existing map.
+    const existingSubscription = this.#stateSubscriptionMap.get(state);
+    const mergedMap = {...existingSubscription?.map, ...map};
+    existingSubscription?.unsubscribe();
+
+    const unsubscribe = state.subscribe(({statePath, newValue}) => {
+      const componentProp = mergedMap[statePath];
+      if (componentProp) this[componentProp] = newValue;
+    }, Object.keys(mergedMap));
+    this.#stateSubscriptionMap.set(state, {map: mergedMap, unsubscribe});
   }
 
   #validateAttributes() {

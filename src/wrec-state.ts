@@ -3,36 +3,19 @@ import {createDeepProxy, proxyToPlainObject} from './proxies.js';
 const inBrowser =
   typeof window !== 'undefined' && typeof window.document !== 'undefined';
 
-// This is used by arbitrary code, not web components,
-// to listen for state changes.
-export type ChangeCallback = (
-  statePath: string,
-  newValue: unknown,
-  oldValue: unknown,
-  state: WrecState
-) => void;
+export type StateChange = {
+  state: WrecState;
+  statePath: string;
+  oldValue: unknown;
+  newValue: unknown;
+};
+
+export type ChangeCallback = (change: StateChange) => void;
 
 type CallbackHolder = {
   callback: ChangeCallback;
   statePaths: string[];
 };
-
-// This is used by web components to listen for state changes.
-export type ChangeListener = {
-  changed: (
-    statePath: string,
-    componentProperty: string,
-    newValue: unknown,
-    oldValue: unknown,
-    state: WrecState
-  ) => void;
-};
-
-type ListenerHolder = {
-  listenerRef: WeakRef<ChangeListener>;
-  propertyMap: Record<string, string>;
-};
-
 type LooseObject = Record<string, unknown>;
 
 class WrecError extends Error {}
@@ -74,9 +57,6 @@ export class WrecState {
 
   #callbackHolders: CallbackHolder[] = [];
   #id = Symbol('objectId');
-  // This cannot be replaced by a WeakMap<ChangeListener, Set<string>>
-  // because there is no way to iterate over the keys of a WeakMap.
-  #listenerHolders: ListenerHolder[] = [];
   #name: string;
   #persist: boolean;
   #proxy: LooseObject;
@@ -111,44 +91,21 @@ export class WrecState {
     WrecState.#stateMap.set(name, this);
   }
 
-  /**
-   * This is used by web components to listen for state changes.
-   * @param listener - object that has a "changed" method
-   * @param map - map from state property paths to component properties
-   */
-  addListener(listener: ChangeListener, map: Record<string, string> = {}) {
-    // Check if the listener was already added.
-    const listenerHolder = this.#listenerHolders.find(
-      listenerHolder => listenerHolder.listenerRef.deref() === listener
-    );
-    if (listenerHolder) {
-      // Add properties to existing propertyMap.
-      const {propertyMap} = listenerHolder;
-      for (const [key, value] of Object.entries(map)) {
-        propertyMap[key] = value;
-      }
-    } else {
-      // Add a new listener.
-      this.#listenerHolders.push({
-        listenerRef: new WeakRef(listener),
-        propertyMap: map
-      });
-    }
-  }
-
-  // This is used by arbitrary code, not web components,
-  // to listen for state changes.
-  // Omit the second parameter to listen for all state changes.
-  // Callbacks are held by strong references, so remove them
-  // by calling removeChangeCallback when no longer needed.
-  addChangeCallback(callback: ChangeCallback, statePaths: string[] = []) {
+  // Omit the `paths` argument to subscribe to all state changes.
+  subscribe(callback: ChangeCallback, paths: string[] = []): () => void {
     if (this.#callbackHolders.some(holder => holder.callback === callback)) {
       throw new WrecError(
-        'WrecState addChangedCallback was passed ' +
-          'a callback that was already added'
+        'WrecState subscribe was passed a callback that was already added'
       );
     }
-    this.#callbackHolders.push({callback, statePaths});
+    const holder = {callback, statePaths: paths};
+    this.#callbackHolders.push(holder);
+
+    return () => {
+      this.#callbackHolders = this.#callbackHolders.filter(
+        existingHolder => existingHolder !== holder
+      );
+    };
   }
 
   addProperty(propName: string, initialValue: unknown) {
@@ -184,61 +141,13 @@ export class WrecState {
       `${JSON.stringify(oldValue)} to ${JSON.stringify(newValue)}`
     );
     */
+    const change = {state: this, statePath, oldValue, newValue};
+
     for (const {callback, statePaths} of this.#callbackHolders) {
       if (statePaths.length === 0 || statePaths.includes(statePath)) {
-        callback(statePath, newValue, oldValue, this);
+        callback(change);
       }
     }
-
-    const staleHolders: Set<ListenerHolder> = new Set();
-
-    for (const holder of this.#listenerHolders) {
-      const listener = holder.listenerRef.deref();
-
-      // If the WeakRef no longer refers to a valid object ...
-      if (!listener) {
-        staleHolders.add(holder);
-        // If the listener is an HTMLElement
-        // that is disconnected from the DOM ...
-      } else if (
-        inBrowser &&
-        listener instanceof HTMLElement &&
-        !listener.isConnected
-      ) {
-        staleHolders.add(holder);
-      } else {
-        const {propertyMap} = holder;
-        const keys = Object.keys(propertyMap);
-        if (keys.length === 0 || keys.includes(statePath)) {
-          listener.changed(
-            statePath,
-            propertyMap[statePath],
-            newValue,
-            oldValue,
-            this
-          );
-        }
-      }
-    }
-
-    // WARNING: If the element is connected again later,
-    // the WrecState useState method must be called again
-    // to re-add the element as a listener.
-    this.#listenerHolders = this.#listenerHolders.filter(
-      holder => !staleHolders.has(holder)
-    );
-  }
-
-  removeChangeCallback(callback: ChangeCallback) {
-    this.#callbackHolders = this.#callbackHolders.filter(holder => {
-      return holder.callback !== callback;
-    });
-  }
-
-  removeListener(listener: ChangeListener) {
-    this.#listenerHolders = this.#listenerHolders.filter(holder => {
-      return holder.listenerRef.deref() !== listener;
-    });
   }
 }
 
