@@ -623,7 +623,7 @@ var U = class e extends p {
 		!this.#a || !N(t) || (this.#a.set(e, t), this.#s?.setFormValue(this.#a));
 	}
 	static ssr(e = {}) {
-		throw new h("Import Wrec from \"wrec/ssr\" to use the ssr method.");
+		throw new h("SSR is not available in the browser build.");
 	}
 	#j(e, t, n) {
 		let r = e instanceof HTMLElement ? e.localName : "CSS rule";

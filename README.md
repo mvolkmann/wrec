@@ -152,8 +152,13 @@ to one of those strings.
 ## SSR Support
 
 Server-side rendering (SSR) is supported.
-This requires importing from "wrec/ssr" instead of "wrec".
-"wrec/ssr" should only be imported by server code.
+Components can always import from "wrec".
+When that import is resolved in a browser build,
+it gets the normal client bundle.
+When it is resolved in Node for SSR, it gets the SSR-enabled bundle.
+This allows the same component source file to work in both environments.
+
+"wrec/ssr" can still be imported explicitly by server code if desired.
 That bundle is much larger because it bundles the node-html-parser package.
 However, the size increase is not likely an issue
 because it is used on the server-side rather than downloaded to web browsers.

@@ -1200,7 +1200,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
 
   static ssr(properties: StringToAny = {}): string {
     void properties;
-    throw new WrecError('Import Wrec from "wrec/ssr" to use the ssr method.');
+    throw new WrecError('SSR is not available in the browser build.');
   }
 
   #throw(

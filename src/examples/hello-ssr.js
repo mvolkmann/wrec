@@ -1,4 +1,4 @@
-import {css, html, Wrec} from '../wrec-ssr';
+import {css, html, Wrec} from 'wrec';
 
 class HelloWorld extends Wrec {
   static properties = {
