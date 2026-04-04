@@ -3,6 +3,21 @@ import {createDeepProxy, proxyToPlainObject} from './proxies.js';
 const inBrowser =
   typeof window !== 'undefined' && typeof window.document !== 'undefined';
 
+// This is used by arbitrary code, not web components,
+// to listen for state changes.
+export type ChangeCallback = (
+  statePath: string,
+  newValue: unknown,
+  oldValue: unknown,
+  state: WrecState
+) => void;
+
+type CallbackHolder = {
+  callback: ChangeCallback;
+  statePaths: string[];
+};
+
+// This is used by web components to listen for state changes.
 export type ChangeListener = {
   changed: (
     statePath: string,
@@ -57,6 +72,7 @@ export class WrecState {
     return this.#stateMap.get(name);
   }
 
+  #callbackHolders: CallbackHolder[] = [];
   #id = Symbol('objectId');
   // This cannot be replaced by a WeakMap<ChangeListener, Set<string>>
   // because there is no way to iterate over the keys of a WeakMap.
@@ -96,6 +112,7 @@ export class WrecState {
   }
 
   /**
+   * This is used by web components to listen for state changes.
    * @param listener - object that has a "changed" method
    * @param map - map from state property paths to component properties
    */
@@ -117,6 +134,21 @@ export class WrecState {
         propertyMap: map
       });
     }
+  }
+
+  // This is used by arbitrary code, not web components,
+  // to listen for state changes.
+  // Omit the second parameter to listen for all state changes.
+  // Callbacks are held by strong references, so remove them
+  // by calling removeChangeCallback when no longer needed.
+  addChangeCallback(callback: ChangeCallback, statePaths: string[] = []) {
+    if (this.#callbackHolders.some(holder => holder.callback === callback)) {
+      throw new WrecError(
+        'WrecState addChangedCallback was passed ' +
+          'a callback that was already added'
+      );
+    }
+    this.#callbackHolders.push({callback, statePaths});
   }
 
   addProperty(propName: string, initialValue: unknown) {
@@ -152,6 +184,12 @@ export class WrecState {
       `${JSON.stringify(oldValue)} to ${JSON.stringify(newValue)}`
     );
     */
+    for (const {callback, statePaths} of this.#callbackHolders) {
+      if (statePaths.length === 0 || statePaths.includes(statePath)) {
+        callback(statePath, newValue, oldValue, this);
+      }
+    }
+
     const staleHolders: Set<ListenerHolder> = new Set();
 
     for (const holder of this.#listenerHolders) {
@@ -189,6 +227,12 @@ export class WrecState {
     this.#listenerHolders = this.#listenerHolders.filter(
       holder => !staleHolders.has(holder)
     );
+  }
+
+  removeChangeCallback(callback: ChangeCallback) {
+    this.#callbackHolders = this.#callbackHolders.filter(holder => {
+      return holder.callback !== callback;
+    });
   }
 
   removeListener(listener: ChangeListener) {

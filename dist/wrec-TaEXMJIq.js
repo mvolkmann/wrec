@@ -28,7 +28,7 @@ var r = typeof window < "u" && window.document !== void 0, i = class extends Err
 	static #e = /* @__PURE__ */ new Map();
 	static {
 		r && window.addEventListener("beforeunload", () => {
-			for (let [e, t] of this.#e.entries()) if (t.#i) {
+			for (let [e, t] of this.#e.entries()) if (t.#a) {
 				let r = n(t);
 				sessionStorage.setItem("wrec-state-" + e, JSON.stringify(r));
 			}
@@ -37,15 +37,16 @@ var r = typeof window < "u" && window.document !== void 0, i = class extends Err
 	static get(e) {
 		return this.#e.get(e);
 	}
-	#t = Symbol("objectId");
-	#n = [];
-	#r;
+	#t = [];
+	#n = Symbol("objectId");
+	#r = [];
 	#i;
 	#a;
+	#o;
 	constructor(n, a, o) {
 		if (!n) throw new i("name cannot be empty");
 		if (e.#e.has(n)) throw new i(`WrecState with name "${n}" already exists`);
-		if (this.#r = n, this.#i = a, this.#a = t({}, this.#o.bind(this)), a && r) {
+		if (this.#i = n, this.#a = a, this.#o = t({}, this.#s.bind(this)), a && r) {
 			let e = sessionStorage.getItem("wrec-state-" + n), t = e ? JSON.parse(e) : void 0;
 			t && (o = t);
 		}
@@ -53,36 +54,44 @@ var r = typeof window < "u" && window.document !== void 0, i = class extends Err
 		e.#e.set(n, this);
 	}
 	addListener(e, t = {}) {
-		let n = this.#n.find((t) => t.listenerRef.deref() === e);
+		let n = this.#r.find((t) => t.listenerRef.deref() === e);
 		if (n) {
 			let { propertyMap: e } = n;
 			for (let [n, r] of Object.entries(t)) e[n] = r;
-		} else this.#n.push({
+		} else this.#r.push({
 			listenerRef: new WeakRef(e),
 			propertyMap: t
+		});
+	}
+	addChangeCallback(e, t = []) {
+		if (this.#t.some((t) => t.callback === e)) throw new i("WrecState addChangedCallback was passed a callback that was already added");
+		this.#t.push({
+			callback: e,
+			statePaths: t
 		});
 	}
 	addProperty(e, t) {
 		Object.defineProperty(this, e, {
 			enumerable: !0,
 			get() {
-				return this.#a[e];
+				return this.#o[e];
 			},
 			set(t) {
-				this.#a[e] = t;
+				this.#o[e] = t;
 			}
-		}), this.#a[e] = t;
+		}), this.#o[e] = t;
 	}
 	get id() {
-		return this.#t;
+		return this.#n;
 	}
 	log() {
-		console.log("WrecState:", this.#r);
-		for (let [e, t] of Object.entries(this.#a)) console.log(`  ${e} = ${JSON.stringify(t)}`);
+		console.log("WrecState:", this.#i);
+		for (let [e, t] of Object.entries(this.#o)) console.log(`  ${e} = ${JSON.stringify(t)}`);
 	}
-	#o(e, t, n) {
+	#s(e, t, n) {
+		for (let { callback: r, statePaths: i } of this.#t) (i.length === 0 || i.includes(e)) && r(e, n, t, this);
 		let i = /* @__PURE__ */ new Set();
-		for (let a of this.#n) {
+		for (let a of this.#r) {
 			let o = a.listenerRef.deref();
 			if (!o) i.add(a);
 			else if (r && o instanceof HTMLElement && !o.isConnected) i.add(a);
@@ -91,10 +100,13 @@ var r = typeof window < "u" && window.document !== void 0, i = class extends Err
 				(i.length === 0 || i.includes(e)) && o.changed(e, r[e], n, t, this);
 			}
 		}
-		this.#n = this.#n.filter((e) => !i.has(e));
+		this.#r = this.#r.filter((e) => !i.has(e));
+	}
+	removeChangeCallback(e) {
+		this.#t = this.#t.filter((t) => t.callback !== e);
 	}
 	removeListener(e) {
-		this.#n = this.#n.filter((t) => t.listenerRef.deref() !== e);
+		this.#r = this.#r.filter((t) => t.listenerRef.deref() !== e);
 	}
 };
 r && process.env.NODE_ENV === "development" && (window.WrecState = a);

@@ -1,13 +1,23 @@
 import {expect, test} from 'vitest';
 import {WrecState} from './wrec-state.js';
 
+type TestState = WrecState & {
+  color: string;
+  team: {
+    leader: {
+      name: string;
+    };
+  };
+  notUsed: string;
+};
+
 const oldColor = 'red';
 const oldName = 'World';
 const myState = new WrecState('vault', false, {
   color: oldColor,
   team: {leader: {name: oldName}},
   notUsed: 'not used'
-});
+}) as TestState;
 
 test('listen top-level', () => {
   const newColor = 'blue';
@@ -52,4 +62,38 @@ test('listen nested', () => {
   myState.addListener(myListener, {color: 'color', 'team.leader.name': 'name'});
   myState.team.leader.name = newName;
   myState.removeListener(myListener);
+});
+
+test('change callback', () => {
+  const calls: Array<{
+    statePath: string;
+    newValue: unknown;
+    oldValue: unknown;
+    state: WrecState;
+  }> = [];
+
+  const callback = (
+    statePath: string,
+    newValue: unknown,
+    oldValue: unknown,
+    state: WrecState
+  ) => {
+    calls.push({statePath, newValue, oldValue, state});
+  };
+
+  myState.addChangeCallback(callback, ['color']);
+  const oldValue = myState.color;
+  const newValue = 'green';
+  myState.color = newValue;
+  myState.team.leader.name = 'Someone Else';
+  myState.removeChangeCallback(callback);
+
+  expect(calls).toEqual([
+    {
+      statePath: 'color',
+      newValue,
+      oldValue,
+      state: myState
+    }
+  ]);
 });

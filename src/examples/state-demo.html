@@ -22,6 +22,11 @@
       button.addEventListener('click', () => {
         state.name = 'World';
       });
+
+      state.addChangeCallback((statePath, newValue, oldValue) => {
+        const msg = `${statePath} changed from ${oldValue} to ${newValue}`;
+        console.log('state-demo.html:', msg);
+      });
     </script>
   </head>
   <body>
