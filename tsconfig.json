@@ -13,6 +13,7 @@
     "sourceMap": true,
     "strict": true,
     "target": "ESNext",
+    "types": ["node"],
     "useDefineForClassFields": false
   },
   "files": ["src/examples/table-wired.ts", "src/wrec.ts"],

@@ -36,9 +36,10 @@ const customElementsApi: CustomElementRegistry =
   globalThis.customElements ??
   ({
     get: (_name: string) => undefined,
-    getName: () => '',
+    getName: (_constructor: CustomElementConstructor) => null,
     define: () => {},
-    upgrade: () => {},
+    initialize: (_root: Node) => {},
+    upgrade: (_root: Node) => {},
     whenDefined: () =>
       Promise.reject(
         new Error('customElements is not available in this environment')
@@ -660,7 +661,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
   }
 
   displayIfSet(value: any, display = 'block') {
-    return `display: ${value ? display : 'none'}`;
+    return `display: ${value == null ? 'none' : display}`;
   }
 
   #evaluateAttributes(element: HTMLElement) {
@@ -1182,6 +1183,7 @@ export abstract class Wrec extends HTMLElementBase implements ChangeListener {
       );
     }
     this[propName] = element;
+    element.removeAttribute('ref');
   }
 
   // This follows the best practice
