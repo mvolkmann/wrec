@@ -17,10 +17,17 @@ type PropertyConfig = {
 };
 type StringToAny = Record<string, any>;
 type StringToString = Record<string, string>;
+type StringToStrings = Map<string, string[]>;
+const newStringToStrings = (): StringToStrings => new Map();
 type StateBinding = {state: WrecState; stateProp: string};
 type StateSubscription = {
   map: StringToString;
   unsubscribe: () => void;
+};
+type ComputedGraph = {
+  computedToDependenciesMap: StringToStrings;
+  computedToDependentsMap: StringToStrings;
+  computedToExprMap: StringToString;
 };
 
 const globalAttributes = new Set([
@@ -291,6 +298,11 @@ export abstract class Wrec extends HTMLElementBase {
   // that corresponds to a camelCase property name.
   private static propToAttrMap = new Map<string, string>();
 
+  // This caches the dependency graph between computed properties
+  // for a component class. It is invalidated if computed properties
+  // are registered after the graph has been built.
+  private static computedGraph: ComputedGraph | null;
+
   // This can be overridden in each Wrec subclass.
   // It lists all the module-level functions
   // that be used in JavaScript expressions.
@@ -324,11 +336,16 @@ export abstract class Wrec extends HTMLElementBase {
   // This is a map from method names to expressions
   // that include calls to them.
   // It is the same for all instances of a component.
-  private static methodToExprsMap: Map<string, string[]> | undefined;
+  private static methodToExprsMap: StringToStrings | undefined;
 
   // This is a map from properties to expressions that refer to them.
   // It is the same for all instances of a component.
-  private static propToExprsMap: Map<string, string[]>;
+  private static propToExprsMap: StringToStrings;
+
+  // This holds the names of computed properties that
+  // have already been registered for a component class,
+  // preventing duplicate registrations as additional instances are created.
+  private static registeredComputedProps: Set<string>;
 
   private static template: HTMLTemplateElement | null = null;
 
@@ -393,11 +410,15 @@ export abstract class Wrec extends HTMLElementBase {
     // and `propToExprsMap` for each Wrec subclass.
     const ctor = this.#ctor;
     if (!this.#hasOwn('attrToPropMap')) ctor.attrToPropMap = new Map();
+    if (!this.#hasOwn('computedGraph')) ctor.computedGraph = null;
     //if (!this.#hasOwn('methodToExprsMap')) ctor.methodToExprsMap = null;
     if (!this.#hasOwn('properties')) ctor.properties = {};
     if (!this.#hasOwn('propToAttrMap')) ctor.propToAttrMap = new Map();
     if (!this.#hasOwn('propToComputedMap')) ctor.propToComputedMap = new Map();
     if (!this.#hasOwn('propToExprsMap')) ctor.propToExprsMap = new Map();
+    if (!this.#hasOwn('registeredComputedProps')) {
+      ctor.registeredComputedProps = new Set();
+    }
   }
 
   attributeChangedCallback(
@@ -894,13 +915,57 @@ export abstract class Wrec extends HTMLElementBase {
     return attrName;
   }
 
+  #getComputedGraph(): ComputedGraph {
+    const ctor = this.#ctor;
+    let graph = ctor.computedGraph;
+    if (graph) return graph;
+
+    const computedToDependenciesMap = newStringToStrings();
+    const computedToDependentsMap = newStringToStrings();
+    const computedToExprMap: StringToString = {};
+
+    for (const propName of ctor.registeredComputedProps) {
+      computedToDependenciesMap.set(propName, []);
+    }
+
+    for (const [referencedProp, computes] of ctor.propToComputedMap!) {
+      for (const [computedName, expr] of computes) {
+        computedToExprMap[computedName] = expr;
+        if (!ctor.registeredComputedProps.has(computedName)) continue;
+        if (!computedToDependenciesMap.has(computedName)) {
+          computedToDependenciesMap.set(computedName, []);
+        }
+        if (!ctor.registeredComputedProps.has(referencedProp)) continue;
+        computedToDependenciesMap.get(computedName)!.push(referencedProp);
+        let dependents = computedToDependentsMap.get(referencedProp);
+        if (!dependents) {
+          dependents = [];
+          computedToDependentsMap.set(referencedProp, dependents);
+        }
+        dependents.push(computedName);
+      }
+    }
+
+    graph = {
+      computedToDependenciesMap,
+      computedToDependentsMap,
+      computedToExprMap
+    };
+    ctor.computedGraph = graph;
+    return graph;
+  }
+
   // Finds all computed properties affected by the given properties
   // and returns [computed property name, computed expression] tuples
   // ordered so dependencies are updated before dependents.
   #getComputedUpdates(propNames: Iterable<string>): string[][] {
+    const {
+      computedToDependenciesMap,
+      computedToDependentsMap,
+      computedToExprMap
+    } = this.#getComputedGraph();
     const map = this.#ctor.propToComputedMap!;
     const affectedSet = new Set<string>();
-    const computedToExprMap: StringToString = {};
     const namesToVisit = [...new Set(propNames)];
 
     // Find all computed properties affected by these property changes,
@@ -918,38 +983,29 @@ export abstract class Wrec extends HTMLElementBase {
       }
     }
 
-    const dependencyCountMap = new Map<string, number>();
-    const computedToDependentsMap = new Map<string, string[]>();
-    for (const computedName of affectedSet) {
-      dependencyCountMap.set(computedName, 0);
-    }
-
-    for (const referencedProp of affectedSet) {
-      const computes = map.get(referencedProp) || [];
-      for (const [computedName] of computes) {
-        if (!affectedSet.has(computedName)) continue;
-        dependencyCountMap.set(
-          computedName,
-          dependencyCountMap.get(computedName)! + 1
-        );
-        let dependents = computedToDependentsMap.get(referencedProp);
-        if (!dependents) {
-          dependents = [];
-          computedToDependentsMap.set(referencedProp, dependents);
-        }
-        dependents.push(computedName);
-      }
-    }
-
     const queue = [...affectedSet].filter(
-      computedName => dependencyCountMap.get(computedName) === 0
+      computedName =>
+        (computedToDependenciesMap.get(computedName) || []).filter(
+          dependencyName => affectedSet.has(dependencyName)
+        ).length === 0
     );
     const orderedNames: string[] = [];
+    const dependencyCountMap = new Map<string, number>();
+    for (const computedName of affectedSet) {
+      const dependencies = computedToDependenciesMap.get(computedName) || [];
+      let dependencyCount = 0;
+      for (const dependencyName of dependencies) {
+        if (affectedSet.has(dependencyName)) dependencyCount++;
+      }
+      dependencyCountMap.set(computedName, dependencyCount);
+    }
+
     for (let index = 0; index < queue.length; index++) {
       const computedName = queue[index];
       orderedNames.push(computedName);
       const dependents = computedToDependentsMap.get(computedName) || [];
       for (const dependentName of dependents) {
+        if (!affectedSet.has(dependentName)) continue;
         const dependencyCount = dependencyCountMap.get(dependentName)! - 1;
         dependencyCountMap.set(dependentName, dependencyCount);
         if (dependencyCount === 0) queue.push(dependentName);
@@ -1096,6 +1152,11 @@ export abstract class Wrec extends HTMLElementBase {
 
   #registerComputedProp(propName: string, config: StringToAny) {
     const ctor = this.#ctor;
+    if (ctor.registeredComputedProps.has(propName)) return;
+
+    ctor.registeredComputedProps.add(propName);
+    ctor.computedGraph = null;
+
     const map = ctor.propToComputedMap!;
 
     function register(referencedProp: string, expr: string) {
@@ -1393,7 +1454,7 @@ export abstract class Wrec extends HTMLElementBase {
     const ctor = this.#ctor;
 
     function buildMap(this: Wrec) {
-      const map = new Map<string, string[]>();
+      const map = newStringToStrings();
       ctor.methodToExprsMap = map;
       const allExprs = Array.from(this.#exprToRefsMap.keys());
       for (const expr of allExprs) {

@@ -40,6 +40,7 @@ export declare abstract class Wrec extends HTMLElementBase {
     #private;
     private static attrToPropMap;
     private static propToAttrMap;
+    private static computedGraph;
     static context: {};
     static css: string;
     private static elementName;
@@ -49,6 +50,7 @@ export declare abstract class Wrec extends HTMLElementBase {
     private static propToComputedMap;
     private static methodToExprsMap;
     private static propToExprsMap;
+    private static registeredComputedProps;
     private static template;
     [key: string]: any;
     static define(elementName: string): void;
