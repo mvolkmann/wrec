@@ -9,6 +9,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "outDir": "dist",
+    "rootDir": "src",
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
@@ -16,7 +17,6 @@
     "types": ["node"],
     "useDefineForClassFields": false
   },
-  "files": ["src/examples/table-wired.ts", "src/wrec.ts"],
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.test.ts"]
 }
