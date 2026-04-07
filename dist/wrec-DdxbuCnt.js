@@ -286,13 +286,13 @@ var U = class e extends p {
 	constructor() {
 		super(), this.attachShadow({ mode: "open" });
 		let e = this.#n;
-		this.#x("attrToPropMap") || (e.attrToPropMap = /* @__PURE__ */ new Map()), this.#x("properties") || (e.properties = {}), this.#x("propToAttrMap") || (e.propToAttrMap = /* @__PURE__ */ new Map()), this.#x("propToComputedMap") || (e.propToComputedMap = /* @__PURE__ */ new Map()), this.#x("propToExprsMap") || (e.propToExprsMap = /* @__PURE__ */ new Map());
+		this.#S("attrToPropMap") || (e.attrToPropMap = /* @__PURE__ */ new Map()), this.#S("properties") || (e.properties = {}), this.#S("propToAttrMap") || (e.propToAttrMap = /* @__PURE__ */ new Map()), this.#S("propToComputedMap") || (e.propToComputedMap = /* @__PURE__ */ new Map()), this.#S("propToExprsMap") || (e.propToExprsMap = /* @__PURE__ */ new Map());
 	}
 	attributeChangedCallback(t, n, r) {
 		t === "disabled" && this.#h();
 		let i = e.getPropName(t);
-		if (!this.#C(i) && this.#S(i)) {
-			let e = this.#F(i, r);
+		if (!this.#w(i) && this.#C(i)) {
+			let e = this.#I(i, r);
 			this[i] = e;
 			let t = this.#i[i];
 			t && this.setFormValue(t, String(e));
@@ -306,24 +306,11 @@ var U = class e extends p {
 			let e = t.get(r) ?? [];
 			for (let t of e) n.add(t);
 		}
-		let r = this.#n.propToComputedMap, i = /* @__PURE__ */ new Set(), a = {};
-		for (let t of Object.keys(e)) {
-			let e = r.get(t) || [];
-			for (let [t, n] of e) i.add(t), a[t] = n;
-		}
-		for (let e of i) {
-			let r = a[e];
-			this.#k(e, this.#v(r));
-			let i = t.get(e) ?? [];
-			for (let e of i) n.add(e);
-		}
-		for (;;) {
-			let e = !1;
-			for (let t of i) {
-				let n = a[t], r = this.#v(n), i = this[t];
-				JSON.stringify(r) !== JSON.stringify(i) && (this.#k(t, r), e = !0);
-			}
-			if (!e) break;
+		let r = this.#b(Object.keys(e));
+		for (let [e, i] of r) {
+			this.#A(e, this.#v(i));
+			let r = t.get(e) ?? [];
+			for (let e of r) n.add(e);
 		}
 		this.#_([...n]), this.#e = !1;
 	}
@@ -342,11 +329,11 @@ var U = class e extends p {
 		this[t] = n;
 	}
 	async connectedCallback() {
-		this.#V(), this.#p(), await this.#d(), this.hasAttribute("disabled") && this.#h(), this.#G(this.shadowRoot), this.#w(this.shadowRoot), this.#B(), this.#f(), this.ready();
+		this.#H(), this.#p(), await this.#d(), this.hasAttribute("disabled") && this.#h(), this.#K(this.shadowRoot), this.#T(this.shadowRoot), this.#V(), this.#f(), this.ready();
 	}
 	#f() {
 		let { properties: e } = this.#n;
-		for (let [t, { computed: n }] of Object.entries(e)) n && this.#k(t, this.#v(n));
+		for (let [t, { computed: n }] of Object.entries(e)) n && this.#A(t, this.#v(n));
 	}
 	#p() {
 		let { observedAttributes: e, properties: t } = this.#n;
@@ -356,22 +343,22 @@ var U = class e extends p {
 	#m(t, n, r) {
 		if (t === "class" || t === "style") throw new h(`"${t}" is a reserved property`);
 		let i = e.getAttrName(t), a = this.hasAttribute(i);
-		n.required && !a && this.#M(this, i, "is a required attribute");
+		n.required && !a && this.#N(this, i, "is a required attribute");
 		let o = n.value;
 		this.hasOwnProperty(t) && (o = this[t], delete this[t]);
-		let { type: c } = n, l = c === Boolean ? o || a : r.includes(i) && a ? this.#P(t, i) : o ?? O(n), u = "#" + t;
-		this[u] = l, n.computed && this.#O(t, n), Object.defineProperty(this, t, {
+		let { type: c } = n, l = c === Boolean ? o || a : r.includes(i) && a ? this.#F(t, i) : o ?? O(n), u = "#" + t;
+		this[u] = l, n.computed && this.#k(t, n), Object.defineProperty(this, t, {
 			enumerable: !0,
 			get() {
 				return this[u];
 			},
 			set(e) {
-				n.computed && !this.#t.has(t) && this.#M(null, t, "is a computed property and cannot be set directly"), c === Number && typeof e == "string" && (e = R(e));
+				n.computed && !this.#t.has(t) && this.#N(null, t, "is a computed property and cannot be set directly"), c === Number && typeof e == "string" && (e = R(e));
 				let r = this[u];
 				if (e === r) return;
-				this.#W(t, c, e), this[u] = e;
+				this.#G(t, c, e), this[u] = e;
 				let a = this.#l.get(t);
-				a && s(a.state, a.stateProp, e), this.#I(t, c, e, i), this.#e || (this.#L(t), this.#D(t)), this.#z(t, e);
+				a && s(a.state, a.stateProp, e), this.#L(t, c, e, i), this.#e || (this.#R(t), this.#O(t)), this.#B(t, e);
 				let o = this.#i[t];
 				o && this.setFormValue(o, String(e)), this.propertyChangedCallback(t, r, e), n.dispatch && this.dispatch("change", {
 					tagName: this.localName,
@@ -405,17 +392,17 @@ var U = class e extends p {
 		for (let r of t.getAttributeNames()) {
 			let i = t.getAttribute(r);
 			if (r === "ref") {
-				this.#j(t, i);
+				this.#M(t, i);
 				continue;
 			}
-			let a = this.#E(t, i);
+			let a = this.#D(t, i);
 			if (a) {
 				let i = this[a];
-				i === void 0 && this.#N(t, r, a);
-				let [o, s] = r.split(":"), c = e.getPropName(o), l = this.#C(a);
-				n && t.#C(c) || (t[c] = i), o === "value" && (s ? (t["on" + s] === void 0 && this.#M(t, r, "refers to an unsupported event name"), t.setAttribute(o, this[a])) : s = "change"), n && !l && t.#c.set(e.getPropName(o), a);
+				i === void 0 && this.#P(t, r, a);
+				let [o, s] = r.split(":"), c = e.getPropName(o), l = this.#w(a);
+				n && t.#w(c) || (t[c] = i), o === "value" && (s ? (t["on" + s] === void 0 && this.#N(t, r, "refers to an unsupported event name"), t.setAttribute(o, this[a])) : s = "change"), n && !l && t.#c.set(e.getPropName(o), a);
 			}
-			this.#A(i, t, r);
+			this.#j(i, t, r);
 		}
 	}
 	#_(e) {
@@ -427,7 +414,7 @@ var U = class e extends p {
 					r.add(t);
 					continue;
 				}
-				if (t instanceof HTMLElement) this.#R(t, e);
+				if (t instanceof HTMLElement) this.#z(t, e);
 				else if (!(t instanceof CSSStyleRule)) {
 					let { element: n, attrName: r } = t;
 					n instanceof CSSStyleRule ? n.style.setProperty(r, e) : B(n, r, e);
@@ -451,13 +438,13 @@ var U = class e extends p {
 				let t = Array.from(e.style);
 				for (let n of t) if (n.startsWith("--")) {
 					let t = e.style.getPropertyValue(n);
-					this.#A(t, e, n);
+					this.#j(t, e, n);
 				}
 			}
 		} else {
 			let t = "";
 			if (P(e)) {
-				this.#A(e.textContent, e);
+				this.#j(e.textContent, e);
 				let n = e.textContent?.match(b);
 				n && (t = n[1]);
 			} else {
@@ -465,8 +452,8 @@ var U = class e extends p {
 				n && (t = n.textContent?.trim() ?? "");
 			}
 			if (t) {
-				let n = this.#E(e, t);
-				n && P(e) ? e.textContent = this[n] : this.#A(t, e);
+				let n = this.#D(e, t);
+				n && P(e) ? e.textContent = this[n] : this.#j(t, e);
 			}
 		}
 	}
@@ -474,7 +461,7 @@ var U = class e extends p {
 		let e = this.getAttribute("form-assoc");
 		if (!e) {
 			let t = this.getAttribute("name");
-			if (t) if (this.#S("value")) e = `value:${t}`;
+			if (t) if (this.#C("value")) e = `value:${t}`;
 			else return;
 			else return;
 		}
@@ -502,59 +489,89 @@ var U = class e extends p {
 		let t = this.propToAttrMap.get(e);
 		return t || (t = e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), this.propToAttrMap.set(e, t)), t;
 	}
+	#b(e) {
+		let t = this.#n.propToComputedMap, n = /* @__PURE__ */ new Set(), r = {}, i = [...new Set(e)];
+		for (let e = 0; e < i.length; e++) {
+			let a = i[e], o = t.get(a) || [];
+			for (let [e, t] of o) r[e] = t, n.has(e) || (n.add(e), i.push(e));
+		}
+		let a = /* @__PURE__ */ new Map(), o = /* @__PURE__ */ new Map();
+		for (let e of n) a.set(e, 0);
+		for (let e of n) {
+			let r = t.get(e) || [];
+			for (let [t] of r) {
+				if (!n.has(t)) continue;
+				a.set(t, a.get(t) + 1);
+				let r = o.get(e);
+				r || (r = [], o.set(e, r)), r.push(t);
+			}
+		}
+		let s = [...n].filter((e) => a.get(e) === 0), c = [];
+		for (let e = 0; e < s.length; e++) {
+			let t = s[e];
+			c.push(t);
+			let n = o.get(t) || [];
+			for (let e of n) {
+				let t = a.get(e) - 1;
+				a.set(e, t), t === 0 && s.push(e);
+			}
+		}
+		if (c.length !== n.size) throw new h(`computed properties form a cycle: ${[...n].filter((e) => a.get(e) > 0).sort().join(", ")}`);
+		return c.map((e) => [e, r[e]]);
+	}
 	static getPropName(e) {
 		let t = this.attrToPropMap.get(e);
 		return t || (t = e.replace(/-([a-z])/g, (e, t) => t.toUpperCase()), this.attrToPropMap.set(e, t)), t;
 	}
-	#b(e, t, n) {
+	#x(e, t, n) {
 		if (n.length !== 1) return;
 		let [r] = n;
 		if (!S.test(r)) return;
 		let i = F(e) || P(e), [a, o] = (t ?? "").split(":");
 		if (!(i && a === "value" || P(e))) return;
-		o ? e["on" + o] === void 0 && this.#M(e, t, "refers to an unsupported event name") : o = "change";
+		o ? e["on" + o] === void 0 && this.#N(e, t, "refers to an unsupported event name") : o = "change";
 		let s = j(r);
 		e.addEventListener(o, (e) => {
 			let { target: t } = e;
 			if (!t) return;
 			let n = t.value, { type: r } = this.#n.properties[s];
-			this[s] = r === Number ? R(n) : n, this.#D(s);
+			this[s] = r === Number ? R(n) : n, this.#O(s);
 		});
 	}
-	#x(e) {
+	#S(e) {
 		return Object.hasOwn(this.#n, e);
 	}
-	#S(e) {
+	#C(e) {
 		return !!this.#n.properties[e];
 	}
-	#C(e) {
+	#w(e) {
 		return !!this.#n.properties[e]?.computed;
 	}
-	#w(e) {
+	#T(e) {
 		let t = Array.from(e.querySelectorAll("*"));
 		for (let e of t) this.#g(e), e.firstElementChild || this.#y(e);
 	}
-	#T() {
+	#E() {
 		if (this.#n.formAssociated || this.closest("form") === null) return;
 		let e = this.#n.name;
-		this.#M(this, void 0, `inside form, class ${e} requires "static formAssociated = true;"`);
+		this.#N(this, void 0, `inside form, class ${e} requires "static formAssociated = true;"`);
 	}
 	static get observedAttributes() {
 		let t = Object.entries(this.properties || {}).filter(([e, t]) => !t.computed).map(([t]) => e.getAttrName(t));
 		return t.includes("disabled") || t.push("disabled"), t;
 	}
 	propertyChangedCallback(e, t, n) {}
-	#E(e, t) {
+	#D(e, t) {
 		if (!t || !S.test(t)) return;
 		let n = j(t);
-		return this[n] === void 0 && this.#N(e, "", n), n;
+		return this[n] === void 0 && this.#P(e, "", n), n;
 	}
-	#D(e) {
+	#O(e) {
 		let t = this.#n.propToExprsMap.get(e) || [];
 		this.#_(t);
 	}
 	ready() {}
-	#O(e, t) {
+	#k(e, t) {
 		let n = this.#n, r = n.propToComputedMap;
 		function i(t, n) {
 			let i = r.get(t);
@@ -563,7 +580,7 @@ var U = class e extends p {
 		let { computed: a } = t, o = a.match(C) || [];
 		for (let t of o) {
 			let n = j(t);
-			this[n] === void 0 && this.#N(null, e, n), typeof this[n] != "function" && i(n, a);
+			this[n] === void 0 && this.#P(null, e, n), typeof this[n] != "function" && i(n, a);
 		}
 		for (let t of a.matchAll(y)) {
 			let r = t[1];
@@ -571,7 +588,7 @@ var U = class e extends p {
 			for (let [e, t] of Object.entries(n.properties)) V(t.usedBy)?.includes(r) && i(e, a);
 		}
 	}
-	#k(e, t) {
+	#A(e, t) {
 		this.#t.add(e);
 		try {
 			this[e] = t;
@@ -579,9 +596,9 @@ var U = class e extends p {
 			this.#t.delete(e);
 		}
 	}
-	#A(e, t, n = void 0) {
+	#j(e, t, n = void 0) {
 		if (!e) return;
-		let r = this.#H(t, n, e);
+		let r = this.#U(t, n, e);
 		if (!r) {
 			let r = e.replaceAll("this..", "this.");
 			n ? B(t, n, r) : "textContent" in t && (t.textContent = r);
@@ -602,13 +619,13 @@ var U = class e extends p {
 		a || (a = [], this.#r.set(e, a)), a.push(n ? {
 			element: t,
 			attrName: n
-		} : t), t instanceof HTMLElement && this.#b(t, n, r);
+		} : t), t instanceof HTMLElement && this.#x(t, n, r);
 		let o = this.#v(e);
-		n ? B(t, n, o) : this.#R(t, o);
+		n ? B(t, n, o) : this.#z(t, o);
 	}
-	#j(e, t) {
+	#M(e, t) {
 		let n = t?.trim() ?? "", r = this.#n.properties[n];
-		r || this.#N(e, "ref", n), r.type !== p && this.#M(e, "ref", `refers to property "${n}" whose type is not HTMLElement`), this[n] && this.#M(e, "ref", `is a duplicate reference to the property "${n}"`), this[n] = e, e.removeAttribute("ref");
+		r || this.#P(e, "ref", n), r.type !== p && this.#N(e, "ref", `refers to property "${n}" whose type is not HTMLElement`), this[n] && this.#N(e, "ref", `is a duplicate reference to the property "${n}"`), this[n] = e, e.removeAttribute("ref");
 	}
 	setAttributeSafe(e, t) {
 		this.hasAttribute(e) || this.setAttribute(e, t);
@@ -619,24 +636,24 @@ var U = class e extends p {
 	static ssr(e = {}) {
 		throw new h("SSR is not available in the browser build.");
 	}
-	#M(e, t, n) {
+	#N(e, t, n) {
 		let r = e instanceof HTMLElement ? e.localName : "CSS rule";
 		throw new h(`component ${this.#n.elementName}` + (e ? `, element "${r}"` : "") + (t ? `, attribute "${t}"` : "") + ` ${n}`);
 	}
-	#N(e, t, n) {
-		this.#M(e, t, `refers to missing property "${n}"`);
+	#P(e, t, n) {
+		this.#N(e, t, `refers to missing property "${n}"`);
 	}
-	#P(e, t) {
-		return this.#F(e, this.getAttribute(t));
+	#F(e, t) {
+		return this.#I(e, this.getAttribute(t));
 	}
-	#F(t, n) {
+	#I(t, n) {
 		if (n?.match(C)) return n;
 		let r = this.#n.properties[t], { type: i, values: a } = r;
-		if (i || this.#M(null, t, "does not specify its type"), n === null) return i === Boolean ? !1 : O(r);
+		if (i || this.#N(null, t, "does not specify its type"), n === null) return i === Boolean ? !1 : O(r);
 		if (i === String) {
 			if (a && !a.includes(n)) {
 				let e = a.map((e) => `"${e}"`).join(", ");
-				this.#M(null, t, `must be one of ${e}`);
+				this.#N(null, t, `must be one of ${e}`);
 			}
 			return n;
 		}
@@ -645,26 +662,25 @@ var U = class e extends p {
 			if (n === "true") return !0;
 			if (n === "false" || n === "null") return !1;
 			let r = e.getAttrName(t);
-			return n && n !== r && this.#M(null, t, "is a Boolean attribute, so its value must match attribute name or be missing"), n === "" || n === r;
+			return n && n !== r && this.#N(null, t, "is a Boolean attribute, so its value must match attribute name or be missing"), n === "" || n === r;
 		}
 	}
-	#I(e, t, n, r) {
-		N(n) && !this.#C(e) && n !== (t === Boolean ? this.hasAttribute(r) : this.#P(e, r)) && z(this, r || e, n);
+	#L(e, t, n, r) {
+		N(n) && !this.#w(e) && n !== (t === Boolean ? this.hasAttribute(r) : this.#F(e, r)) && z(this, r || e, n);
 	}
-	#L(e) {
-		let t = this.#n.propToComputedMap.get(e) || [];
-		for (let [e, n] of t) this.#k(e, this.#v(n));
+	#R(e) {
+		for (let [t, n] of this.#b([e])) this.#A(t, this.#v(n));
 	}
-	#R(e, t) {
+	#z(e, t) {
 		if (t === void 0) return;
 		let n = e instanceof HTMLElement;
 		Array.isArray(t) && (t = t.join(""));
 		let r = typeof t;
-		r !== "string" && r !== "number" && this.#M(e, void 0, " computed content is not a string or number");
+		r !== "string" && r !== "number" && this.#N(e, void 0, " computed content is not a string or number");
 		let i = String(t);
-		e instanceof HTMLElement && P(e) ? e.value = i : n && r === "string" && i.trim().startsWith("<") ? (e.innerHTML = d(i), this.#G(e), this.#w(e)) : n && (e.textContent = i);
+		e instanceof HTMLElement && P(e) ? e.value = i : n && r === "string" && i.trim().startsWith("<") ? (e.innerHTML = d(i), this.#K(e), this.#T(e)) : n && (e.textContent = i);
 	}
-	#z(e, t) {
+	#B(e, t) {
 		let n = this.#c.get(e);
 		if (!n) return;
 		let r = this.getRootNode();
@@ -674,7 +690,7 @@ var U = class e extends p {
 		let a = i;
 		a[n] = t;
 	}
-	#B() {
+	#V() {
 		let e = this.#n;
 		function t() {
 			let t = /* @__PURE__ */ new Map();
@@ -704,8 +720,8 @@ var U = class e extends p {
 			t = {};
 			for (let n of Object.keys(e)) t[n] = n;
 		}
-		this.#U(e, t);
-		for (let [n, r] of Object.entries(t)) if (this.#S(r)) {
+		this.#W(e, t);
+		for (let [n, r] of Object.entries(t)) if (this.#C(r)) {
 			let t = o(e, n);
 			t !== void 0 && (this[r] = t), this.#l.set(r, {
 				state: e,
@@ -726,50 +742,50 @@ var U = class e extends p {
 			unsubscribe: i
 		});
 	}
-	#V() {
+	#H() {
 		let t = new Set(Object.keys(this.#n.properties));
 		for (let n of this.getAttributeNames()) if (!f.has(n) && !n.startsWith("on") && n !== "ref") {
 			if (n === "form-assoc") {
-				this.#T();
+				this.#E();
 				continue;
 			}
 			if (!t.has(e.getPropName(n))) {
 				if (n === "name") {
-					this.#T();
+					this.#E();
 					continue;
 				}
-				this.#M(null, n, "is not a supported attribute");
+				this.#N(null, n, "is not a supported attribute");
 			}
 		}
 	}
-	#H(e, t, n) {
+	#U(e, t, n) {
 		let r = n.match(C);
 		if (r) return r.forEach((n) => {
 			let r = j(n);
-			this[r] === void 0 && this.#N(e, t, r);
+			this[r] === void 0 && this.#P(e, t, r);
 		}), r;
 	}
-	#U(e, t) {
+	#W(e, t) {
 		for (let [n, r] of Object.entries(t)) {
 			let t = o(e, n);
-			t === void 0 && this.#M(this, void 0, `invalid state path "${n}"`), t = this[r], this.#S(r) || this.#M(null, r, "refers to missing property in useState map");
+			t === void 0 && this.#N(this, void 0, `invalid state path "${n}"`), t = this[r], this.#C(r) || this.#N(null, r, "refers to missing property in useState map");
 		}
 	}
-	#W(e, t, n) {
+	#G(e, t, n) {
 		let { values: r } = this.#n.properties[e];
 		if (r) {
 			let i;
-			t === String ? typeof n == "string" ? r.includes(n) || (i = `must be one of ${r.map((e) => `"${e}"`).join(", ")}`) : i = `value is a ${typeof n}, but type is String` : i = "declares allowed values, but its type is not String", i && this.#M(null, e, i);
+			t === String ? typeof n == "string" ? r.includes(n) || (i = `must be one of ${r.map((e) => `"${e}"`).join(", ")}`) : i = `value is a ${typeof n}, but type is String` : i = "declares allowed values, but its type is not String", i && this.#N(null, e, i);
 		}
 		if (n instanceof t) return;
 		let i = typeof n;
 		if (i === "object") {
 			let { constructor: r } = n;
-			i = r.name, r !== t && this.#M(null, e, `was set to a ${i}, but must be a ${t.name}`);
+			i = r.name, r !== t && this.#N(null, e, `was set to a ${i}, but must be a ${t.name}`);
 		}
-		i !== t.name.toLowerCase() && this.#M(null, e, `was set to a ${i}, but must be a ${t.name}`);
+		i !== t.name.toLowerCase() && this.#N(null, e, `was set to a ${i}, but must be a ${t.name}`);
 	}
-	#G(e) {
+	#K(e) {
 		let t = Array.from(e.querySelectorAll("*"));
 		for (let e of t) {
 			let t = [];
@@ -779,9 +795,9 @@ var U = class e extends p {
 					let i = r.slice(2);
 					i = i[0].toLowerCase() + i.slice(1).toLowerCase();
 					let a = n.value;
-					this.#H(e, r, a);
+					this.#U(e, r, a);
 					let o;
-					typeof this[a] == "function" ? o = (e) => this[a](e) : (this.#H(e, r, a), o = () => this.#v(a)), e.addEventListener(i, o), t.push(r);
+					typeof this[a] == "function" ? o = (e) => this[a](e) : (this.#U(e, r, a), o = () => this.#v(a)), e.addEventListener(i, o), t.push(r);
 				}
 			}
 			for (let n of t) e.removeAttribute(n);

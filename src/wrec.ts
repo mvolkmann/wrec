@@ -433,45 +433,14 @@ export abstract class Wrec extends HTMLElementBase {
       }
     }
 
-    // Find the set of computed property names
-    // that depend on any of the properties being changed.
-    const propToComputedMap = this.#ctor.propToComputedMap;
-    const computedSet = new Set<string>();
-    const computedToExprMap: StringToString = {};
-    for (const propName of Object.keys(changes)) {
-      const computes = propToComputedMap.get(propName) || [];
-      for (const [computedName, expr] of computes) {
-        computedSet.add(computedName);
-        computedToExprMap[computedName] = expr;
-      }
-    }
-
-    // Compute new values for the computed properties.
-    for (const computedName of computedSet) {
-      // Update the computed property.
-      const expr = computedToExprMap[computedName];
+    // Compute affected computed properties in dependency order.
+    const computedUpdates = this.#getComputedUpdates(Object.keys(changes));
+    for (const [computedName, expr] of computedUpdates) {
       this.#setComputed(computedName, this.#evaluateInContext(expr));
-      // Find the expressions that use the computed property.
       const exprs = propToExprsMap.get(computedName) ?? [];
       for (const expr of exprs) {
         exprSet.add(expr);
       }
-    }
-
-    // Computed properties can depend on other computed properties.
-    // So we need to recompute them until they stop changing.
-    while (true) {
-      let changed = false;
-      for (const computedName of computedSet) {
-        const expr = computedToExprMap[computedName];
-        const newValue = this.#evaluateInContext(expr);
-        const oldValue = this[computedName];
-        if (JSON.stringify(newValue) !== JSON.stringify(oldValue)) {
-          this.#setComputed(computedName, newValue);
-          changed = true;
-        }
-      }
-      if (!changed) break;
     }
 
     this.#evaluateExpressions([...exprSet]);
@@ -925,6 +894,83 @@ export abstract class Wrec extends HTMLElementBase {
     return attrName;
   }
 
+  // Finds all computed properties affected by the given properties
+  // and returns [computed property name, computed expression] tuples
+  // ordered so dependencies are updated before dependents.
+  #getComputedUpdates(propNames: Iterable<string>): string[][] {
+    const map = this.#ctor.propToComputedMap!;
+    const affectedSet = new Set<string>();
+    const computedToExprMap: StringToString = {};
+    const namesToVisit = [...new Set(propNames)];
+
+    // Find all computed properties affected by these property changes,
+    // including transitively dependent computed properties.
+    // Note that while iterating over namesToVisit, elements can be added to it.
+    for (let index = 0; index < namesToVisit.length; index++) {
+      const propName = namesToVisit[index];
+      const computes = map.get(propName) || [];
+      for (const [computedName, expr] of computes) {
+        computedToExprMap[computedName] = expr;
+        if (!affectedSet.has(computedName)) {
+          affectedSet.add(computedName);
+          namesToVisit.push(computedName);
+        }
+      }
+    }
+
+    const dependencyCountMap = new Map<string, number>();
+    const computedToDependentsMap = new Map<string, string[]>();
+    for (const computedName of affectedSet) {
+      dependencyCountMap.set(computedName, 0);
+    }
+
+    for (const referencedProp of affectedSet) {
+      const computes = map.get(referencedProp) || [];
+      for (const [computedName] of computes) {
+        if (!affectedSet.has(computedName)) continue;
+        dependencyCountMap.set(
+          computedName,
+          dependencyCountMap.get(computedName)! + 1
+        );
+        let dependents = computedToDependentsMap.get(referencedProp);
+        if (!dependents) {
+          dependents = [];
+          computedToDependentsMap.set(referencedProp, dependents);
+        }
+        dependents.push(computedName);
+      }
+    }
+
+    const queue = [...affectedSet].filter(
+      computedName => dependencyCountMap.get(computedName) === 0
+    );
+    const orderedNames: string[] = [];
+    for (let index = 0; index < queue.length; index++) {
+      const computedName = queue[index];
+      orderedNames.push(computedName);
+      const dependents = computedToDependentsMap.get(computedName) || [];
+      for (const dependentName of dependents) {
+        const dependencyCount = dependencyCountMap.get(dependentName)! - 1;
+        dependencyCountMap.set(dependentName, dependencyCount);
+        if (dependencyCount === 0) queue.push(dependentName);
+      }
+    }
+
+    if (orderedNames.length !== affectedSet.size) {
+      const cycleNames = [...affectedSet]
+        .filter(computedName => dependencyCountMap.get(computedName)! > 0)
+        .sort();
+      throw new WrecError(
+        `computed properties form a cycle: ${cycleNames.join(', ')}`
+      );
+    }
+
+    return orderedNames.map(computedName => [
+      computedName,
+      computedToExprMap[computedName]
+    ]);
+  }
+
   static getPropName(attrName: string) {
     let propName = this.attrToPropMap.get(attrName);
     if (!propName) {
@@ -1289,9 +1335,7 @@ export abstract class Wrec extends HTMLElementBase {
   // Updates all computed properties that reference this property.
   // VS Code thinks this is never called, but it is called by #defineProp.
   #updateComputedProperties(propName: string) {
-    const map = this.#ctor.propToComputedMap!;
-    const computes = map.get(propName) || [];
-    for (const [computedName, expr] of computes) {
+    for (const [computedName, expr] of this.#getComputedUpdates([propName])) {
       this.#setComputed(computedName, this.#evaluateInContext(expr));
     }
   }
