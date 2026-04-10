@@ -1165,50 +1165,58 @@ export abstract class Wrec extends HTMLElementBase {
     ctor.computedGraph = null;
 
     for (const [propName, config] of Object.entries(ctor.properties)) {
-      if (!config.computed) continue;
-      ctor.registeredComputedProps.add(propName);
-      this.#registerComputedProp(propName, config);
+      if (config.computed) this.#registerComputedProp(propName, config);
     }
   }
 
-  #registerComputedProp(propName: string, config: StringToAny) {
+  // Records which properties a computed property depends on
+  // so dependent computed properties can be recomputed when they change.
+  #registerComputedProp(computedPropName: string, config: StringToAny) {
     const ctor = this.#ctor;
+    ctor.registeredComputedProps.add(computedPropName);
     const map = ctor.propToComputedMap!;
 
+    // `referencedProp` is a property name found in
+    // the expression for a computed property.
+    // `expr` is that expression
     function register(referencedProp: string, expr: string) {
+      // `computes` is an array of tuples that holds
+      // a property name and an expression that uses the property.
       let computes = map.get(referencedProp);
       if (!computes) {
         computes = [];
         map.set(referencedProp, computes);
       }
-      // Each element is a tuple of a property name
-      // and an expression that uses the property.
-      computes.push([propName, expr]);
+      computes.push([computedPropName, expr]);
     }
 
-    const {computed} = config;
-    const matches = computed.match(REFS_RE) || [];
-    for (const match of matches) {
-      const referencedProp = getPropName(match);
+    const expr = config.computed;
+
+    // Iterate over the properties referenced in the expression.
+    for (const match of expr.matchAll(REFS_RE)) {
+      const referencedProp = getPropName(match[0]);
       if (this[referencedProp] === undefined) {
-        this.#throwInvalidRef(null, propName, referencedProp);
+        this.#throwInvalidRef(null, computedPropName, referencedProp);
       }
       if (typeof this[referencedProp] !== 'function') {
-        register(referencedProp, computed);
+        register(referencedProp, expr);
       }
     }
 
-    for (const match of computed.matchAll(CALL_RE)) {
+    // Iterate over all the method calls in the expression.
+    for (const match of expr.matchAll(CALL_RE)) {
       const methodName = match[1];
       if (typeof this[methodName] !== 'function') {
         throw new WrecError(
-          `property ${propName} computed calls non-method ${methodName}`
+          `property ${computedPropName} computed calls non-method ${methodName}`
         );
       }
 
+      // Iterate over all the properties of the component.
       for (const [propName, config] of Object.entries(ctor.properties)) {
+        // If the property is used by the method ...
         if (usedByArray(config.usedBy)?.includes(methodName)) {
-          register(propName, computed);
+          register(propName, expr);
         }
       }
     }
