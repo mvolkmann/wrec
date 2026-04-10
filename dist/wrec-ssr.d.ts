@@ -51,6 +51,7 @@ export declare abstract class Wrec extends HTMLElementBase {
     private static methodToExprsMap;
     private static propToExprsMap;
     private static registeredComputedProps;
+    private static computedPropsRegistered;
     private static template;
     [key: string]: any;
     static define(elementName: string): void;
