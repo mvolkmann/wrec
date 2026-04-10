@@ -476,13 +476,6 @@ function transformSourceFile(sourceFile) {
       const methodNames = [
         ...(propToMethods.get(propName) ?? new Set())
       ].sort();
-      suggestions.push({
-        propName,
-        suggestion:
-          methodNames.length > 0
-            ? createUsedByProperty(methodNames, quote)
-            : 'remove usedBy'
-      });
       const configObject = member.initializer;
       const existingMembers = configObject.properties.filter(
         property =>
@@ -493,6 +486,15 @@ function transformSourceFile(sourceFile) {
       );
       const hadUsedBy =
         existingMembers.length !== configObject.properties.length;
+      if (methodNames.length > 0 || hadUsedBy) {
+        suggestions.push({
+          propName,
+          suggestion:
+            methodNames.length > 0
+              ? createUsedByProperty(methodNames, quote)
+              : 'remove usedBy'
+        });
+      }
       const needsUsedBy = methodNames.length > 0;
       if (!hadUsedBy && !needsUsedBy) continue;
 
@@ -629,16 +631,12 @@ function main() {
 
   const result = updateUsedByFile(inputPaths[0], {dry, quiet});
   if (dry) {
-    if (!result.changed) {
-      console.log('usedBy is already up to date.');
-      return;
-    }
-
     // In dry mode, report the inferred change and exit non-zero when at
     // least one update would be needed so the script can be used in checks.
     for (const {propName, suggestion} of result.suggestions) {
       console.log(`${propName} - ${suggestion}`);
     }
+    if (!result.changed) return;
     process.exit(1);
   }
 
