@@ -59,18 +59,16 @@ describe('used-by.js', () => {
     expect(result.foundWrecSubclass).toBe(true);
     expect(result.changed).toBe(true);
     expect(result.text).toContain(
-      'count: { type: Number, usedBy: ["getSummary", "renderCount"] }'
+      'count: {type: Number, usedBy: ["getSummary", "renderCount"]}'
     );
-    expect(result.text).toContain(
-      'label: { type: String, usedBy: "getSummary" }'
-    );
+    expect(result.text).toContain('label: {type: String, usedBy: "getSummary"}');
     expect(result.text).toContain(
       'summary: {type: String, computed: "this.getSummary()"}'
     );
-    expect(result.text).toContain('stale: { type: String }');
+    expect(result.text).toContain('stale: {type: String}');
   });
 
-  test('reports dry-run suggestions without writing the file', () => {
+  test('reports all inferred dry-run suggestions without writing the file', () => {
     const filePath = createTempComponent(`
       import {html, Wrec} from 'wrec';
 
@@ -100,6 +98,44 @@ describe('used-by.js', () => {
     expect(after).toBe(before);
   });
 
+  test('dry run reports inferred usage for properties that are already up to date', () => {
+    const filePath = createTempComponent(`
+      import {html, Wrec} from 'wrec';
+
+      class Fixture extends Wrec {
+        static properties = {
+          labels: {type: Array, usedBy: ['makeList', 'makeRows']},
+          rows: {type: Array, computed: 'this.makeRows()', usedBy: 'renderRows'}
+        };
+
+        static html = html\`
+          <div>\${this.makeList()}</div>
+          <div>\${this.renderRows()}</div>
+        \`;
+
+        makeList() {
+          return this.labels.join(', ');
+        }
+
+        makeRows() {
+          return this.labels.map(label => label.toUpperCase());
+        }
+
+        renderRows() {
+          return this.rows.join(', ');
+        }
+      }
+    `);
+
+    const result = updateUsedByFile(filePath, {dry: true});
+
+    expect(result.changed).toBe(false);
+    expect(result.suggestions).toEqual([
+      {propName: 'labels', suggestion: "usedBy: ['makeList', 'makeRows']"},
+      {propName: 'rows', suggestion: "usedBy: 'renderRows'"}
+    ]);
+  });
+
   test('writes inferred usedBy values back to the file', () => {
     const filePath = createTempComponent(`
       import {html, Wrec} from 'wrec';
@@ -121,7 +157,7 @@ describe('used-by.js', () => {
     const updated = fs.readFileSync(filePath, 'utf8');
 
     expect(result.changed).toBe(true);
-    expect(updated).toContain("count: { type: Number, usedBy: 'renderCount' }");
+    expect(updated).toContain("count: {type: Number, usedBy: 'renderCount'}");
   });
 
   test('throws when the source file does not define a Wrec subclass', () => {

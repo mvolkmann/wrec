@@ -41,7 +41,13 @@ function buildConfigText(sourceFile, member, methodNames, quote) {
     configObject.end
   );
   const multiline = original.includes('\n');
-  if (!multiline) return `{ ${existingTexts.join(', ')} }`;
+  if (!multiline) {
+    const openMatch = original.match(/^\{(\s*)/);
+    const closeMatch = original.match(/(\s*)\}$/);
+    const openSpacing = openMatch ? openMatch[1] : ' ';
+    const closeSpacing = closeMatch ? closeMatch[1] : ' ';
+    return `{${openSpacing}${existingTexts.join(', ')}${closeSpacing}}`;
+  }
 
   // Preserve the surrounding formatting style so the update feels like a
   // minimal edit instead of reformatting the whole object.
@@ -427,6 +433,7 @@ function isSupportedSourceFile(filePath, excludeTests = false) {
 function transformSourceFile(sourceFile) {
   const edits = [];
   const {names: wrecNames, quote} = getWrecImportInfo(sourceFile);
+  const suggestions = [];
   let foundWrecSubclass = false;
 
   // Each matching class contributes text replacements for the specific
@@ -469,6 +476,13 @@ function transformSourceFile(sourceFile) {
       const methodNames = [
         ...(propToMethods.get(propName) ?? new Set())
       ].sort();
+      suggestions.push({
+        propName,
+        suggestion:
+          methodNames.length > 0
+            ? createUsedByProperty(methodNames, quote)
+            : 'remove usedBy'
+      });
       const configObject = member.initializer;
       const existingMembers = configObject.properties.filter(
         property =>
@@ -504,6 +518,7 @@ function transformSourceFile(sourceFile) {
       changed: false,
       edits: [],
       foundWrecSubclass: false,
+      suggestions,
       text: sourceFile.text
     };
   }
@@ -513,6 +528,7 @@ function transformSourceFile(sourceFile) {
       changed: false,
       edits: [],
       foundWrecSubclass: true,
+      suggestions,
       text: sourceFile.text
     };
   }
@@ -524,7 +540,13 @@ function transformSourceFile(sourceFile) {
       nextSource.slice(0, edit.start) + edit.text + nextSource.slice(edit.end);
   }
 
-  return {changed: true, edits, foundWrecSubclass: true, text: nextSource};
+  return {
+    changed: true,
+    edits,
+    foundWrecSubclass: true,
+    suggestions,
+    text: nextSource
+  };
 }
 
 function validateTargetFile(target, cwd = process.cwd()) {
@@ -566,21 +588,14 @@ export function updateUsedByFile(filePath, options = {}) {
   const text = fs.readFileSync(resolved, 'utf8');
   const {
     changed,
-    edits,
     foundWrecSubclass,
+    suggestions,
     text: nextText
   } = updateUsedBySource(resolved, text);
   if (!foundWrecSubclass) {
     throw new Error('No class extending Wrec was found.');
   }
   if (dry) {
-    const suggestions = edits.toReversed().map(edit => {
-      const match = edit.text.match(/usedBy:\s*(?:['"][^'"]*['"]|\[[^\]]*\])/);
-      return {
-        propName: edit.propName,
-        suggestion: match ? match[0] : 'remove usedBy'
-      };
-    });
     return {changed, foundWrecSubclass, suggestions, text: nextText};
   }
 
