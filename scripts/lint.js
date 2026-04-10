@@ -1386,7 +1386,7 @@ function main() {
   const positionalArgs = args.filter(arg => arg !== '--verbose');
 
   if (positionalArgs.length > 1) {
-    fail('usage: node scripts/wrec-lint.js [file.js|file.ts]');
+    fail('usage: node scripts/wrec-lint.js [--verbose] {file-path}');
   }
 
   const [filePath] = positionalArgs;

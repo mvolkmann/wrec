@@ -46,7 +46,7 @@
     "preview": "vite preview",
     "test": "node port-check.js && playwright test",
     "testui": "playwright test --ui",
-    "unittest": "vitest"
+    "unittest": "vitest run"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
