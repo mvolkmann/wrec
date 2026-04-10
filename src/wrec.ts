@@ -977,19 +977,25 @@ export abstract class Wrec extends HTMLElementBase {
 
     // Find all computed properties affected by these property changes,
     // including transitively dependent computed properties.
-    // Note that while iterating over namesToVisit, elements can be added to it.
+    // The reason this is uses a plain for look is that
+    // while iterating over `namesToVisit`, elements can be added to it.
     for (let index = 0; index < namesToVisit.length; index++) {
       const propName = namesToVisit[index];
-      const computes = map.get(propName) || [];
-      for (const [computedName, expr] of computes) {
+      const tuples = map.get(propName) || [];
+      for (const [computedName, expr] of tuples) {
         computedToExprMap[computedName] = expr;
         if (!affectedSet.has(computedName)) {
+          // Visit each affected computed property too, because
+          // it can trigger other computed properties that depend on it.
           affectedSet.add(computedName);
           namesToVisit.push(computedName);
         }
       }
     }
 
+    // Seed the queue with affected computed properties
+    // that do not depend on any other affected computed properties,
+    // so they can be updated first.
     const queue = [...affectedSet].filter(
       computedName =>
         (computedToDependenciesMap.get(computedName) || []).filter(
@@ -1002,11 +1008,15 @@ export abstract class Wrec extends HTMLElementBase {
       const dependencies = computedToDependenciesMap.get(computedName) || [];
       let dependencyCount = 0;
       for (const dependencyName of dependencies) {
+        // Ignore unaffected dependencies
+        // because they already have current values.
         if (affectedSet.has(dependencyName)) dependencyCount++;
       }
       dependencyCountMap.set(computedName, dependencyCount);
     }
 
+    // Perform a topological sort so computed properties are recomputed
+    // only after any affected computed properties they depend on.
     for (let index = 0; index < queue.length; index++) {
       const computedName = queue[index];
       orderedNames.push(computedName);
@@ -1015,11 +1025,15 @@ export abstract class Wrec extends HTMLElementBase {
         if (!affectedSet.has(dependentName)) continue;
         const dependencyCount = dependencyCountMap.get(dependentName)! - 1;
         dependencyCountMap.set(dependentName, dependencyCount);
+        // When all affected dependencies have been processed,
+        // this dependent becomes ready to recompute.
         if (dependencyCount === 0) queue.push(dependentName);
       }
     }
 
     if (orderedNames.length !== affectedSet.size) {
+      // Any remaining computed properties still depend on each other,
+      // which means there is a cycle in the computed-property graph.
       const cycleNames = [...affectedSet]
         .filter(computedName => dependencyCountMap.get(computedName)! > 0)
         .sort();
