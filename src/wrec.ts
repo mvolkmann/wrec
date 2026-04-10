@@ -1015,7 +1015,9 @@ export abstract class Wrec extends HTMLElementBase {
       dependencyCountMap.set(computedName, dependencyCount);
     }
 
-    // Perform a topological sort so computed properties are recomputed
+    // Perform a topological sort using Kahn's algorithm
+    // described at https://en.wikipedia.org/wiki/Topological_sorting.
+    // This is needed so computed properties are recomputed
     // only after any affected computed properties they depend on.
     for (let index = 0; index < queue.length; index++) {
       const computedName = queue[index];
