@@ -1,50 +1,58 @@
 #!/usr/bin/env node
+// This script inspects a given Wrec component source file and
+// determines the proper values for property config `usedBy` properties.
+// Each value is a list of methods that use the property
+// or a single method name.
+// It uses the TypeScript compiler to parse the file,
+// discover which expressions call which methods,
+// trace property usage through those call chains, and
+// output or update the `usedBy` properties`.
+//
+// To run this, enter `npx wrec-usedby [file-path]`
+// If no file-path is specified, the script runs on
+// all .js and .ts files in and below the current directory.
+//
+// Two flags are supported:
+// --dry requests a dry run where `usedBy` values are output,
+//       but the file is not modified.
+// --verbose outputs lists of the properties and expressions that are found
 
 import fs from 'node:fs';
 import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 import ts from 'typescript';
 
-const args = process.argv.slice(2);
-const dry = args.includes('--dry');
-const verbose = args.includes('--verbose');
-const inputPaths = args.filter(arg => !arg.startsWith('--'));
-
-if (args.includes('--write')) {
-  console.error('--write is no longer supported; writing is now the default.');
-  process.exit(1);
-}
-
-if (args.includes('--check')) {
-  console.error('Use --dry instead of --check.');
-  process.exit(1);
-}
-
-if (inputPaths.length !== 1) {
-  console.error(
-    'Specify a single source file, e.g. npx wrec-usedby src/examples/radio-group.js'
+function buildConfigText(sourceFile, member, methodNames, quote) {
+  const {text} = sourceFile;
+  const configObject = member.initializer;
+  const existingMembers = configObject.properties.filter(
+    property =>
+      !(
+        ts.isPropertyAssignment(property) &&
+        getNameText(property.name) === 'usedBy'
+      )
   );
-  process.exit(1);
-}
+  const existingTexts = existingMembers.map(property =>
+    text.slice(property.getStart(sourceFile), property.end).trim()
+  );
+  if (methodNames.length > 0)
+    existingTexts.push(createUsedByProperty(methodNames, quote));
 
-const cwd = process.cwd();
-const targets = inputPaths.map(file => path.resolve(cwd, file));
+  const original = text.slice(
+    configObject.getStart(sourceFile),
+    configObject.end
+  );
+  const multiline = original.includes('\n');
+  if (!multiline) return `{ ${existingTexts.join(', ')} }`;
 
-for (const target of targets) {
-  if (!fs.existsSync(target)) {
-    console.error(`File not found: ${path.relative(cwd, target)}`);
-    process.exit(1);
-  }
-
-  const stat = fs.statSync(target);
-  if (!stat.isFile()) {
-    console.error(`Not a file: ${path.relative(cwd, target)}`);
-    process.exit(1);
-  }
-
-  if (!/\.(js|ts)$/.test(target) || /\.d\.ts$/.test(target)) {
-    console.error(`Unsupported file type: ${path.relative(cwd, target)}`);
-    process.exit(1);
-  }
+  // Preserve the surrounding formatting style so the update feels like a
+  // minimal edit instead of reformatting the whole object.
+  const memberIndent = getIndent(text, member.getStart(sourceFile));
+  const firstExisting = existingMembers[0];
+  const innerIndent = firstExisting
+    ? getIndent(text, firstExisting.getStart(sourceFile))
+    : memberIndent + '  ';
+  return `{\n${existingTexts.map(part => `${innerIndent}${part}`).join(',\n')}\n${memberIndent}}`;
 }
 
 function collectFiles(startPath, files = []) {
@@ -52,9 +60,7 @@ function collectFiles(startPath, files = []) {
 
   const stat = fs.statSync(startPath);
   if (stat.isFile()) {
-    if (/\.(js|ts)$/.test(startPath) && !/\.d\.ts$/.test(startPath)) {
-      files.push(startPath);
-    }
+    if (isSupportedSourceFile(startPath)) files.push(startPath);
     return files;
   }
 
@@ -63,12 +69,7 @@ function collectFiles(startPath, files = []) {
     if (entry.isDirectory()) {
       if (entry.name === 'node_modules' || entry.name === 'dist') continue;
       collectFiles(fullPath, files);
-    } else if (
-      entry.isFile() &&
-      /\.(js|ts)$/.test(entry.name) &&
-      !entry.name.endsWith('.d.ts') &&
-      !entry.name.includes('.test.')
-    ) {
+    } else if (entry.isFile() && isSupportedSourceFile(entry.name, true)) {
       files.push(fullPath);
     }
   }
@@ -76,63 +77,11 @@ function collectFiles(startPath, files = []) {
   return files;
 }
 
-const files = targets.flatMap(target => collectFiles(target));
-
-function getNameText(name) {
-  if (
-    ts.isIdentifier(name) ||
-    ts.isStringLiteral(name) ||
-    ts.isPrivateIdentifier(name)
-  ) {
-    return name.text;
+function createUsedByProperty(methodNames, quote) {
+  if (methodNames.length === 1) {
+    return `usedBy: ${quote}${methodNames[0]}${quote}`;
   }
-  return null;
-}
-
-function hasStaticModifier(node) {
-  return Boolean(
-    node.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword)
-  );
-}
-
-function getWrecImportInfo(sourceFile) {
-  const names = new Set(['Wrec']);
-  let quote = "'";
-
-  for (const statement of sourceFile.statements) {
-    if (
-      !ts.isImportDeclaration(statement) ||
-      !statement.importClause ||
-      !ts.isStringLiteral(statement.moduleSpecifier)
-    ) {
-      continue;
-    }
-
-    const moduleName = statement.moduleSpecifier.text;
-    const isWrecModule =
-      moduleName === 'wrec' ||
-      moduleName === 'wrec/ssr' ||
-      moduleName.endsWith('/wrec') ||
-      moduleName.endsWith('/wrec-ssr');
-    if (!isWrecModule) continue;
-
-    const namedBindings = statement.importClause.namedBindings;
-    if (!namedBindings || !ts.isNamedImports(namedBindings)) continue;
-
-    for (const element of namedBindings.elements) {
-      const importedName = element.propertyName?.text ?? element.name.text;
-      if (importedName === 'Wrec') {
-        names.add(element.name.text);
-
-        const moduleText = statement.moduleSpecifier.getText(sourceFile);
-        if (moduleText.startsWith('"') || moduleText.startsWith("'")) {
-          quote = moduleText[0];
-        }
-      }
-    }
-  }
-
-  return {names, quote};
+  return `usedBy: [${methodNames.map(name => `${quote}${name}${quote}`).join(', ')}]`;
 }
 
 function extendsWrec(node, wrecNames) {
@@ -148,51 +97,6 @@ function extendsWrec(node, wrecNames) {
         )
     )
   );
-}
-
-function getTemplateCalledMethods(classNode) {
-  const methodNames = new Set();
-  const CALL_RE = /this\.([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
-
-  function visit(node) {
-    if (
-      ts.isPropertyAccessExpression(node) &&
-      node.expression.kind === ts.SyntaxKind.ThisKeyword &&
-      ts.isCallExpression(node.parent) &&
-      node.parent.expression === node
-    ) {
-      methodNames.add(node.name.text);
-    }
-
-    ts.forEachChild(node, visit);
-  }
-
-  function addTemplateTextMethods(template) {
-    const text = template.getText();
-    for (const match of text.matchAll(CALL_RE)) {
-      methodNames.add(match[1]);
-    }
-  }
-
-  for (const member of classNode.members) {
-    if (
-      ts.isPropertyDeclaration(member) &&
-      hasStaticModifier(member) &&
-      getNameText(member.name) === 'html' &&
-      member.initializer
-    ) {
-      if (
-        ts.isTaggedTemplateExpression(member.initializer) &&
-        ts.isIdentifier(member.initializer.tag) &&
-        member.initializer.tag.text === 'html'
-      ) {
-        addTemplateTextMethods(member.initializer.template);
-      }
-      ts.forEachChild(member.initializer, visit);
-    }
-  }
-
-  return methodNames;
 }
 
 function getComputedCalledMethods(classNode) {
@@ -236,6 +140,12 @@ function getComputedCalledMethods(classNode) {
   }
 
   return methodNames;
+}
+
+function getIndent(text, pos) {
+  const lineStart = text.lastIndexOf('\n', pos - 1) + 1;
+  const match = /^[ \t]*/.exec(text.slice(lineStart));
+  return match ? match[0] : '';
 }
 
 function getMethodUsages(classNode, propertyNames) {
@@ -283,6 +193,9 @@ function getMethodUsages(classNode, propertyNames) {
       }
 
       function visit(child) {
+        // Record both direct property reads like `this.foo` and method calls
+        // like `this.renderFoo()` so we can later propagate property usage
+        // through method-to-method call chains.
         if (
           ts.isPropertyAccessExpression(child) &&
           child.expression.kind === ts.SyntaxKind.ThisKeyword
@@ -354,6 +267,9 @@ function getMethodUsages(classNode, propertyNames) {
   const memo = new Map();
 
   function getTransitiveProps(methodName, seen = new Set()) {
+    // Starting from methods that are reachable from the template/computed
+    // properties, walk through nested method calls and accumulate every
+    // component property touched along the way.
     if (memo.has(methodName)) return memo.get(methodName);
     if (seen.has(methodName)) return new Set();
 
@@ -395,48 +311,119 @@ function getMethodUsages(classNode, propertyNames) {
   return propToMethods;
 }
 
-function createUsedByProperty(methodNames, quote) {
-  if (methodNames.length === 1) {
-    return `usedBy: ${quote}${methodNames[0]}${quote}`;
+function getNameText(name) {
+  if (
+    ts.isIdentifier(name) ||
+    ts.isStringLiteral(name) ||
+    ts.isPrivateIdentifier(name)
+  ) {
+    return name.text;
   }
-  return `usedBy: [${methodNames.map(name => `${quote}${name}${quote}`).join(', ')}]`;
+  return null;
 }
 
-function getIndent(text, pos) {
-  const lineStart = text.lastIndexOf('\n', pos - 1) + 1;
-  const match = /^[ \t]*/.exec(text.slice(lineStart));
-  return match ? match[0] : '';
+function getTemplateCalledMethods(classNode) {
+  const methodNames = new Set();
+  const CALL_RE = /this\.([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
+
+  function visit(node) {
+    if (
+      ts.isPropertyAccessExpression(node) &&
+      node.expression.kind === ts.SyntaxKind.ThisKeyword &&
+      ts.isCallExpression(node.parent) &&
+      node.parent.expression === node
+    ) {
+      methodNames.add(node.name.text);
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  function addTemplateTextMethods(template) {
+    // Template expressions can hide method calls inside raw template text,
+    // so use a regex in addition to AST traversal to catch those names.
+    const text = template.getText();
+    for (const match of text.matchAll(CALL_RE)) {
+      methodNames.add(match[1]);
+    }
+  }
+
+  for (const member of classNode.members) {
+    if (
+      ts.isPropertyDeclaration(member) &&
+      hasStaticModifier(member) &&
+      getNameText(member.name) === 'html' &&
+      member.initializer
+    ) {
+      if (
+        ts.isTaggedTemplateExpression(member.initializer) &&
+        ts.isIdentifier(member.initializer.tag) &&
+        member.initializer.tag.text === 'html'
+      ) {
+        addTemplateTextMethods(member.initializer.template);
+      }
+      ts.forEachChild(member.initializer, visit);
+    }
+  }
+
+  return methodNames;
 }
 
-function buildConfigText(sourceFile, member, methodNames, quote) {
-  const {text} = sourceFile;
-  const configObject = member.initializer;
-  const existingMembers = configObject.properties.filter(
-    property =>
-      !(
-        ts.isPropertyAssignment(property) &&
-        getNameText(property.name) === 'usedBy'
-      )
-  );
-  const existingTexts = existingMembers.map(property =>
-    text.slice(property.getStart(sourceFile), property.end).trim()
-  );
-  if (methodNames.length > 0)
-    existingTexts.push(createUsedByProperty(methodNames, quote));
+function getWrecImportInfo(sourceFile) {
+  const names = new Set(['Wrec']);
+  let quote = "'";
 
-  const original = text.slice(
-    configObject.getStart(sourceFile),
-    configObject.end
-  );
-  const multiline = original.includes('\n');
-  if (!multiline) return `{ ${existingTexts.join(', ')} }`;
+  // Support aliased imports such as `import {Wrec as Base} from 'wrec'`
+  // so subclass detection still works and generated text matches the
+  // file's existing quote style.
+  for (const statement of sourceFile.statements) {
+    if (
+      !ts.isImportDeclaration(statement) ||
+      !statement.importClause ||
+      !ts.isStringLiteral(statement.moduleSpecifier)
+    ) {
+      continue;
+    }
 
-  const memberIndent = getIndent(text, member.getStart(sourceFile));
-  const firstExisting = existingMembers[0];
-  const innerIndent = firstExisting
-    ? getIndent(text, firstExisting.getStart(sourceFile))
-    : memberIndent + '  ';
-  return `{\n${existingTexts.map(part => `${innerIndent}${part}`).join(',\n')}\n${memberIndent}}`;
+    const moduleName = statement.moduleSpecifier.text;
+    const isWrecModule =
+      moduleName === 'wrec' ||
+      moduleName === 'wrec/ssr' ||
+      moduleName.endsWith('/wrec') ||
+      moduleName.endsWith('/wrec-ssr');
+    if (!isWrecModule) continue;
+
+    const namedBindings = statement.importClause.namedBindings;
+    if (!namedBindings || !ts.isNamedImports(namedBindings)) continue;
+
+    for (const element of namedBindings.elements) {
+      const importedName = element.propertyName?.text ?? element.name.text;
+      if (importedName === 'Wrec') {
+        names.add(element.name.text);
+
+        const moduleText = statement.moduleSpecifier.getText(sourceFile);
+        if (moduleText.startsWith('"') || moduleText.startsWith("'")) {
+          quote = moduleText[0];
+        }
+      }
+    }
+  }
+
+  return {names, quote};
+}
+
+function hasStaticModifier(node) {
+  return Boolean(
+    node.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword)
+  );
+}
+
+function isSupportedSourceFile(filePath, excludeTests = false) {
+  return (
+    /\.(js|ts)$/.test(filePath) &&
+    !/\.d\.ts$/.test(filePath) &&
+    (!excludeTests || !filePath.includes('.test.'))
+  );
 }
 
 function transformSourceFile(sourceFile) {
@@ -444,6 +431,8 @@ function transformSourceFile(sourceFile) {
   const {names: wrecNames, quote} = getWrecImportInfo(sourceFile);
   let foundWrecSubclass = false;
 
+  // Each matching class contributes text replacements for the specific
+  // property config objects that need `usedBy` added, updated, or removed.
   for (const node of sourceFile.statements) {
     if (!ts.isClassDeclaration(node) || !extendsWrec(node, wrecNames)) continue;
     foundWrecSubclass = true;
@@ -540,46 +529,126 @@ function transformSourceFile(sourceFile) {
   return {changed: true, edits, foundWrecSubclass: true, text: nextSource};
 }
 
-let changedCount = 0;
+function validateTargetFile(target, cwd = process.cwd()) {
+  if (!fs.existsSync(target)) {
+    throw new Error(`File not found: ${path.relative(cwd, target)}`);
+  }
 
-for (const file of files) {
-  const text = fs.readFileSync(file, 'utf8');
-  const scriptKind = file.endsWith('.ts') ? ts.ScriptKind.TS : ts.ScriptKind.JS;
+  const stat = fs.statSync(target);
+  if (!stat.isFile()) {
+    throw new Error(`Not a file: ${path.relative(cwd, target)}`);
+  }
+
+  if (!/\.(js|ts)$/.test(target) || /\.d\.ts$/.test(target)) {
+    throw new Error(`Unsupported file type: ${path.relative(cwd, target)}`);
+  }
+}
+
+export function updateUsedBySource(filePath, text) {
+  const scriptKind =
+    filePath.endsWith('.ts') ? ts.ScriptKind.TS : ts.ScriptKind.JS;
   const sourceFile = ts.createSourceFile(
-    file,
+    filePath,
     text,
     ts.ScriptTarget.Latest,
     true,
     scriptKind
   );
 
+  return transformSourceFile(sourceFile);
+}
+
+export function updateUsedByFile(filePath, options = {}) {
+  const {dry = false, verbose = false} = options;
+  const cwd = process.cwd();
+  const resolved = path.resolve(cwd, filePath);
+  validateTargetFile(resolved, cwd);
+
+  const text = fs.readFileSync(resolved, 'utf8');
   const {
     changed,
     edits,
     foundWrecSubclass,
     text: nextText
-  } = transformSourceFile(sourceFile);
+  } = updateUsedBySource(resolved, text);
   if (!foundWrecSubclass) {
-    console.error('No class extending Wrec was found.');
-    process.exit(1);
+    throw new Error('No class extending Wrec was found.');
   }
-  if (!changed) continue;
-
-  changedCount++;
   if (dry) {
-    for (const edit of edits.toReversed()) {
+    const suggestions = edits.toReversed().map(edit => {
       const match = edit.text.match(/usedBy:\s*(?:['"][^'"]*['"]|\[[^\]]*\])/);
-      const suggestion = match ? match[0] : 'remove usedBy';
-      console.log(`${edit.propName} - ${suggestion}`);
-    }
-  } else {
-    fs.writeFileSync(file, nextText);
+      return {
+        propName: edit.propName,
+        suggestion: match ? match[0] : 'remove usedBy'
+      };
+    });
+    return {changed, foundWrecSubclass, suggestions, text: nextText};
   }
-  if (verbose && !dry) console.log('updated');
+
+  if (changed) {
+    // Otherwise, apply the rewritten source text back to disk.
+    fs.writeFileSync(resolved, nextText);
+  }
+  return {changed, foundWrecSubclass, suggestions: [], text: nextText, verbose};
 }
 
-if (dry && changedCount > 0) process.exit(1);
+function fail(message) {
+  console.error(message);
+  process.exit(1);
+}
 
-if (dry && changedCount === 0) {
-  console.log('usedBy is already up to date.');
+function main() {
+  const args = process.argv.slice(2);
+  const dry = args.includes('--dry');
+  const verbose = args.includes('--verbose');
+  const inputPaths = args.filter(arg => !arg.startsWith('--'));
+
+  if (args.includes('--check')) {
+    throw new Error('Use --dry instead of --check.');
+  }
+
+  if (inputPaths.length !== 1) {
+    throw new Error(
+      'Specify a single source file, e.g. npx wrec-usedby src/examples/radio-group.js'
+    );
+  }
+
+  const result = updateUsedByFile(inputPaths[0], {dry, verbose});
+  if (dry) {
+    if (!result.changed) {
+      console.log('usedBy is already up to date.');
+      return;
+    }
+
+    // In dry mode, report the inferred change and exit non-zero when at
+    // least one update would be needed so the script can be used in checks.
+    for (const {propName, suggestion} of result.suggestions) {
+      console.log(`${propName} - ${suggestion}`);
+    }
+    process.exit(1);
+  }
+
+  if (verbose && result.changed) {
+    console.log('updated');
+  }
+}
+
+const isCliEntry = (() => {
+  if (!process.argv[1]) return false;
+  try {
+    return (
+      fs.realpathSync(process.argv[1]) ===
+      fs.realpathSync(fileURLToPath(import.meta.url))
+    );
+  } catch {
+    return path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+  }
+})();
+
+if (isCliEntry) {
+  try {
+    main();
+  } catch (error) {
+    fail(error instanceof Error ? error.message : String(error));
+  }
 }
