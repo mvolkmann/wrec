@@ -343,9 +343,13 @@ export abstract class Wrec extends HTMLElementBase {
   private static propToExprsMap: StringToStrings;
 
   // This holds the names of computed properties that
-  // have already been registered for a component class,
-  // preventing duplicate registrations as additional instances are created.
+  // have been registered for a component class.
+  // It is used when computing dependency order.
   private static registeredComputedProps: Set<string>;
+
+  // This tracks whether computed properties for a component class
+  // have already had their dependencies registered.
+  private static computedPropsRegistered: boolean;
 
   private static template: HTMLTemplateElement | null = null;
 
@@ -411,6 +415,9 @@ export abstract class Wrec extends HTMLElementBase {
     const ctor = this.#ctor;
     if (!this.#hasOwn('attrToPropMap')) ctor.attrToPropMap = new Map();
     if (!this.#hasOwn('computedGraph')) ctor.computedGraph = null;
+    if (!this.#hasOwn('computedPropsRegistered')) {
+      ctor.computedPropsRegistered = false;
+    }
     //if (!this.#hasOwn('methodToExprsMap')) ctor.methodToExprsMap = null;
     if (!this.#hasOwn('properties')) ctor.properties = {};
     if (!this.#hasOwn('propToAttrMap')) ctor.propToAttrMap = new Map();
@@ -537,6 +544,8 @@ export abstract class Wrec extends HTMLElementBase {
       if (!config.computed) continue;
       this.#defineProp(propName, config, observedAttributes);
     }
+
+    this.#registerComputedProps();
   }
 
   #defineProp(
@@ -574,8 +583,6 @@ export abstract class Wrec extends HTMLElementBase {
           : (value ?? defaultForConfig(config));
     const privateName = '#' + propName;
     this[privateName] = typedValue;
-
-    if (config.computed) this.#registerComputedProp(propName, config);
 
     Object.defineProperty(this, propName, {
       enumerable: true,
@@ -1150,13 +1157,22 @@ export abstract class Wrec extends HTMLElementBase {
   // the component DOM has been built and made reactive.
   ready() {}
 
-  #registerComputedProp(propName: string, config: StringToAny) {
+  #registerComputedProps() {
     const ctor = this.#ctor;
-    if (ctor.registeredComputedProps.has(propName)) return;
+    if (ctor.computedPropsRegistered) return;
 
-    ctor.registeredComputedProps.add(propName);
+    ctor.computedPropsRegistered = true;
     ctor.computedGraph = null;
 
+    for (const [propName, config] of Object.entries(ctor.properties)) {
+      if (!config.computed) continue;
+      ctor.registeredComputedProps.add(propName);
+      this.#registerComputedProp(propName, config);
+    }
+  }
+
+  #registerComputedProp(propName: string, config: StringToAny) {
+    const ctor = this.#ctor;
     const map = ctor.propToComputedMap!;
 
     function register(referencedProp: string, expr: string) {
