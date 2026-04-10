@@ -1,5 +1,11 @@
 #!/usr/bin/env node
 
+// This lints a given source file that defines a wrec component.
+// To run this, enter `npx wrec-lint [--verbose] {file-path}`
+//
+// Include --verbose to output lists of the
+// properties and expressions that are found.
+
 // This linter checks Wrec components for these issues:
 // - undefined properties accessed in expressions
 // - undefined instance methods called in expressions

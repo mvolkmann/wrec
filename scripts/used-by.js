@@ -8,14 +8,12 @@
 // trace property usage through those call chains, and
 // output or update the `usedBy` properties`.
 //
-// To run this, enter `npx wrec-usedby [file-path]`
+// To run this, enter `npx wrec-usedby [--dry] [file-path]`
 // If no file-path is specified, the script runs on
 // all .js and .ts files in and below the current directory.
 //
-// Two flags are supported:
-// --dry requests a dry run where `usedBy` values are output,
-//       but the file is not modified.
-// --verbose outputs lists of the properties and expressions that are found
+// Include the --dry flag for a dry run where `usedBy` values are output,
+// but no files are modified.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -545,8 +543,9 @@ function validateTargetFile(target, cwd = process.cwd()) {
 }
 
 export function updateUsedBySource(filePath, text) {
-  const scriptKind =
-    filePath.endsWith('.ts') ? ts.ScriptKind.TS : ts.ScriptKind.JS;
+  const scriptKind = filePath.endsWith('.ts')
+    ? ts.ScriptKind.TS
+    : ts.ScriptKind.JS;
   const sourceFile = ts.createSourceFile(
     filePath,
     text,
@@ -559,7 +558,7 @@ export function updateUsedBySource(filePath, text) {
 }
 
 export function updateUsedByFile(filePath, options = {}) {
-  const {dry = false, verbose = false} = options;
+  const {dry = false, quiet = false} = options;
   const cwd = process.cwd();
   const resolved = path.resolve(cwd, filePath);
   validateTargetFile(resolved, cwd);
@@ -589,7 +588,7 @@ export function updateUsedByFile(filePath, options = {}) {
     // Otherwise, apply the rewritten source text back to disk.
     fs.writeFileSync(resolved, nextText);
   }
-  return {changed, foundWrecSubclass, suggestions: [], text: nextText, verbose};
+  return {changed, foundWrecSubclass, suggestions: [], text: nextText, quiet};
 }
 
 function fail(message) {
@@ -600,7 +599,7 @@ function fail(message) {
 function main() {
   const args = process.argv.slice(2);
   const dry = args.includes('--dry');
-  const verbose = args.includes('--verbose');
+  const quiet = args.includes('--quiet');
   const inputPaths = args.filter(arg => !arg.startsWith('--'));
 
   if (args.includes('--check')) {
@@ -613,7 +612,7 @@ function main() {
     );
   }
 
-  const result = updateUsedByFile(inputPaths[0], {dry, verbose});
+  const result = updateUsedByFile(inputPaths[0], {dry, quiet});
   if (dry) {
     if (!result.changed) {
       console.log('usedBy is already up to date.');
@@ -628,9 +627,7 @@ function main() {
     process.exit(1);
   }
 
-  if (verbose && result.changed) {
-    console.log('updated');
-  }
+  if (result.changed) console.log('updated');
 }
 
 const isCliEntry = (() => {
