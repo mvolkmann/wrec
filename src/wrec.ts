@@ -1432,7 +1432,8 @@ export abstract class Wrec extends HTMLElementBase {
   }
 
   // Updates all computed properties that reference this property.
-  // VS Code thinks this is never called, but it is called by #defineProp.
+  // VS Code thinks this is never called,
+  // but it is called by the setter in #defineProp.
   #updateComputedProperties(propName: string) {
     for (const [computedName, expr] of this.#getComputedUpdates([propName])) {
       this.#setComputed(computedName, this.#evaluateInContext(expr));
