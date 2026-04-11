@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {afterEach, describe, expect, test} from 'vitest';
-import {evaluateSourceFile, updateUsedBySource} from '../scripts/used-by.js';
+import {evaluateSourceFile, evaluateSourceText} from '../scripts/used-by.js';
 
 const tempPaths: string[] = [];
 
@@ -54,7 +54,7 @@ describe('used-by.js', () => {
       }
     `;
 
-    const result = updateUsedBySource('/virtual/component.js', source);
+    const result = evaluateSourceText('/virtual/component.js', source);
 
     expect(result.foundWrecSubclass).toBe(true);
     expect(result.changed).toBe(true);
@@ -164,13 +164,13 @@ describe('used-by.js', () => {
 
   test('throws when the source file does not define a Wrec subclass', () => {
     expect(() =>
-      updateUsedBySource(
+      evaluateSourceText(
         '/virtual/not-a-component.js',
         'export const value = 1;'
       )
     ).not.toThrow();
 
-    const result = updateUsedBySource(
+    const result = evaluateSourceText(
       '/virtual/not-a-component.js',
       'export const value = 1;'
     );

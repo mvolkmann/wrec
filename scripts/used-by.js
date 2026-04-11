@@ -95,7 +95,8 @@ function createUsedByProperty(methodNames, quote) {
 }
 
 // Determines what changes, if any, should be made in
-// the usedBy properties in property configuration objects.
+// the usedBy properties in property configuration objects
+// found in the file at a given relative path.
 export function evaluateSourceFile(filePath, options = {}) {
   const {dry = false} = options;
   const absFilePath = path.resolve(cwd, filePath);
@@ -107,7 +108,7 @@ export function evaluateSourceFile(filePath, options = {}) {
     foundWrecSubclass,
     suggestions,
     text: nextText
-  } = updateUsedBySource(absFilePath, text);
+  } = evaluateSourceText(absFilePath, text);
 
   // If we didn't find the definition of a class that extends Wrec ...
   if (!foundWrecSubclass) {
@@ -126,6 +127,23 @@ export function evaluateSourceFile(filePath, options = {}) {
   }
 
   return {changed, foundWrecSubclass, suggestions: [], text: nextText};
+}
+
+// Determines what changes, if any, should be made in
+// the usedBy properties in property configuration objects
+// found in source file text.
+export function evaluateSourceText(filePath, text) {
+  const scriptKind = filePath.endsWith('.ts')
+    ? ts.ScriptKind.TS
+    : ts.ScriptKind.JS;
+  const sourceFile = ts.createSourceFile(
+    filePath,
+    text,
+    ts.ScriptTarget.Latest,
+    true,
+    scriptKind
+  );
+  return transformSourceFile(sourceFile);
 }
 
 // Determines whether a class declaration extends one of the known Wrec imports.
@@ -637,7 +655,7 @@ function transformSourceFile(sourceFile) {
   };
 }
 
-// Validates that the requested target exists and is a supported source file.
+// Validates that the source file exists and has a supported extension.
 function validateFile(absFilePath) {
   if (!fs.existsSync(absFilePath)) throw new Error('File not found');
 
@@ -647,21 +665,6 @@ function validateFile(absFilePath) {
   if (!/\.(js|ts)$/.test(absFilePath) || /\.d\.ts$/.test(absFilePath)) {
     throw new Error('Unsupported file type');
   }
-}
-
-// Parses source text and returns the `usedBy` updates it would need.
-export function updateUsedBySource(filePath, text) {
-  const scriptKind = filePath.endsWith('.ts')
-    ? ts.ScriptKind.TS
-    : ts.ScriptKind.JS;
-  const sourceFile = ts.createSourceFile(
-    filePath,
-    text,
-    ts.ScriptTarget.Latest,
-    true,
-    scriptKind
-  );
-  return transformSourceFile(sourceFile);
 }
 
 // Handles CLI arguments and runs the `usedBy` updater workflow.
