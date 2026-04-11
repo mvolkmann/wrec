@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {afterEach, describe, expect, test} from 'vitest';
-import {updateUsedByFile, updateUsedBySource} from '../scripts/used-by.js';
+import {evaluateSourceFile, updateUsedBySource} from '../scripts/used-by.js';
 
 const tempPaths: string[] = [];
 
@@ -61,7 +61,9 @@ describe('used-by.js', () => {
     expect(result.text).toContain(
       'count: {type: Number, usedBy: ["getSummary", "renderCount"]}'
     );
-    expect(result.text).toContain('label: {type: String, usedBy: "getSummary"}');
+    expect(result.text).toContain(
+      'label: {type: String, usedBy: "getSummary"}'
+    );
     expect(result.text).toContain(
       'summary: {type: String, computed: "this.getSummary()"}'
     );
@@ -87,7 +89,7 @@ describe('used-by.js', () => {
     `);
 
     const before = fs.readFileSync(filePath, 'utf8');
-    const result = updateUsedByFile(filePath, {dry: true});
+    const result = evaluateSourceFile(filePath, {dry: true});
     const after = fs.readFileSync(filePath, 'utf8');
 
     expect(result.changed).toBe(true);
@@ -127,7 +129,7 @@ describe('used-by.js', () => {
       }
     `);
 
-    const result = updateUsedByFile(filePath, {dry: true});
+    const result = evaluateSourceFile(filePath, {dry: true});
 
     expect(result.changed).toBe(false);
     expect(result.suggestions).toEqual([
@@ -153,7 +155,7 @@ describe('used-by.js', () => {
       }
     `);
 
-    const result = updateUsedByFile(filePath);
+    const result = evaluateSourceFile(filePath);
     const updated = fs.readFileSync(filePath, 'utf8');
 
     expect(result.changed).toBe(true);
@@ -175,7 +177,7 @@ describe('used-by.js', () => {
     expect(result.foundWrecSubclass).toBe(false);
 
     const filePath = createTempComponent('export const value = 1;');
-    expect(() => updateUsedByFile(filePath)).toThrow(
+    expect(() => evaluateSourceFile(filePath)).toThrow(
       'No class extending Wrec was found.'
     );
   });

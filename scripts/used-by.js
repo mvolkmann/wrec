@@ -92,6 +92,41 @@ function createUsedByProperty(methodNames, quote) {
   return `usedBy: [${methodNames.map(name => `${quote}${name}${quote}`).join(', ')}]`;
 }
 
+// Determines what changes, if any, should be made in
+// the usedBy properties in property configuration objects.
+export function evaluateSourceFile(filePath, options = {}) {
+  const {dry = false} = options;
+  const cwd = process.cwd();
+  const resolved = path.resolve(cwd, filePath);
+  validateTargetFile(resolved, cwd);
+
+  const text = fs.readFileSync(resolved, 'utf8');
+  const {
+    changed,
+    foundWrecSubclass,
+    suggestions,
+    text: nextText
+  } = updateUsedBySource(resolved, text);
+
+  // If we didn't find the definition of a class that extends Wrec ...
+  if (!foundWrecSubclass) {
+    throw new Error('No class extending Wrec was found.');
+  }
+
+  // If this is just a dray run ...
+  if (dry) {
+    return {changed, foundWrecSubclass, suggestions, text: nextText};
+  }
+
+  // If changes were made, write the new source code back to the file.
+  if (changed) {
+    // Otherwise, apply the rewritten source text back to disk.
+    fs.writeFileSync(resolved, nextText);
+  }
+
+  return {changed, foundWrecSubclass, suggestions: [], text: nextText};
+}
+
 // Determines whether a class declaration extends one of the known Wrec imports.
 function extendsWrec(node, wrecNames) {
   return Boolean(
@@ -632,40 +667,6 @@ export function updateUsedBySource(filePath, text) {
   return transformSourceFile(sourceFile);
 }
 
-// Applies inferred `usedBy` updates to a file or reports them in dry-run mode.
-export function updateUsedByFile(filePath, options = {}) {
-  const {dry = false} = options;
-  const cwd = process.cwd();
-  const resolved = path.resolve(cwd, filePath);
-  validateTargetFile(resolved, cwd);
-
-  const text = fs.readFileSync(resolved, 'utf8');
-  const {
-    changed,
-    foundWrecSubclass,
-    suggestions,
-    text: nextText
-  } = updateUsedBySource(resolved, text);
-
-  // If we didn't find the definition of a class that extends Wrec ...
-  if (!foundWrecSubclass) {
-    throw new Error('No class extending Wrec was found.');
-  }
-
-  // If this is just a dray run ...
-  if (dry) {
-    return {changed, foundWrecSubclass, suggestions, text: nextText};
-  }
-
-  // If changes were made, write the new source code back to the file.
-  if (changed) {
-    // Otherwise, apply the rewritten source text back to disk.
-    fs.writeFileSync(resolved, nextText);
-  }
-
-  return {changed, foundWrecSubclass, suggestions: [], text: nextText};
-}
-
 // Handles CLI arguments and runs the `usedBy` updater workflow.
 function main() {
   const args = process.argv.slice(2);
@@ -676,7 +677,7 @@ function main() {
   }
 
   const dry = args.includes('--dry');
-  const result = updateUsedByFile(inputPaths[0], {dry});
+  const result = evaluateSourceFile(inputPaths[0], {dry});
   if (dry) {
     // Report the proposed changes.
     for (const {propName, suggestion} of result.suggestions) {
