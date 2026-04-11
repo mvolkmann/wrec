@@ -3,7 +3,8 @@
 // determines the proper values for property config `usedBy` properties.
 // Each value is a list of methods that use the property
 // or a single method name.
-// It uses the TypeScript compiler to parse the file,
+//
+// This uses the TypeScript compiler to parse the source file,
 // discover which expressions call which methods,
 // trace property usage through those call chains, and
 // output or update the `usedBy` properties`.
@@ -20,9 +21,11 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import ts from 'typescript';
 
+// Rebuilds a property config object with an updated `usedBy` entry.
 function buildConfigText(sourceFile, member, methodNames, quote) {
   const {text} = sourceFile;
   const configObject = member.initializer;
+  // Get an array of all the config object properties except `usedBy`.
   const existingMembers = configObject.properties.filter(
     property =>
       !(
@@ -59,6 +62,7 @@ function buildConfigText(sourceFile, member, methodNames, quote) {
   return `{\n${existingTexts.map(part => `${innerIndent}${part}`).join(',\n')}\n${memberIndent}}`;
 }
 
+// Recursively gathers supported source files beneath the given path.
 function collectFiles(startPath, files = []) {
   if (!fs.existsSync(startPath)) return files;
 
@@ -81,6 +85,7 @@ function collectFiles(startPath, files = []) {
   return files;
 }
 
+// Formats a `usedBy` property value using the file's existing quote style.
 function createUsedByProperty(methodNames, quote) {
   if (methodNames.length === 1) {
     return `usedBy: ${quote}${methodNames[0]}${quote}`;
@@ -88,6 +93,7 @@ function createUsedByProperty(methodNames, quote) {
   return `usedBy: [${methodNames.map(name => `${quote}${name}${quote}`).join(', ')}]`;
 }
 
+// Determines whether a class declaration extends one of the known Wrec imports.
 function extendsWrec(node, wrecNames) {
   return Boolean(
     node.heritageClauses?.some(
@@ -103,6 +109,7 @@ function extendsWrec(node, wrecNames) {
   );
 }
 
+// Extracts method names referenced by `computed` property config strings.
 function getComputedCalledMethods(classNode) {
   const methodNames = new Set();
   const CALL_RE = /this\.([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
@@ -146,12 +153,15 @@ function getComputedCalledMethods(classNode) {
   return methodNames;
 }
 
+// Returns the leading indentation for the line containing the given position.
 function getIndent(text, pos) {
   const lineStart = text.lastIndexOf('\n', pos - 1) + 1;
   const match = /^[ \t]*/.exec(text.slice(lineStart));
   return match ? match[0] : '';
 }
 
+// Returns a map where the keys are property names and
+// the values are Sets of public methods that use it transitively.
 function getMethodUsages(classNode, propertyNames) {
   const methodInfo = new Map();
   for (const member of classNode.members) {
@@ -170,6 +180,7 @@ function getMethodUsages(classNode, propertyNames) {
       const calledMethods = new Set();
       const isPrivate = ts.isPrivateIdentifier(member.name);
 
+      // Records property names introduced through destructuring or identifiers.
       function addBindingName(name) {
         if (ts.isIdentifier(name)) {
           props.add(name.text);
@@ -178,6 +189,7 @@ function getMethodUsages(classNode, propertyNames) {
         }
       }
 
+      // Adds property names referenced by an object binding pattern.
       function addObjectBindingProps(bindingPattern) {
         for (const element of bindingPattern.elements) {
           if (element.dotDotDotToken) continue;
@@ -196,6 +208,7 @@ function getMethodUsages(classNode, propertyNames) {
         }
       }
 
+      // Walks the method body to collect property reads and method calls.
       function visit(child) {
         // Record both direct property reads like `this.foo` and method calls
         // like `this.renderFoo()` so we can later propagate property usage
@@ -270,6 +283,7 @@ function getMethodUsages(classNode, propertyNames) {
   ]);
   const memo = new Map();
 
+  // Follows method-call chains to accumulate all properties touched downstream.
   function getTransitiveProps(methodName, seen = new Set()) {
     // Starting from methods that are reachable from the template/computed
     // properties, walk through nested method calls and accumulate every
@@ -315,6 +329,7 @@ function getMethodUsages(classNode, propertyNames) {
   return propToMethods;
 }
 
+// Converts a supported AST name node into plain text.
 function getNameText(name) {
   if (
     ts.isIdentifier(name) ||
@@ -326,10 +341,12 @@ function getNameText(name) {
   return null;
 }
 
+// Finds methods invoked from the component's static HTML template.
 function getTemplateCalledMethods(classNode) {
   const methodNames = new Set();
   const CALL_RE = /this\.([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
 
+  // Walks template AST nodes to capture direct `this.method()` calls.
   function visit(node) {
     if (
       ts.isPropertyAccessExpression(node) &&
@@ -343,6 +360,7 @@ function getTemplateCalledMethods(classNode) {
     ts.forEachChild(node, visit);
   }
 
+  // Scans raw template text for method calls that AST traversal can miss.
   function addTemplateTextMethods(template) {
     // Template expressions can hide method calls inside raw template text,
     // so use a regex in addition to AST traversal to catch those names.
@@ -373,6 +391,7 @@ function getTemplateCalledMethods(classNode) {
   return methodNames;
 }
 
+// Collects imported Wrec class names and the quote style used for those imports.
 function getWrecImportInfo(sourceFile) {
   const names = new Set(['Wrec']);
   let quote = "'";
@@ -416,12 +435,14 @@ function getWrecImportInfo(sourceFile) {
   return {names, quote};
 }
 
+// Reports whether a class member declares the `static` modifier.
 function hasStaticModifier(node) {
   return Boolean(
     node.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword)
   );
 }
 
+// Checks whether a path points to a supported JavaScript or TypeScript source file.
 function isSupportedSourceFile(filePath, excludeTests = false) {
   return (
     /\.(js|ts)$/.test(filePath) &&
@@ -430,19 +451,20 @@ function isSupportedSourceFile(filePath, excludeTests = false) {
   );
 }
 
+// Computes all `usedBy` edits needed for a parsed source file.
 function transformSourceFile(sourceFile) {
   const edits = [];
   const {names: wrecNames, quote} = getWrecImportInfo(sourceFile);
   const suggestions = [];
   let foundWrecSubclass = false;
 
-  // Each matching class contributes text replacements for the specific
-  // property config objects that need `usedBy` added, updated, or removed.
+  // Find the statement that defines a class that extends Wrec.
   for (const node of sourceFile.statements) {
     if (!ts.isClassDeclaration(node) || !extendsWrec(node, wrecNames)) continue;
     foundWrecSubclass = true;
 
     let propertiesObject = null;
+    // Find the static property named "properties".
     for (const member of node.members) {
       if (
         ts.isPropertyDeclaration(member) &&
@@ -456,26 +478,39 @@ function transformSourceFile(sourceFile) {
       }
     }
 
+    // Bail out if no static property named "properties" was found.
     if (!propertiesObject) continue;
 
+    // Get a Set of the defined property names.
     const propertyNames = new Set(
       propertiesObject.properties
         .filter(ts.isPropertyAssignment)
         .map(property => getNameText(property.name))
-        .filter(Boolean)
+        .filter(name => name !== null)
     );
 
+    // Get a map where the keys are property names and
+    // the values are Sets of public methods that use it transitively.
     const propToMethods = getMethodUsages(node, propertyNames);
+
+    // For each member that represents a component property ...
     for (const member of propertiesObject.properties) {
+      // Skip the member if not a property assignment.
       if (!ts.isPropertyAssignment(member)) continue;
 
+      // Skip the member if we can't gets its name
+      // or if its value isn't an object literal.
       const propName = getNameText(member.name);
       if (!propName || !ts.isObjectLiteralExpression(member.initializer))
         continue;
 
+      // Convert the Set of methods that use the property into a sorted array.
       const methodNames = [
         ...(propToMethods.get(propName) ?? new Set())
       ].sort();
+
+      // Get an array of all the NodeObjects that represent
+      // properties in the configuration object, except the one for "usedBy".
       const configObject = member.initializer;
       const existingMembers = configObject.properties.filter(
         property =>
@@ -484,19 +519,23 @@ function transformSourceFile(sourceFile) {
             getNameText(property.name) === 'usedBy'
           )
       );
-      const hadUsedBy =
-        existingMembers.length !== configObject.properties.length;
-      if (methodNames.length > 0 || hadUsedBy) {
+
+      // If the property is used by any methods ...
+      if (methodNames.length > 0) {
         suggestions.push({
           propName,
-          suggestion:
-            methodNames.length > 0
-              ? createUsedByProperty(methodNames, quote)
-              : 'remove usedBy'
+          suggestion: createUsedByProperty(methodNames, quote)
         });
+      } else {
+        // Determine if the configuration object already had a "usedBy" property.
+        const hadUsedBy =
+          existingMembers.length !== configObject.properties.length;
+        if (hadUsedBy) {
+          suggestions.push({propName, suggestion: 'remove usedBy'});
+        } else {
+          continue;
+        }
       }
-      const needsUsedBy = methodNames.length > 0;
-      if (!hadUsedBy && !needsUsedBy) continue;
 
       const nextText = buildConfigText(sourceFile, member, methodNames, quote);
       const currentText = sourceFile.text.slice(
@@ -551,6 +590,7 @@ function transformSourceFile(sourceFile) {
   };
 }
 
+// Validates that the requested target exists and is a supported source file.
 function validateTargetFile(target, cwd = process.cwd()) {
   if (!fs.existsSync(target)) {
     throw new Error(`File not found: ${path.relative(cwd, target)}`);
@@ -566,6 +606,7 @@ function validateTargetFile(target, cwd = process.cwd()) {
   }
 }
 
+// Parses source text and returns the `usedBy` updates it would need.
 export function updateUsedBySource(filePath, text) {
   const scriptKind = filePath.endsWith('.ts')
     ? ts.ScriptKind.TS
@@ -577,10 +618,10 @@ export function updateUsedBySource(filePath, text) {
     true,
     scriptKind
   );
-
   return transformSourceFile(sourceFile);
 }
 
+// Applies inferred `usedBy` updates to a file or reports them in dry-run mode.
 export function updateUsedByFile(filePath, options = {}) {
   const {dry = false, quiet = false} = options;
   const cwd = process.cwd();
@@ -608,11 +649,13 @@ export function updateUsedByFile(filePath, options = {}) {
   return {changed, foundWrecSubclass, suggestions: [], text: nextText, quiet};
 }
 
+// Prints an error message and exits the CLI with a failure code.
 function fail(message) {
   console.error(message);
   process.exit(1);
 }
 
+// Handles CLI arguments and runs the `usedBy` updater workflow.
 function main() {
   const args = process.argv.slice(2);
   const dry = args.includes('--dry');

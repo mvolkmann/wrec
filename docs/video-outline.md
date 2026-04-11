@@ -3,21 +3,19 @@
 This outline is based on the project README, the examples in `src/examples`,
 and the architecture notes in `docs/how-wrec-works.md`.
 
-## 1. Introduction
+## 1. Bold Claims
 
-- What `wrec` is: a small library for building reactive web components,
-  similar to Lit and Stencil
-- Who it is for: developers who want native custom elements with less
-  boilerplate
-- What viewers will build: a small reactive component, followed by a richer
-  example
+- I’ve had a long career and this is the best thing I’ve created
+- You cannot create components with less code using any other library/framework
+- You might not care if you're fine with
+  generating UI code that you never examine or maintain
 
-## 2. Why wrec
+## 2. Introduction
 
-- Pain points with vanilla web components
-- What `wrec` simplifies: reactive properties, templating, CSS, events, and
-  shared state
-- Quick preview of examples such as `hello-world`, `counter`, and `state-demo`
+- wrec is a library that simplifies developing web components,
+  similar to Lit and Stencil.
+- It has a strong emphasis on reactivity and simplicity.
+- Updating a component property can cause the rendered DOM to update.
 
 ## 3. Project Setup
 
@@ -26,27 +24,31 @@ and the architecture notes in `docs/how-wrec-works.md`.
 - Install Vite with `npm i -D vite`
 - Add a simple `dev` script to `package.json`
 - Create a minimal `index.html`
-- Explain the local dev workflow from the README
 
-## 4. First Component: Hello World
+## 4. hello-world Component
 
 - Import `Wrec`, `html`, and optionally `css`
 - Create a class that extends `Wrec`
+- Optionally define `static properties`
 - Define `static html`
+- Optionally define `static css`
+- Optionally add methods
 - Register the element with `.define(...)`
 - Render the component in HTML
 - Point to `src/examples/hello-world.js`
 
+- Quick preview of examples such as `hello-world`, `counter`, and `state-demo`
+
 ## 5. Reactive Properties
 
-- Add `static properties`
+- In `static properties` object, each property is configured with an object
 - Explain types, default values, and attribute-to-property behavior
 - Demonstrate changing a property from markup and DevTools
 - Show how DOM updates happen automatically
 
 ## 6. Styling with static css
 
-- Add component-scoped styles
+- Add component-scoped styles with `static css`
 - Show basic `:host` styling and element styling
 - Introduce reactive CSS as a standout feature
 - Point to `src/examples/reactive-css.js` and `src/examples/css-demo.js`
@@ -57,13 +59,15 @@ and the architecture notes in `docs/how-wrec-works.md`.
 - Build a simple counter
 - Show conditional attributes like disabling decrement at zero
 - Point to `src/examples/counter-wrec.js`
+- `input` and `select` element `value` attributes
+  can have 2-way bindings to component properties
 
 ## 8. Expressions and Binding
 
 - Explain that expressions can appear in text, attributes, and CSS
 - Show derived UI such as conditional labels and live updates
 - Demonstrate a binding-oriented example such as `number-bind` or
-  `data-binding`
+  `data-binding` (parent-child 2-way bindings)
 
 ## 9. Computed Properties
 
@@ -71,14 +75,16 @@ and the architecture notes in `docs/how-wrec-works.md`.
 - Demonstrate width and height producing area
 - Point to `src/examples/rectangle-area.ts`
 
-## 10. Shared State with WrecState
+## 10. Contributing to Form Submissions
+
+## 11. Shared State with WrecState
 
 - Explain when local component state is not enough
 - Show two components sharing state
 - Update one component and watch another react
 - Point to `src/examples/state-demo.html` and `src/examples/state-demo2`
 
-## 11. Advanced Features Sampler
+## 12. Advanced Features Sampler
 
 - Enumerated property values with `values`
 - Slots
@@ -87,7 +93,7 @@ and the architecture notes in `docs/how-wrec-works.md`.
 - Point to `traffic-light`, `slots-demo`, `ref-demo`, and the SSR section of
   the README
 
-## 12. How wrec Works Internally
+## 13. How wrec Works Internally
 
 - Give a high-level explanation only
 - Cover the two core maps described in the README:
