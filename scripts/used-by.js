@@ -537,11 +537,15 @@ function transformSourceFile(sourceFile) {
         }
       }
 
+      // Build the new text for the property configuration object.
       const nextText = buildConfigText(sourceFile, member, methodNames, quote);
+      // Get the existing text for the property configuration object.
       const currentText = sourceFile.text.slice(
         configObject.getStart(sourceFile),
         configObject.end
       );
+      // If they differ, add an object describing
+      // the desired edit to the edits array.
       if (nextText !== currentText) {
         edits.push({
           start: configObject.getStart(sourceFile),
@@ -554,6 +558,7 @@ function transformSourceFile(sourceFile) {
     }
   }
 
+  // If we didn't find a Wrec subclass, then there are no changes to make.
   if (!foundWrecSubclass) {
     return {
       changed: false,
@@ -564,6 +569,8 @@ function transformSourceFile(sourceFile) {
     };
   }
 
+  // If we found a Wrec subclass,
+  // but no edits for usedBy properties are needed ...
   if (edits.length === 0) {
     return {
       changed: false,
@@ -574,8 +581,13 @@ function transformSourceFile(sourceFile) {
     };
   }
 
+  // Get the current text in the source file.
   let nextSource = sourceFile.text;
+
+  // Sort the edits to be made from last to first.
   edits.sort((a, b) => b.start - a.start);
+
+  // Make each of the edits to the source file.
   for (const edit of edits) {
     nextSource =
       nextSource.slice(0, edit.start) + edit.text + nextSource.slice(edit.end);
@@ -635,17 +647,23 @@ export function updateUsedByFile(filePath, options = {}) {
     suggestions,
     text: nextText
   } = updateUsedBySource(resolved, text);
+
+  // If we didn't find the definition of a class that extends Wrec ...
   if (!foundWrecSubclass) {
     throw new Error('No class extending Wrec was found.');
   }
+
+  // If this is just a dray run ...
   if (dry) {
     return {changed, foundWrecSubclass, suggestions, text: nextText};
   }
 
+  // If changes were made, write the new source code back to the file.
   if (changed) {
     // Otherwise, apply the rewritten source text back to disk.
     fs.writeFileSync(resolved, nextText);
   }
+
   return {changed, foundWrecSubclass, suggestions: [], text: nextText, quiet};
 }
 
@@ -674,16 +692,16 @@ function main() {
 
   const result = updateUsedByFile(inputPaths[0], {dry, quiet});
   if (dry) {
-    // In dry mode, report the inferred change and exit non-zero when at
-    // least one update would be needed so the script can be used in checks.
+    // In dry mode, report the proposed changes and
+    // exit non-zero when at least one update would be needed
+    // so the script can be used in checks.
     for (const {propName, suggestion} of result.suggestions) {
       console.log(`${propName} - ${suggestion}`);
     }
-    if (!result.changed) return;
-    process.exit(1);
+    if (result.changed) process.exit(1);
+  } else if (result.changed) {
+    console.log('updated source file');
   }
-
-  if (result.changed) console.log('updated');
 }
 
 const isCliEntry = (() => {
