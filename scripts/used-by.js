@@ -666,12 +666,6 @@ export function updateUsedByFile(filePath, options = {}) {
   return {changed, foundWrecSubclass, suggestions: [], text: nextText, quiet};
 }
 
-// Prints an error message and exits the CLI with a failure code.
-function fail(message) {
-  console.error(message);
-  process.exit(1);
-}
-
 // Handles CLI arguments and runs the `usedBy` updater workflow.
 function main() {
   const args = process.argv.slice(2);
@@ -709,6 +703,7 @@ if (import.meta.main) {
   try {
     main();
   } catch (error) {
-    fail(error instanceof Error ? error.message : String(error));
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
   }
 }
