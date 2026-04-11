@@ -18,7 +18,6 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import {fileURLToPath} from 'node:url';
 import ts from 'typescript';
 
 // Rebuilds a property config object with an updated `usedBy` entry.
@@ -704,19 +703,9 @@ function main() {
   }
 }
 
-const isCliEntry = (() => {
-  if (!process.argv[1]) return false;
-  try {
-    return (
-      fs.realpathSync(process.argv[1]) ===
-      fs.realpathSync(fileURLToPath(import.meta.url))
-    );
-  } catch {
-    return path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-  }
-})();
-
-if (isCliEntry) {
+// If this is being run as a script,
+// versus being imported (likely by test code) ...
+if (import.meta.main) {
   try {
     main();
   } catch (error) {
