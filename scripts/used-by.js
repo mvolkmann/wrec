@@ -20,6 +20,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 
+const cwd = process.cwd();
+
 // Rebuilds a property config object with an updated `usedBy` entry.
 function buildConfigText(sourceFile, member, methodNames, quote) {
   const {text} = sourceFile;
@@ -96,17 +98,16 @@ function createUsedByProperty(methodNames, quote) {
 // the usedBy properties in property configuration objects.
 export function evaluateSourceFile(filePath, options = {}) {
   const {dry = false} = options;
-  const cwd = process.cwd();
-  const resolved = path.resolve(cwd, filePath);
-  validateTargetFile(resolved, cwd);
+  const absFilePath = path.resolve(cwd, filePath);
+  validateFile(absFilePath);
 
-  const text = fs.readFileSync(resolved, 'utf8');
+  const text = fs.readFileSync(absFilePath, 'utf8');
   const {
     changed,
     foundWrecSubclass,
     suggestions,
     text: nextText
-  } = updateUsedBySource(resolved, text);
+  } = updateUsedBySource(absFilePath, text);
 
   // If we didn't find the definition of a class that extends Wrec ...
   if (!foundWrecSubclass) {
@@ -121,7 +122,7 @@ export function evaluateSourceFile(filePath, options = {}) {
   // If changes were made, write the new source code back to the file.
   if (changed) {
     // Otherwise, apply the rewritten source text back to disk.
-    fs.writeFileSync(resolved, nextText);
+    fs.writeFileSync(absFilePath, nextText);
   }
 
   return {changed, foundWrecSubclass, suggestions: [], text: nextText};
@@ -637,18 +638,14 @@ function transformSourceFile(sourceFile) {
 }
 
 // Validates that the requested target exists and is a supported source file.
-function validateTargetFile(target, cwd = process.cwd()) {
-  if (!fs.existsSync(target)) {
-    throw new Error(`File not found: ${path.relative(cwd, target)}`);
-  }
+function validateFile(absFilePath) {
+  if (!fs.existsSync(absFilePath)) throw new Error('File not found');
 
-  const stat = fs.statSync(target);
-  if (!stat.isFile()) {
-    throw new Error(`Not a file: ${path.relative(cwd, target)}`);
-  }
+  const stat = fs.statSync(absFilePath);
+  if (!stat.isFile()) throw new Error('Not a file');
 
-  if (!/\.(js|ts)$/.test(target) || /\.d\.ts$/.test(target)) {
-    throw new Error(`Unsupported file type: ${path.relative(cwd, target)}`);
+  if (!/\.(js|ts)$/.test(absFilePath) || /\.d\.ts$/.test(absFilePath)) {
+    throw new Error('Unsupported file type');
   }
 }
 
