@@ -634,7 +634,7 @@ export function updateUsedBySource(filePath, text) {
 
 // Applies inferred `usedBy` updates to a file or reports them in dry-run mode.
 export function updateUsedByFile(filePath, options = {}) {
-  const {dry = false, quiet = false} = options;
+  const {dry = false} = options;
   const cwd = process.cwd();
   const resolved = path.resolve(cwd, filePath);
   validateTargetFile(resolved, cwd);
@@ -663,14 +663,13 @@ export function updateUsedByFile(filePath, options = {}) {
     fs.writeFileSync(resolved, nextText);
   }
 
-  return {changed, foundWrecSubclass, suggestions: [], text: nextText, quiet};
+  return {changed, foundWrecSubclass, suggestions: [], text: nextText};
 }
 
 // Handles CLI arguments and runs the `usedBy` updater workflow.
 function main() {
   const args = process.argv.slice(2);
   const dry = args.includes('--dry');
-  const quiet = args.includes('--quiet');
   const inputPaths = args.filter(arg => !arg.startsWith('--'));
 
   if (args.includes('--check')) {
@@ -683,7 +682,7 @@ function main() {
     );
   }
 
-  const result = updateUsedByFile(inputPaths[0], {dry, quiet});
+  const result = updateUsedByFile(inputPaths[0], {dry});
   if (dry) {
     // In dry mode, report the proposed changes and
     // exit non-zero when at least one update would be needed
