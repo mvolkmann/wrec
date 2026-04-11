@@ -669,30 +669,27 @@ export function updateUsedByFile(filePath, options = {}) {
 // Handles CLI arguments and runs the `usedBy` updater workflow.
 function main() {
   const args = process.argv.slice(2);
-  const dry = args.includes('--dry');
   const inputPaths = args.filter(arg => !arg.startsWith('--'));
 
-  if (args.includes('--check')) {
-    throw new Error('Use --dry instead of --check.');
-  }
-
   if (inputPaths.length !== 1) {
-    throw new Error(
-      'Specify a single source file, e.g. npx wrec-usedby src/examples/radio-group.js'
-    );
+    throw new Error('Specify a single source file');
   }
 
+  const dry = args.includes('--dry');
   const result = updateUsedByFile(inputPaths[0], {dry});
   if (dry) {
-    // In dry mode, report the proposed changes and
-    // exit non-zero when at least one update would be needed
-    // so the script can be used in checks.
+    // Report the proposed changes.
     for (const {propName, suggestion} of result.suggestions) {
       console.log(`${propName} - ${suggestion}`);
     }
+
+    // Exit with a non-zero when there is at least one change
+    // so that condition can be checked.
     if (result.changed) process.exit(1);
   } else if (result.changed) {
-    console.log('updated source file');
+    console.info('updated source file');
+  } else {
+    console.info('no changes needed');
   }
 }
 
