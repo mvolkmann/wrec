@@ -115,7 +115,8 @@ export function evaluateSourceFile(filePath, options = {}) {
     throw new Error('No class extending Wrec was found.');
   }
 
-  // If changes were made, write the modified source code back to the file.
+  // If this isn't a dry run and changes were made,
+  // write the modified source code back to the file.
   if (!dry && changed) {
     fs.writeFileSync(absFilePath, nextText);
     suggestions = []; // all the suggestions have been applied
