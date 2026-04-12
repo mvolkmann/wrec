@@ -182,6 +182,7 @@ function getComputedCalledMethods(classNode) {
     }
   }
 
+  // If no matching declaration was found, return an empty Set.
   if (!propertiesNode) return methodNames;
 
   // For each property in the last "static properties" object ...
