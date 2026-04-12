@@ -24,6 +24,10 @@ const cwd = process.cwd();
 
 // Builds a new property config object
 // with an updated `usedBy` entry if needed.
+// - member is an AST node for the initialization of a property
+//   inside the "static properties" object.
+// - methodsNames is an array of the methods that use the property.
+// - quote is either a single or double quote.
 function buildConfigText(sourceFile, member, methodNames, quote) {
   const configObject = member.initializer;
 
@@ -42,6 +46,7 @@ function buildConfigText(sourceFile, member, methodNames, quote) {
   const propertyStrings = existingMembers.map(property =>
     text.slice(property.getStart(sourceFile), property.end).trim()
   );
+
   // If this property is used by any methods,
   // add a usedBy property that lists them.
   if (methodNames.length > 0) {
