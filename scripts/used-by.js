@@ -437,8 +437,12 @@ function getTemplateCalledMethods(classNode) {
   return methodNames;
 }
 
-// Collects imported Wrec class names and
-// determines the quote character (single or double) used for those imports.
+// Collects imported Wrec class names. For example,
+// the following line would treat "MyWrec" as a class
+// that can be extended in order to implement a wrec component:
+//   import { Wrec as MyWrec } from 'wrec`
+// This also determines the quote character (single or double)
+// used for those imports.
 function getWrecImportInfo(sourceFile) {
   // Start with the unaliased class name and a default quote style
   // in case the file imports Wrec later or not at all.
@@ -446,8 +450,7 @@ function getWrecImportInfo(sourceFile) {
   let quote = "'";
 
   // Support aliased imports such as `import {Wrec as Base} from 'wrec'`
-  // so subclass detection still works and generated text matches the
-  // file's existing quote style.
+  // so subclass detection still works.
   for (const statement of sourceFile.statements) {
     // Ignore anything that is not an import declaration
     // with a string module path.
@@ -461,11 +464,7 @@ function getWrecImportInfo(sourceFile) {
 
     // Only inspect imports that come from Wrec itself or its supported variants.
     const moduleName = statement.moduleSpecifier.text;
-    const isWrecModule =
-      moduleName === 'wrec' ||
-      moduleName === 'wrec/ssr' ||
-      moduleName.endsWith('/wrec') ||
-      moduleName.endsWith('/wrec-ssr');
+    const isWrecModule = moduleName === 'wrec' || moduleName.endsWith('/wrec');
     if (!isWrecModule) continue;
 
     // Skip default or namespace imports
