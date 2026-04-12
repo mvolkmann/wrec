@@ -25,7 +25,6 @@ const cwd = process.cwd();
 // Builds a new property config object
 // with an updated `usedBy` entry if needed.
 function buildConfigText(sourceFile, member, methodNames, quote) {
-  console.log('used-by.js : name =', member.name.escapedText);
   const configObject = member.initializer;
 
   // Get an array of AST nodes for all the config object properties
@@ -155,43 +154,60 @@ function extendsWrec(node, wrecNames) {
   );
 }
 
-// Extracts method names referenced by `computed` property config strings.
+// Gets the names of all methods that are called from
+// the "computed" JavaScript expression of an component property.
 function getComputedCalledMethods(classNode) {
   const methodNames = new Set();
   const CALL_RE = /this\.([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
+  let propertiesNode;
 
   for (const member of classNode.members) {
+    // If this member isn't the AST node for "static properties = ..."
+    // then skip it.
     if (
-      !ts.isPropertyDeclaration(member) ||
-      !hasStaticModifier(member) ||
-      getNameText(member.name) !== 'properties' ||
-      !member.initializer ||
-      !ts.isObjectLiteralExpression(member.initializer)
+      ts.isPropertyDeclaration(member) &&
+      hasStaticModifier(member) &&
+      getNameText(member.name) === 'properties' &&
+      member.initializer &&
+      ts.isObjectLiteralExpression(member.initializer)
+    ) {
+      // Keep the last matching declaration because JavaScript class fields
+      // use last-one-wins semantics when the same static field is declared twice.
+      propertiesNode = member.initializer;
+    }
+  }
+
+  if (!propertiesNode) return methodNames;
+
+  // For each property in the last "static properties" object ...
+  for (const property of propertiesNode.properties) {
+    // If it isn't a property assignment or
+    // the property value isn't an object literal then skip it.
+    if (
+      !ts.isPropertyAssignment(property) ||
+      !ts.isObjectLiteralExpression(property.initializer)
     ) {
       continue;
     }
 
-    for (const property of member.initializer.properties) {
+    // For each property in the configuration object ...
+    for (const configProperty of property.initializer.properties) {
+      // If it isn't a property assignment or
+      // the property name isn't "computed" then skip it.
       if (
-        !ts.isPropertyAssignment(property) ||
-        !ts.isObjectLiteralExpression(property.initializer)
+        !ts.isPropertyAssignment(configProperty) ||
+        getNameText(configProperty.name) !== 'computed'
       ) {
         continue;
       }
 
-      for (const configProperty of property.initializer.properties) {
-        if (
-          !ts.isPropertyAssignment(configProperty) ||
-          getNameText(configProperty.name) !== 'computed'
-        ) {
-          continue;
-        }
+      // If the property value isn't a string then skip it.
+      if (!ts.isStringLiteralLike(configProperty.initializer)) continue;
 
-        if (!ts.isStringLiteralLike(configProperty.initializer)) continue;
-        const computed = configProperty.initializer.text;
-        for (const match of computed.matchAll(CALL_RE)) {
-          methodNames.add(match[1]);
-        }
+      // Find all the method calls in the string JavaScript expression.
+      const computed = configProperty.initializer.text;
+      for (const match of computed.matchAll(CALL_RE)) {
+        methodNames.add(match[1]);
       }
     }
   }
@@ -375,65 +391,49 @@ function getMethodUsages(classNode, propertyNames) {
   return propToMethods;
 }
 
-// Converts a supported AST name node into plain text.
-function getNameText(name) {
-  if (
-    ts.isIdentifier(name) ||
-    ts.isStringLiteral(name) ||
-    ts.isPrivateIdentifier(name)
-  ) {
-    return name.text;
-  }
-  return null;
-}
+// Gets the text value of an AST name node.
+const getNameText = name =>
+  ts.isIdentifier(name) ||
+  ts.isStringLiteral(name) ||
+  ts.isPrivateIdentifier(name)
+    ? name.text
+    : null;
 
-// Finds methods invoked from the component's static HTML template.
+// Gets the names of all methods that are called
+// from the component's static HTML template.
 function getTemplateCalledMethods(classNode) {
-  const methodNames = new Set();
-  const CALL_RE = /this\.([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
-
-  // Walks template AST nodes to capture direct `this.method()` calls.
-  function visit(node) {
-    if (
-      ts.isPropertyAccessExpression(node) &&
-      node.expression.kind === ts.SyntaxKind.ThisKeyword &&
-      ts.isCallExpression(node.parent) &&
-      node.parent.expression === node
-    ) {
-      methodNames.add(node.name.text);
-    }
-
-    ts.forEachChild(node, visit);
-  }
-
-  // Scans raw template text for method calls that AST traversal can miss.
-  function addTemplateTextMethods(template) {
-    // Template expressions can hide method calls inside raw template text,
-    // so use a regex in addition to AST traversal to catch those names.
-    const text = template.getText();
-    for (const match of text.matchAll(CALL_RE)) {
-      methodNames.add(match[1]);
-    }
-  }
-
+  // Find the last `static html = html\`...\`` declaration
+  // because duplicate static class fields use last-one-wins semantics.
+  let template;
   for (const member of classNode.members) {
+    // If it's a "static html =" property assignment node ...
     if (
       ts.isPropertyDeclaration(member) &&
       hasStaticModifier(member) &&
       getNameText(member.name) === 'html' &&
       member.initializer
     ) {
+      // If the value is a tagged template literal with the "html" tag ...
       if (
         ts.isTaggedTemplateExpression(member.initializer) &&
         ts.isIdentifier(member.initializer.tag) &&
         member.initializer.tag.text === 'html'
       ) {
-        addTemplateTextMethods(member.initializer.template);
+        template = member.initializer.template;
       }
-      ts.forEachChild(member.initializer, visit);
     }
   }
 
+  const methodNames = new Set();
+  if (template) {
+    // Finds all method names called in the HTML template
+    // matching `this.method()`.
+    const text = template.getText();
+    const CALL_RE = /this\.([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
+    for (const match of text.matchAll(CALL_RE)) {
+      methodNames.add(match[1]);
+    }
+  }
   return methodNames;
 }
 
@@ -480,12 +480,10 @@ function getWrecImportInfo(sourceFile) {
         // Store the local identifier that this file uses to refer to Wrec.
         names.add(element.name.text);
 
-        // Capture whether the source file used single or double quotes
+        // Capture whether the source file uses single or double quotes
         // so generated code can follow the file's existing style.
         const moduleText = statement.moduleSpecifier.getText(sourceFile);
-        if (moduleText.startsWith('"') || moduleText.startsWith("'")) {
-          quote = moduleText[0];
-        }
+        quote = moduleText[0];
       }
     }
   }

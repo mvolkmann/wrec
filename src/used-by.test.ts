@@ -100,6 +100,67 @@ describe('used-by.js', () => {
     expect(after).toBe(before);
   });
 
+  test('uses only the last static properties declaration for computed methods', () => {
+    const source = `
+      import {html, Wrec} from 'wrec';
+
+      class Fixture extends Wrec {
+        static properties = {
+          count: {type: Number, computed: 'this.oldSummary()'}
+        };
+
+        static properties = {
+          count: {type: Number, computed: 'this.newSummary()'}
+        };
+
+        static html = html\`<div>\${this.count}</div>\`;
+
+        oldSummary() {
+          return 1;
+        }
+
+        newSummary() {
+          return this.count;
+        }
+      }
+    `;
+
+    const result = evaluateSourceText('/virtual/component.js', source);
+
+    expect(result.text).toContain("count: {type: Number, computed: 'this.newSummary()'}");
+    expect(result.text).not.toContain("usedBy: 'oldSummary'");
+    expect(result.text).toContain("usedBy: 'newSummary'");
+  });
+
+  test('uses only the last static html declaration for template methods', () => {
+    const source = `
+      import {html, Wrec} from 'wrec';
+
+      class Fixture extends Wrec {
+        static properties = {
+          count: {type: Number}
+        };
+
+        static html = html\`<div>\${this.oldRender()}</div>\`;
+
+        static html = html\`<div>\${this.newRender()}</div>\`;
+
+        oldRender() {
+          return this.count;
+        }
+
+        newRender() {
+          return this.count;
+        }
+      }
+    `;
+
+    const result = evaluateSourceText('/virtual/component.js', source);
+
+    expect(result.text).not.toContain("usedBy: 'oldRender'");
+    expect(result.text).toContain("usedBy: 'newRender'");
+  });
+
   test('dry run reports inferred usage for properties that are already up to date', () => {
     const filePath = createTempComponent(`
       import {html, Wrec} from 'wrec';
