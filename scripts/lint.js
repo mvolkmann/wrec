@@ -133,7 +133,7 @@ const WREC_REF_NAME = '__wrec';
 const componentPropertyCache = new Map();
 
 // Analyzes an expression for invalid property access,
-// methods calls, and arithmetic usage.
+// method calls, and arithmetic usage.
 function analyzeExpression(
   expressionNode,
   checker,
@@ -254,14 +254,20 @@ function analyzeExpression(
       if (!isNumericLikeType(leftType)) {
         findings.typeErrors.push({
           expression: toUserFacingExpression(node.getText()),
-          message: `left operand "${toUserFacingExpression(node.left.getText())}" has type ${checker.typeToString(leftType)}, but arithmetic operators require number`
+          message:
+            `left operand "${toUserFacingExpression(node.left.getText())}" ` +
+            `has type ${checker.typeToString(leftType)}, ` +
+            'but arithmetic operators require number'
         });
       }
 
       if (!isNumericLikeType(rightType)) {
         findings.typeErrors.push({
           expression: toUserFacingExpression(node.getText()),
-          message: `right operand "${toUserFacingExpression(node.right.getText())}" has type ${checker.typeToString(rightType)}, but arithmetic operators require number`
+          message:
+            `right operand "${toUserFacingExpression(node.right.getText())}" ` +
+            `has type ${checker.typeToString(rightType)}, ` +
+            'but arithmetic operators require number'
         });
       }
     }
@@ -343,7 +349,8 @@ function collectClassMethods(classNode) {
 function collectHelperExpressions(augmentedSourceFile) {
   const helpers = [];
 
-  // Finds generated helper functions and stores their return expressions by index.
+  // Finds generated helper functions and
+  // stores their return expressions by index.
   function visit(node) {
     if (
       ts.isFunctionDeclaration(node) &&
@@ -419,7 +426,8 @@ function collectUseStateMapErrors(classNode, supportedProps, findings) {
           const componentProp = property.initializer.text;
           if (!supportedProps.has(componentProp)) {
             findings.invalidUseStateMaps.push(
-              `useState maps state property "${statePath}" to missing component property "${componentProp}"`
+              `useState maps state property "${statePath}" to ` +
+                `missing component property "${componentProp}"`
             );
           }
         }
@@ -929,7 +937,9 @@ function formatReport(
     lines.push('extra arguments:');
     findings.extraArguments.forEach(finding => {
       lines.push(
-        `  ${finding.methodName}: argument ${finding.argumentIndex} "${finding.argument}" exceeds the ${finding.parameterCount}-parameter signature`
+        `  ${finding.methodName}: argument ${finding.argumentIndex} ` +
+          `"${finding.argument}" exceeds the ` +
+          `${finding.parameterCount}-parameter signature`
       );
     });
   }
@@ -938,7 +948,9 @@ function formatReport(
     lines.push('incompatible arguments:');
     findings.incompatibleArguments.forEach(finding => {
       lines.push(
-        `  ${finding.methodName}: argument "${finding.argument}" has type ${finding.argumentType}, but parameter "${finding.parameterName}" expects ${finding.parameterType}`
+        `  ${finding.methodName}: argument "${finding.argument}" ` +
+          `has type ${finding.argumentType}, but parameter ` +
+          `"${finding.parameterName}" expects ${finding.parameterType}`
       );
     });
   }
@@ -1549,7 +1561,8 @@ function validateComputedProperty(
       !classMethods.has(referencedName)
     ) {
       findings.invalidComputedProperties.push(
-        `property "${propName}" computed references missing property "${referencedName}"`
+        `property "${propName}" computed references ` +
+          `missing property "${referencedName}"`
       );
     }
   }
@@ -1558,7 +1571,8 @@ function validateComputedProperty(
     const methodName = match[1];
     if (!classMethods.has(methodName)) {
       findings.invalidComputedProperties.push(
-        `property "${propName}" computed calls non-method instance member "${methodName}"`
+        `property "${propName}" computed calls ` +
+          `non-method instance member "${methodName}"`
       );
     }
   }
@@ -1644,7 +1658,8 @@ function validateFormAssocAttribute(attrName, attrValue, findings) {
       .map(part => part.trim());
     if (!trimmed || rest.length > 0 || !propName || !fieldName) {
       findings.invalidFormAssocValues.push(
-        `form-assoc="${attrValue}" is invalid; expected "property:field" or a comma-separated list of them`
+        `form-assoc="${attrValue}" is invalid; expected ` +
+          '"property:field" or a comma-separated list of them'
       );
       return;
     }
@@ -1670,7 +1685,8 @@ function validateFormAssocPropertyMappings(
     if (!propName) continue;
     if (!supportedProps.has(propName)) {
       findings.invalidFormAssocValues.push(
-        `form-assoc="${attrValue}" refers to missing component property "${propName}"`
+        `form-assoc="${attrValue}" refers to ` +
+          `missing component property "${propName}"`
       );
     }
   }
@@ -1710,12 +1726,13 @@ function validateHtmlNesting(node, findings) {
     allowedParents &&
     (!parentTagName || !allowedParents.has(parentTagName))
   ) {
+    const parentDescription = parentTagName
+      ? `<${parentTagName}>`
+      : 'the document root';
     findings.invalidHtmlNesting.push(
       `<${tagName}> must be nested inside ${[...allowedParents]
         .map(name => `<${name}>`)
-        .join(
-          ' or '
-        )}, but parent is ${parentTagName ? `<${parentTagName}>` : 'the document root'}`
+        .join(' or ')}, but parent is ${parentDescription}`
     );
   }
 
@@ -1767,7 +1784,8 @@ function validatePropertyConfigs(
         for (const methodName of methods) {
           if (!classMethods.has(methodName)) {
             findings.invalidUsedByReferences.push(
-              `property "${propName}" usedBy references missing method "${methodName}"`
+              `property "${propName}" usedBy references ` +
+                `missing method "${methodName}"`
             );
           }
         }
@@ -1805,7 +1823,8 @@ function validatePropertyConfigs(
         !values.includes(valueProp.initializer.text)
       ) {
         findings.invalidDefaultValues.push(
-          `property "${propName}" default value "${valueProp.initializer.text}" is not in values`
+          `property "${propName}" default value ` +
+            `"${valueProp.initializer.text}" is not in values`
         );
       }
     }
@@ -1818,7 +1837,9 @@ function validatePropertyConfigs(
       );
       if (mismatch) {
         findings.invalidDefaultValues.push(
-          `property "${propName}" default value has type ${mismatch.valueTypeName}, but declared type is ${mismatch.typeName}`
+          `property "${propName}" default value ` +
+            `has type ${mismatch.valueTypeName}, ` +
+            `but declared type is ${mismatch.typeName}`
         );
       }
     }
@@ -1847,14 +1868,16 @@ function validateRefAttribute(
 
   if (propInfo.typeText !== 'HTMLElement') {
     findings.invalidRefAttributes.push(
-      `ref="${attrValue}" refers to property "${propName}" whose type is not HTMLElement`
+      `ref="${attrValue}" refers to property "${propName}" ` +
+        'whose type is not HTMLElement'
     );
     return;
   }
 
   if (seenRefProps.has(propName)) {
     findings.invalidRefAttributes.push(
-      `ref="${attrValue}" is a duplicate reference to the property "${propName}"`
+      `ref="${attrValue}" is a duplicate reference ` +
+        `to the property "${propName}"`
     );
     return;
   }
@@ -1870,7 +1893,8 @@ function validateValueBindingEvent(node, attrName, findings) {
 
   const tagName = node.rawTagName || node.tagName || 'element';
   findings.unsupportedEventNames.push(
-    `${tagName} attribute "${attrName}" refers to an unsupported event name "${eventName}"`
+    `${tagName} attribute "${attrName}" refers to ` +
+      `an unsupported event name "${eventName}"`
   );
 }
 
