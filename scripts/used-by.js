@@ -396,6 +396,46 @@ function extendsWrec(classNode, wrecNames) {
 }
 
 // Gets the names of all methods that are called from
+// JavaScript expressions in the component's static CSS template.
+// This is only called by getMethodUsages.
+function getCssCalledMethods(classNode) {
+  const methodNames = new Set();
+  const CALL_RE = /this\.([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
+  let template;
+
+  for (const member of classNode.members) {
+    // If this member isn't the AST node for "static css = ..."
+    // then skip it.
+    if (
+      ts.isPropertyDeclaration(member) &&
+      hasStaticModifier(member) &&
+      getNameText(member.name) === 'css' &&
+      member.initializer &&
+      ts.isTaggedTemplateExpression(member.initializer) &&
+      ts.isIdentifier(member.initializer.tag) &&
+      member.initializer.tag.text === 'css'
+    ) {
+      // Keep the last matching declaration because
+      // JavaScript class fields use last-one-wins semantics
+      // when the same static field is declared twice.
+      template = member.initializer.template;
+    }
+  }
+
+  // If no matching declaration was found, return an empty Set.
+  if (!template) return methodNames;
+
+  // Finds all method names called in CSS property value expressions
+  // matching `this.method()`.
+  const text = template.getText();
+  for (const match of text.matchAll(CALL_RE)) {
+    methodNames.add(match[1]);
+  }
+
+  return methodNames;
+}
+
+// Gets the names of all methods that are called from
 // the "computed" JavaScript expression of an component property.
 // This is only called by getMethodUsages.
 function getComputedCalledMethods(classNode) {
@@ -490,9 +530,11 @@ function getMethodUsages(classNode, propertyNames) {
     });
   }
 
-  // Build a Set method names that are called from the "static html" template
-  // or from computed property expressions.
+  // Build a Set of method names that are called from
+  // the "static html" template, the "static css" template,
+  // or computed property expressions.
   const entryMethods = new Set([
+    ...getCssCalledMethods(classNode),
     ...getTemplateCalledMethods(classNode),
     ...getComputedCalledMethods(classNode)
   ]);

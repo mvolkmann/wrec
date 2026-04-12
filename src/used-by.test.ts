@@ -23,6 +23,74 @@ function createTempComponent(source: string) {
 }
 
 describe('used-by.js', () => {
+  test('dry run reports inferred usage for properties that are already up to date', () => {
+    const filePath = createTempComponent(`
+      import {html, Wrec} from 'wrec';
+
+      class Fixture extends Wrec {
+        static properties = {
+          labels: {type: Array, usedBy: ['makeList', 'makeRows']},
+          rows: {type: Array, computed: 'this.makeRows()', usedBy: 'renderRows'}
+        };
+
+        static html = html\`
+          <div>\${this.makeList()}</div>
+          <div>\${this.renderRows()}</div>
+        \`;
+
+        makeList() {
+          return this.labels.join(', ');
+        }
+
+        makeRows() {
+          return this.labels.map(label => label.toUpperCase());
+        }
+
+        renderRows() {
+          return this.rows.join(', ');
+        }
+      }
+    `);
+
+    const result = evaluateSourceFile(filePath, {dry: true});
+
+    expect(result.changed).toBe(false);
+    expect(result.suggestions).toEqual([
+      {propName: 'labels', suggestion: "usedBy: ['makeList', 'makeRows']"},
+      {propName: 'rows', suggestion: "usedBy: 'renderRows'"}
+    ]);
+  });
+
+  test('infers usedBy values from methods called in static css expressions', () => {
+    const source = `
+      import {css, html, Wrec} from 'wrec';
+
+      class Fixture extends Wrec {
+        static properties = {
+          theme: {type: String}
+        };
+
+        static css = css\`
+          p {
+            color: this.getThemeColor();
+          }
+        \`;
+
+        static html = html\`<p>hello</p>\`;
+
+        getThemeColor() {
+          return this.theme;
+        }
+      }
+    `;
+
+    const result = evaluateSourceText('/virtual/component.js', source);
+
+    expect(result.foundWrecSubclass).toBe(true);
+    expect(result.changed).toBe(true);
+    expect(result.text).toContain("theme: {type: String, usedBy: 'getThemeColor'}");
+  });
+
   test('infers usedBy values from template and computed entry methods', () => {
     const source = `
       import {html, Wrec} from "wrec";
@@ -100,6 +168,55 @@ describe('used-by.js', () => {
     expect(after).toBe(before);
   });
 
+  test('throws when the source file does not define a Wrec subclass', () => {
+    expect(() =>
+      evaluateSourceText(
+        '/virtual/not-a-component.js',
+        'export const value = 1;'
+      )
+    ).not.toThrow();
+
+    const result = evaluateSourceText(
+      '/virtual/not-a-component.js',
+      'export const value = 1;'
+    );
+    expect(result.foundWrecSubclass).toBe(false);
+
+    const filePath = createTempComponent('export const value = 1;');
+    expect(() => evaluateSourceFile(filePath)).toThrow(
+      'No class extending Wrec was found.'
+    );
+  });
+
+  test('uses only the last static html declaration for template methods', () => {
+    const source = `
+      import {html, Wrec} from 'wrec';
+
+      class Fixture extends Wrec {
+        static properties = {
+          count: {type: Number}
+        };
+
+        static html = html\`<div>\${this.oldRender()}</div>\`;
+
+        static html = html\`<div>\${this.newRender()}</div>\`;
+
+        oldRender() {
+          return this.count;
+        }
+
+        newRender() {
+          return this.count;
+        }
+      }
+    `;
+
+    const result = evaluateSourceText('/virtual/component.js', source);
+
+    expect(result.text).not.toContain("usedBy: 'oldRender'");
+    expect(result.text).toContain("usedBy: 'newRender'");
+  });
+
   test('uses only the last static properties declaration for computed methods', () => {
     const source = `
       import {html, Wrec} from 'wrec';
@@ -132,73 +249,6 @@ describe('used-by.js', () => {
     expect(result.text).toContain("usedBy: 'newSummary'");
   });
 
-  test('uses only the last static html declaration for template methods', () => {
-    const source = `
-      import {html, Wrec} from 'wrec';
-
-      class Fixture extends Wrec {
-        static properties = {
-          count: {type: Number}
-        };
-
-        static html = html\`<div>\${this.oldRender()}</div>\`;
-
-        static html = html\`<div>\${this.newRender()}</div>\`;
-
-        oldRender() {
-          return this.count;
-        }
-
-        newRender() {
-          return this.count;
-        }
-      }
-    `;
-
-    const result = evaluateSourceText('/virtual/component.js', source);
-
-    expect(result.text).not.toContain("usedBy: 'oldRender'");
-    expect(result.text).toContain("usedBy: 'newRender'");
-  });
-
-  test('dry run reports inferred usage for properties that are already up to date', () => {
-    const filePath = createTempComponent(`
-      import {html, Wrec} from 'wrec';
-
-      class Fixture extends Wrec {
-        static properties = {
-          labels: {type: Array, usedBy: ['makeList', 'makeRows']},
-          rows: {type: Array, computed: 'this.makeRows()', usedBy: 'renderRows'}
-        };
-
-        static html = html\`
-          <div>\${this.makeList()}</div>
-          <div>\${this.renderRows()}</div>
-        \`;
-
-        makeList() {
-          return this.labels.join(', ');
-        }
-
-        makeRows() {
-          return this.labels.map(label => label.toUpperCase());
-        }
-
-        renderRows() {
-          return this.rows.join(', ');
-        }
-      }
-    `);
-
-    const result = evaluateSourceFile(filePath, {dry: true});
-
-    expect(result.changed).toBe(false);
-    expect(result.suggestions).toEqual([
-      {propName: 'labels', suggestion: "usedBy: ['makeList', 'makeRows']"},
-      {propName: 'rows', suggestion: "usedBy: 'renderRows'"}
-    ]);
-  });
-
   test('writes inferred usedBy values back to the file', () => {
     const filePath = createTempComponent(`
       import {html, Wrec} from 'wrec';
@@ -221,25 +271,5 @@ describe('used-by.js', () => {
 
     expect(result.changed).toBe(true);
     expect(updated).toContain("count: {type: Number, usedBy: 'renderCount'}");
-  });
-
-  test('throws when the source file does not define a Wrec subclass', () => {
-    expect(() =>
-      evaluateSourceText(
-        '/virtual/not-a-component.js',
-        'export const value = 1;'
-      )
-    ).not.toThrow();
-
-    const result = evaluateSourceText(
-      '/virtual/not-a-component.js',
-      'export const value = 1;'
-    );
-    expect(result.foundWrecSubclass).toBe(false);
-
-    const filePath = createTempComponent('export const value = 1;');
-    expect(() => evaluateSourceFile(filePath)).toThrow(
-      'No class extending Wrec was found.'
-    );
   });
 });
