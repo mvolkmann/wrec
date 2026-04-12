@@ -22,11 +22,14 @@ import ts from 'typescript';
 
 const cwd = process.cwd();
 
-// Rebuilds a property config object with an updated `usedBy` entry.
+// Builds a new property config object
+// with an updated `usedBy` entry if needed.
 function buildConfigText(sourceFile, member, methodNames, quote) {
-  const {text} = sourceFile;
+  console.log('used-by.js : name =', member.name.escapedText);
   const configObject = member.initializer;
-  // Get an array of all the config object properties except `usedBy`.
+
+  // Get an array of AST nodes for all the config object properties
+  // except `usedBy`.
   const existingMembers = configObject.properties.filter(
     property =>
       !(
@@ -34,64 +37,54 @@ function buildConfigText(sourceFile, member, methodNames, quote) {
         getNameText(property.name) === 'usedBy'
       )
   );
-  const existingTexts = existingMembers.map(property =>
+
+  // Create property assignment strings from the AST nodes.
+  const {text} = sourceFile;
+  const propertyStrings = existingMembers.map(property =>
     text.slice(property.getStart(sourceFile), property.end).trim()
   );
-  if (methodNames.length > 0)
-    existingTexts.push(createUsedByProperty(methodNames, quote));
+  // If this property is used by any methods,
+  // add a usedBy property that lists them.
+  if (methodNames.length > 0) {
+    propertyStrings.push(createUsedByProperty(methodNames, quote));
+  }
 
-  const original = text.slice(
+  const existingPropertiesString = text.slice(
     configObject.getStart(sourceFile),
     configObject.end
   );
-  const multiline = original.includes('\n');
-  if (!multiline) {
-    const openMatch = original.match(/^\{(\s*)/);
-    const closeMatch = original.match(/(\s*)\}$/);
-    const openSpacing = openMatch ? openMatch[1] : ' ';
-    const closeSpacing = closeMatch ? closeMatch[1] : ' ';
-    return `{${openSpacing}${existingTexts.join(', ')}${closeSpacing}}`;
+
+  const multiline = existingPropertiesString.includes('\n');
+  if (multiline) {
+    // Build and return a multi-line config object string
+    // that preserves the existing indentation.
+    const memberIndent = getIndent(text, member.getStart(sourceFile));
+    const [firstMember] = existingMembers;
+    const propertyIndent = firstMember
+      ? getIndent(text, firstMember.getStart(sourceFile))
+      : memberIndent + '  ';
+    const content = propertyStrings
+      .map(part => `${propertyIndent}${part}`)
+      .join(',\n');
+    return `{\n${content}\n${memberIndent}}`;
   }
 
-  // Preserve the surrounding formatting style so the update feels like a
-  // minimal edit instead of reformatting the whole object.
-  const memberIndent = getIndent(text, member.getStart(sourceFile));
-  const firstExisting = existingMembers[0];
-  const innerIndent = firstExisting
-    ? getIndent(text, firstExisting.getStart(sourceFile))
-    : memberIndent + '  ';
-  return `{\n${existingTexts.map(part => `${innerIndent}${part}`).join(',\n')}\n${memberIndent}}`;
+  // Build and return a single line config object string
+  // that preserves the existing spacing around curly braces.
+  const openMatch = existingPropertiesString.match(/^\{(\s*)/);
+  const closeMatch = existingPropertiesString.match(/(\s*)\}$/);
+  const openSpacing = openMatch ? openMatch[1] : ' ';
+  const closeSpacing = closeMatch ? closeMatch[1] : ' ';
+  return `{${openSpacing}${propertyStrings.join(', ')}${closeSpacing}}`;
 }
 
-// Recursively gathers supported source files beneath the given path.
-function collectFiles(startPath, files = []) {
-  if (!fs.existsSync(startPath)) return files;
-
-  const stat = fs.statSync(startPath);
-  if (stat.isFile()) {
-    if (isSupportedSourceFile(startPath)) files.push(startPath);
-    return files;
-  }
-
-  for (const entry of fs.readdirSync(startPath, {withFileTypes: true})) {
-    const fullPath = path.join(startPath, entry.name);
-    if (entry.isDirectory()) {
-      if (entry.name === 'node_modules' || entry.name === 'dist') continue;
-      collectFiles(fullPath, files);
-    } else if (entry.isFile() && isSupportedSourceFile(entry.name, true)) {
-      files.push(fullPath);
-    }
-  }
-
-  return files;
-}
-
-// Formats a `usedBy` property value using the file's existing quote style.
+// Returns a string for a usedBy property.
 function createUsedByProperty(methodNames, quote) {
-  if (methodNames.length === 1) {
-    return `usedBy: ${quote}${methodNames[0]}${quote}`;
-  }
-  return `usedBy: [${methodNames.map(name => `${quote}${name}${quote}`).join(', ')}]`;
+  const value =
+    methodNames.length === 1
+      ? `${quote}${methodNames[0]}${quote}`
+      : `[${methodNames.map(name => `${quote}${name}${quote}`).join(', ')}]`;
+  return `usedBy: ${value}`;
 }
 
 // Determines what changes, if any, should be made in
@@ -444,7 +437,8 @@ function getTemplateCalledMethods(classNode) {
   return methodNames;
 }
 
-// Collects imported Wrec class names and the quote style used for those imports.
+// Collects imported Wrec class names and
+// determines the quote character (single or double) used for those imports.
 function getWrecImportInfo(sourceFile) {
   const names = new Set(['Wrec']);
   let quote = "'";
