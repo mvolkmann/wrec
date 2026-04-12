@@ -2,7 +2,7 @@
   "name": "wrec",
   "description": "a small library that greatly simplifies building web components",
   "author": "R. Mark Volkmann",
-  "version": "0.29.4",
+  "version": "0.30.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -34,8 +34,9 @@
   },
   "files": [
     "dist",
-    "scripts/used-by.js",
+    "scripts/ast-utils.js",
     "scripts/lint.js",
+    "scripts/used-by.js",
     "README.md"
   ],
   "scripts": {

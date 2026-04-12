@@ -19,6 +19,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
+import {
+  extendsWrec,
+  getNameText,
+  getPropertyAssignmentNames,
+  getWrecImportInfo,
+  hasStaticModifier
+} from './ast-utils.js';
 
 const cwd = process.cwd();
 
@@ -82,12 +89,7 @@ function analyzeSourceFile(sourceFile) {
     if (!propertiesObject) continue;
 
     // Get a Set of the defined property names.
-    const propertyNames = new Set(
-      propertiesObject.properties
-        .filter(ts.isPropertyAssignment)
-        .map(property => getNameText(property.name))
-        .filter(name => name !== null)
-    );
+    const propertyNames = new Set(getPropertyAssignmentNames(propertiesObject));
 
     // Get a map where the keys are property names and
     // the values are Sets of public methods that use it transitively.
@@ -378,23 +380,6 @@ export function evaluateSourceText(filePath, text) {
   return analyzeSourceFile(sourceFile);
 }
 
-// Determines whether a class declaration extends one of the known Wrec imports.
-// This is only called by analyzeSourceFile.
-function extendsWrec(classNode, wrecNames) {
-  return Boolean(
-    classNode.heritageClauses?.some(
-      clause =>
-        clause.token === ts.SyntaxKind.ExtendsKeyword &&
-        clause.types.some(
-          type =>
-            ts.isExpressionWithTypeArguments(type) &&
-            ts.isIdentifier(type.expression) &&
-            wrecNames.has(type.expression.text)
-        )
-    )
-  );
-}
-
 // Gets the names of all methods that are called from
 // JavaScript expressions in the component's static CSS template.
 // This is only called by getMethodUsages.
@@ -560,14 +545,6 @@ function getMethodUsages(classNode, propertyNames) {
   return propToMethods;
 }
 
-// Gets the text value of an AST name node.
-const getNameText = name =>
-  ts.isIdentifier(name) ||
-  ts.isStringLiteral(name) ||
-  ts.isPrivateIdentifier(name)
-    ? name.text
-    : null;
-
 // Gets the names of all methods that are called
 // from the component's static HTML template.
 // This is only called by getMethodUsages.
@@ -635,67 +612,6 @@ function getTransitiveProps(methodInfo, memo, methodName, seen = new Set()) {
   seen.delete(methodName);
   memo.set(methodName, props);
   return props;
-}
-
-// Collects imported Wrec class names. For example,
-// the following line would treat "MyWrec" as a class
-// that can be extended in order to implement a wrec component:
-//   import { Wrec as MyWrec } from 'wrec`
-// This also determines the quote character (single or double)
-// used for those imports.
-function getWrecImportInfo(sourceFile) {
-  // Start with the unaliased class name and a default quote style
-  // in case the file imports Wrec later or not at all.
-  const names = new Set(['Wrec']);
-  let quote = "'";
-
-  // Support aliased imports such as `import {Wrec as Base} from 'wrec'`
-  // so subclass detection still works.
-  for (const statement of sourceFile.statements) {
-    // Ignore anything that is not an import declaration
-    // with a string module path.
-    if (
-      !ts.isImportDeclaration(statement) ||
-      !statement.importClause ||
-      !ts.isStringLiteral(statement.moduleSpecifier)
-    ) {
-      continue;
-    }
-
-    // Only inspect imports that come from Wrec itself or its supported variants.
-    const moduleName = statement.moduleSpecifier.text;
-    const isWrecModule = moduleName === 'wrec' || moduleName.endsWith('/wrec');
-    if (!isWrecModule) continue;
-
-    // Skip default or namespace imports
-    // because we only care about named imports.
-    const namedBindings = statement.importClause.namedBindings;
-    if (!namedBindings || !ts.isNamedImports(namedBindings)) continue;
-
-    for (const element of namedBindings.elements) {
-      // Resolve the original imported name so aliased imports
-      // like `Wrec as Base` still count as Wrec imports.
-      const importedName = element.propertyName?.text ?? element.name.text;
-      if (importedName === 'Wrec') {
-        // Store the local identifier that this file uses to refer to Wrec.
-        names.add(element.name.text);
-
-        // Capture whether the source file uses single or double quotes
-        // so generated code can follow the file's existing style.
-        const moduleText = statement.moduleSpecifier.getText(sourceFile);
-        quote = moduleText[0];
-      }
-    }
-  }
-
-  return {names, quote};
-}
-
-// Determines if a class member is static.
-function hasStaticModifier(member) {
-  return Boolean(
-    member.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword)
-  );
 }
 
 // Determines if a class member represents an instance method.

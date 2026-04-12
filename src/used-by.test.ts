@@ -168,6 +168,30 @@ describe('used-by.js', () => {
     expect(after).toBe(before);
   });
 
+  test('supports aliased Wrec imports', () => {
+    const source = `
+      import {html, Wrec as BaseWrec} from 'wrec';
+
+      class Fixture extends BaseWrec {
+        static properties = {
+          count: {type: Number}
+        };
+
+        static html = html\`<div>\${this.renderCount()}</div>\`;
+
+        renderCount() {
+          return this.count;
+        }
+      }
+    `;
+
+    const result = evaluateSourceText('/virtual/component.js', source);
+
+    expect(result.foundWrecSubclass).toBe(true);
+    expect(result.changed).toBe(true);
+    expect(result.text).toContain("count: {type: Number, usedBy: 'renderCount'}");
+  });
+
   test('throws when the source file does not define a Wrec subclass', () => {
     expect(() =>
       evaluateSourceText(

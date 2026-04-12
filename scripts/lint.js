@@ -33,6 +33,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 import {parse} from 'node-html-parser';
+import {
+  collectWrecClasses,
+  getMemberName,
+  getPropertyAssignmentNames,
+  hasStaticModifier
+} from './ast-utils.js';
 
 const CSS_PROPERTY_RE = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g;
 const REFS_TEST_RE = /this\.[a-zA-Z_$][\w$]*(\.[a-zA-Z_$][\w$]*)*/;
@@ -378,7 +384,7 @@ function collectSupportedPropertyNames(classNode) {
   const supportedProps = new Set();
 
   for (const member of classNode.members) {
-    if (!isStaticMember(member)) continue;
+    if (!hasStaticModifier(member)) continue;
     if (!ts.isPropertyDeclaration(member)) continue;
 
     const name = getMemberName(member);
@@ -390,10 +396,8 @@ function collectSupportedPropertyNames(classNode) {
       continue;
     }
 
-    for (const property of member.initializer.properties) {
-      if (!ts.isPropertyAssignment(property)) continue;
-      const propName = getMemberName(property);
-      if (propName) supportedProps.add(propName);
+    for (const propName of getPropertyAssignmentNames(member.initializer)) {
+      supportedProps.add(propName);
     }
   }
 
@@ -438,32 +442,6 @@ function collectUseStateMapErrors(classNode, supportedProps, findings) {
   }
 
   visit(classNode);
-}
-
-// Finds all classes in a source file that extend Wrec.
-function collectWrecClasses(sourceFile) {
-  const classes = [];
-
-  // Walks the source tree and collects matching class declarations.
-  function visit(node) {
-    if (ts.isClassDeclaration(node) && node.name) {
-      const heritage = node.heritageClauses?.find(
-        clause => clause.token === ts.SyntaxKind.ExtendsKeyword
-      );
-      const typeNode = heritage?.types[0];
-      if (
-        typeNode &&
-        ts.isIdentifier(typeNode.expression) &&
-        typeNode.expression.text === 'Wrec'
-      ) {
-        classes.push(node);
-      }
-    }
-    ts.forEachChild(node, visit);
-  }
-
-  visit(sourceFile);
-  return classes;
 }
 
 // Creates a TypeScript program that can type-check the given source text.
@@ -535,7 +513,7 @@ function extractProperties(sourceFile, checker, classNode) {
   let contextKeys = [];
 
   for (const member of classNode.members) {
-    if (!isStaticMember(member)) continue;
+    if (!hasStaticModifier(member)) continue;
     if (!ts.isPropertyDeclaration(member)) continue;
 
     const name = getMemberName(member);
@@ -642,7 +620,7 @@ function extractTemplateExpressions(
   const expressions = [];
 
   for (const member of classNode.members) {
-    if (!isStaticMember(member)) continue;
+    if (!hasStaticModifier(member)) continue;
     if (!ts.isPropertyDeclaration(member)) continue;
 
     const name = getMemberName(member);
@@ -1048,14 +1026,6 @@ function getHtmlTagName(node) {
   return typeof tagName === 'string' ? tagName.toLowerCase() : '';
 }
 
-// Gets a plain string member name when one can be statically determined.
-function getMemberName(node) {
-  const {name} = node;
-  if (!name) return undefined;
-  if (ts.isIdentifier(name) || ts.isStringLiteral(name)) return name.text;
-  return undefined;
-}
-
 // Gets an object-literal property with the given key.
 function getObjectProperty(objectLiteral, key) {
   for (const property of objectLiteral.properties) {
@@ -1231,15 +1201,6 @@ function isNumericLikeType(type) {
         ts.TypeFlags.Any)
     );
   });
-}
-
-// Returns whether a class member is marked static.
-function isStaticMember(node) {
-  return ts.canHaveModifiers(node)
-    ? ts
-        .getModifiers(node)
-        ?.some(mod => mod.kind === ts.SyntaxKind.StaticKeyword)
-    : false;
 }
 
 // Returns whether a file defines at least one Wrec component class.
