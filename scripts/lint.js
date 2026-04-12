@@ -1396,6 +1396,13 @@ export function lintSource(filePath, sourceText, options = {}) {
 // Runs the command-line interface for the linter.
 function main() {
   const args = process.argv.slice(2);
+  const unknownFlags = args.filter(
+    arg => arg.startsWith('--') && arg !== '--verbose'
+  );
+  if (unknownFlags.length > 0) {
+    fail(`unknown option: ${unknownFlags[0]}`);
+  }
+
   const verbose = args.includes('--verbose');
   const positionalArgs = args.filter(arg => arg !== '--verbose');
 

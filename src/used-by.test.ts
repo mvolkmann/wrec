@@ -1,3 +1,4 @@
+import {spawnSync} from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -59,6 +60,17 @@ describe('used-by.js', () => {
       {propName: 'labels', suggestion: "usedBy: ['makeList', 'makeRows']"},
       {propName: 'rows', suggestion: "usedBy: 'renderRows'"}
     ]);
+  });
+
+  test('errors on unknown command-line options', () => {
+    const result = spawnSync(process.execPath, ['scripts/used-by.js', '--bogus'], {
+      cwd: path.resolve(import.meta.dirname, '..'),
+      encoding: 'utf8'
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe('');
+    expect(result.stderr).toContain('unknown option: --bogus');
   });
 
   test('infers usedBy values from methods called in static css expressions', () => {

@@ -1,3 +1,4 @@
+import {spawnSync} from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 import {describe, expect, test} from 'vitest';
@@ -52,6 +53,17 @@ describe('lint.js', () => {
     `);
 
     expect(output).not.toContain('invalid html nesting:');
+  });
+
+  test('errors on unknown command-line options', () => {
+    const result = spawnSync(process.execPath, ['scripts/lint.js', '--bogus'], {
+      cwd: repoRoot,
+      encoding: 'utf8'
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe('');
+    expect(result.stderr).toContain('unknown option: --bogus');
   });
 
   test('reports arithmetic type errors', () => {

@@ -638,6 +638,13 @@ function isSupportedSourceFile(filePath, excludeTests = false) {
 // Handles CLI arguments and runs the script.
 function main() {
   const args = process.argv.slice(2);
+  const unknownFlags = args.filter(
+    arg => arg.startsWith('--') && arg !== '--dry'
+  );
+  if (unknownFlags.length > 0) {
+    throw new Error(`unknown option: ${unknownFlags[0]}`);
+  }
+
   const inputPaths = args.filter(arg => !arg.startsWith('--'));
 
   if (inputPaths.length !== 1) {
