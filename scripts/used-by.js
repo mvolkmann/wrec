@@ -102,6 +102,8 @@ export function evaluateSourceFile(filePath, options = {}) {
   const absFilePath = path.resolve(cwd, filePath);
   validateFile(absFilePath);
 
+  // The file is read in this function instead of in evaluateSourceText
+  // so unit tests can pass hard-coded text to that function.
   const text = fs.readFileSync(absFilePath, 'utf8');
   let {
     changed,
@@ -128,6 +130,8 @@ export function evaluateSourceFile(filePath, options = {}) {
 // Determines what changes, if any, should be made in
 // the usedBy properties in property configuration objects
 // found in source file text.
+// This function was factored out of evaluateSourceFile
+// to support unit tests.
 export function evaluateSourceText(filePath, text) {
   const scriptKind = filePath.endsWith('.ts')
     ? ts.ScriptKind.TS
