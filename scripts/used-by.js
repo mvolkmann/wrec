@@ -221,7 +221,8 @@ function getComputedCalledMethods(classNode) {
   return methodNames;
 }
 
-// Returns the leading indentation for the line containing the given position.
+// Returns the leading indentation in the line
+// that begins at a given position (`pos`) inside `text`.
 function getIndent(text, pos) {
   const lineStart = text.lastIndexOf('\n', pos - 1) + 1;
   const match = /^[ \t]*/.exec(text.slice(lineStart));
