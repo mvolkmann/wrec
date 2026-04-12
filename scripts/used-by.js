@@ -231,17 +231,24 @@ function getIndent(text, pos) {
 
 // Returns a map where the keys are property names and
 // the values are Sets of public methods that use it transitively.
+// THIS FUNCTION IS TOO COMPLEX!
 function getMethodUsages(classNode, propertyNames) {
   const methodInfo = new Map();
+
+  // For each top-level member in the class definition ...
   for (const member of classNode.members) {
+    // If it is a static property or method, skip it.
     if (hasStaticModifier(member)) continue;
 
+    // If it is a method declaration, getter, or setter
+    // and it has a body ...
     if (
       (ts.isMethodDeclaration(member) ||
         ts.isGetAccessorDeclaration(member) ||
         ts.isSetAccessorDeclaration(member)) &&
       member.body
     ) {
+      // If the member doesn't have a string name, skip it.
       const methodName = getNameText(member.name);
       if (!methodName) continue;
 
