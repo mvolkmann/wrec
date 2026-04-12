@@ -22,8 +22,8 @@ import ts from 'typescript';
 
 const cwd = process.cwd();
 
-// Returns a map where the keys are property names and
-// the values are Sets of public methods that use it transitively.
+// Records property names introduced by an identifier
+// or an object binding pattern.
 function addBindingName(props, name) {
   if (ts.isIdentifier(name)) {
     props.add(name.text);
@@ -32,6 +32,7 @@ function addBindingName(props, name) {
   }
 }
 
+// Adds property names referenced by an object binding pattern.
 function addObjectBindingProps(props, bindingPattern) {
   for (const element of bindingPattern.elements) {
     if (element.dotDotDotToken) continue;
@@ -258,6 +259,7 @@ function buildConfigText(sourceFile, member, methodNames, quote) {
   return `{${openSpacing}${propertyStrings.join(', ')}${closeSpacing}}`;
 }
 
+// This is only called by getMethodUsages.
 function collectMethodBodyUsage(node, props, calledMethods) {
   if (
     ts.isPropertyAccessExpression(node) &&
@@ -381,6 +383,7 @@ function extendsWrec(node, wrecNames) {
 
 // Gets the names of all methods that are called from
 // the "computed" JavaScript expression of an component property.
+// This is only called by getMethodUsages.
 function getComputedCalledMethods(classNode) {
   const methodNames = new Set();
   const CALL_RE = /this\.([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
@@ -508,6 +511,7 @@ const getNameText = name =>
 
 // Gets the names of all methods that are called
 // from the component's static HTML template.
+// This is only called by getMethodUsages.
 function getTemplateCalledMethods(classNode) {
   // Find the last `static html = html\`...\`` declaration
   // because duplicate static class fields use last-one-wins semantics.
@@ -545,6 +549,7 @@ function getTemplateCalledMethods(classNode) {
 }
 
 // Follows method-call chains to accumulate all properties touched downstream.
+// This is only called by getMethodUsages.
 function getTransitiveProps(methodInfo, memo, methodName, seen = new Set()) {
   // Starting from methods that are reachable from the template/computed
   // properties, walk through nested method calls and accumulate every
@@ -634,6 +639,7 @@ function hasStaticModifier(node) {
   );
 }
 
+// This is only called by getMethodUsages.
 function isInstanceMethodMember(member) {
   return (
     !hasStaticModifier(member) &&
@@ -680,6 +686,8 @@ function main() {
   }
 }
 
+// Records a `this` property access and
+// tracks it as a method call when applicable.
 function recordThisAccess(props, calledMethods, node, name) {
   props.add(name);
   if (ts.isCallExpression(node.parent) && node.parent.expression === node) {
