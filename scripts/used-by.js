@@ -103,7 +103,7 @@ export function evaluateSourceFile(filePath, options = {}) {
   validateFile(absFilePath);
 
   const text = fs.readFileSync(absFilePath, 'utf8');
-  const {
+  let {
     changed,
     foundWrecSubclass,
     suggestions,
@@ -115,18 +115,13 @@ export function evaluateSourceFile(filePath, options = {}) {
     throw new Error('No class extending Wrec was found.');
   }
 
-  // If this is just a dray run ...
-  if (dry) {
-    return {changed, foundWrecSubclass, suggestions, text: nextText};
-  }
-
-  // If changes were made, write the new source code back to the file.
-  if (changed) {
-    // Otherwise, apply the rewritten source text back to disk.
+  // If changes were made, write the modified source code back to the file.
+  if (!dry && changed) {
     fs.writeFileSync(absFilePath, nextText);
+    suggestions = []; // all the suggestions have been applied
   }
 
-  return {changed, foundWrecSubclass, suggestions: [], text: nextText};
+  return {changed, foundWrecSubclass, suggestions, text: nextText};
 }
 
 // Determines what changes, if any, should be made in
