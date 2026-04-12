@@ -478,36 +478,12 @@ function getMethodUsages(classNode, propertyNames) {
   ]);
   const memo = new Map();
 
-  // Follows method-call chains to accumulate all properties touched downstream.
-  function getTransitiveProps(methodName, seen = new Set()) {
-    // Starting from methods that are reachable from the template/computed
-    // properties, walk through nested method calls and accumulate every
-    // component property touched along the way.
-    if (memo.has(methodName)) return memo.get(methodName);
-    if (seen.has(methodName)) return new Set();
-
-    seen.add(methodName);
-    const info = methodInfo.get(methodName);
-    const props = new Set(info?.props ?? []);
-
-    if (info) {
-      for (const calledMethod of info.calledMethods) {
-        const calledProps = getTransitiveProps(calledMethod, seen);
-        for (const propName of calledProps) props.add(propName);
-      }
-    }
-
-    seen.delete(methodName);
-    memo.set(methodName, props);
-    return props;
-  }
-
   const propToMethods = new Map();
   for (const methodName of entryMethods) {
     const info = methodInfo.get(methodName);
     if (!info || info.isPrivate) continue;
 
-    for (const propName of getTransitiveProps(methodName)) {
+    for (const propName of getTransitiveProps(methodInfo, memo, methodName)) {
       if (!propertyNames.has(propName)) continue;
 
       let methods = propToMethods.get(propName);
@@ -566,6 +542,35 @@ function getTemplateCalledMethods(classNode) {
     }
   }
   return methodNames;
+}
+
+// Follows method-call chains to accumulate all properties touched downstream.
+function getTransitiveProps(methodInfo, memo, methodName, seen = new Set()) {
+  // Starting from methods that are reachable from the template/computed
+  // properties, walk through nested method calls and accumulate every
+  // component property touched along the way.
+  if (memo.has(methodName)) return memo.get(methodName);
+  if (seen.has(methodName)) return new Set();
+
+  seen.add(methodName);
+  const info = methodInfo.get(methodName);
+  const props = new Set(info?.props ?? []);
+
+  if (info) {
+    for (const calledMethod of info.calledMethods) {
+      const calledProps = getTransitiveProps(
+        methodInfo,
+        memo,
+        calledMethod,
+        seen
+      );
+      for (const propName of calledProps) props.add(propName);
+    }
+  }
+
+  seen.delete(methodName);
+  memo.set(methodName, props);
+  return props;
 }
 
 // Collects imported Wrec class names. For example,
