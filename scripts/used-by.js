@@ -22,8 +22,11 @@ import ts from 'typescript';
 
 const cwd = process.cwd();
 
-// Records property names introduced by an identifier
-// or an object binding pattern.
+// Records property names introduced by
+// an identifier or object binding pattern.
+// An object binding pattern is destructuring syntax
+// used in a binding position, like a variable declaration,
+// parameter list, or assignment target.
 function addBindingName(props, name) {
   if (ts.isIdentifier(name)) {
     props.add(name.text);
@@ -259,12 +262,16 @@ function buildConfigText(sourceFile, member, methodNames, quote) {
   return `{${openSpacing}${propertyStrings.join(', ')}${closeSpacing}}`;
 }
 
+// Walks a method body to collect component property reads
+// and method calls made through `this`.
 // This is only called by getMethodUsages.
 function collectMethodBodyUsage(node, props, calledMethods) {
   if (
     ts.isPropertyAccessExpression(node) &&
     node.expression.kind === ts.SyntaxKind.ThisKeyword
   ) {
+    // Handles direct property access like `this.foo`
+    // and records method calls like `this.foo()`.
     recordThisAccess(props, calledMethods, node, node.name.text);
   } else if (
     ts.isElementAccessExpression(node) &&
@@ -272,18 +279,24 @@ function collectMethodBodyUsage(node, props, calledMethods) {
     node.argumentExpression &&
     ts.isStringLiteralLike(node.argumentExpression)
   ) {
+    // Handles string-based element access like `this['foo']`
+    // and records method calls like `this['foo']()`.
     recordThisAccess(props, calledMethods, node, node.argumentExpression.text);
   } else if (
     ts.isVariableDeclaration(node) &&
     node.initializer &&
     node.initializer.kind === ts.SyntaxKind.ThisKeyword
   ) {
+    // Handles variable declarations initialized from `this`,
+    // such as `const {foo} = this` or `const self = this`.
     addBindingName(props, node.name);
   } else if (
     ts.isBinaryExpression(node) &&
     node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
     node.right.kind === ts.SyntaxKind.ThisKeyword
   ) {
+    // Handles assignments from `this`, such as destructuring
+    // or object-literal patterns that pull named properties from it.
     if (ts.isObjectLiteralExpression(node.left)) {
       for (const property of node.left.properties) {
         if (
