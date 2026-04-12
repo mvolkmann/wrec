@@ -607,12 +607,13 @@ function getTemplateCalledMethods(classNode) {
   return methodNames;
 }
 
-// Follows method-call chains to accumulate all properties touched downstream.
+// Recursively follow method-call chains
+// to accumulate all properties touched downstream.
 // This is only called by getMethodUsages.
 function getTransitiveProps(methodInfo, memo, methodName, seen = new Set()) {
-  // Starting from methods that are reachable from the template/computed
-  // properties, walk through nested method calls and accumulate every
-  // component property touched along the way.
+  // Starting from methods that are reachable from
+  // css/template/computed properties, walk through nested method calls
+  // and accumulate every component property touched along the way.
   if (memo.has(methodName)) return memo.get(methodName);
   if (seen.has(methodName)) return new Set();
 
@@ -691,13 +692,14 @@ function getWrecImportInfo(sourceFile) {
   return {names, quote};
 }
 
-// Reports whether a class member declares the `static` modifier.
-function hasStaticModifier(node) {
+// Determines if a class member is static.
+function hasStaticModifier(member) {
   return Boolean(
-    node.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword)
+    member.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword)
   );
 }
 
+// Determines if a class member represents an instance method.
 // This is only called by getMethodUsages.
 function isInstanceMethodMember(member) {
   return (
