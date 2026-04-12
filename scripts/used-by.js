@@ -440,6 +440,8 @@ function getTemplateCalledMethods(classNode) {
 // Collects imported Wrec class names and
 // determines the quote character (single or double) used for those imports.
 function getWrecImportInfo(sourceFile) {
+  // Start with the unaliased class name and a default quote style
+  // in case the file imports Wrec later or not at all.
   const names = new Set(['Wrec']);
   let quote = "'";
 
@@ -447,6 +449,8 @@ function getWrecImportInfo(sourceFile) {
   // so subclass detection still works and generated text matches the
   // file's existing quote style.
   for (const statement of sourceFile.statements) {
+    // Ignore anything that is not an import declaration
+    // with a string module path.
     if (
       !ts.isImportDeclaration(statement) ||
       !statement.importClause ||
@@ -455,6 +459,7 @@ function getWrecImportInfo(sourceFile) {
       continue;
     }
 
+    // Only inspect imports that come from Wrec itself or its supported variants.
     const moduleName = statement.moduleSpecifier.text;
     const isWrecModule =
       moduleName === 'wrec' ||
@@ -463,14 +468,21 @@ function getWrecImportInfo(sourceFile) {
       moduleName.endsWith('/wrec-ssr');
     if (!isWrecModule) continue;
 
+    // Skip default or namespace imports
+    // because we only care about named imports.
     const namedBindings = statement.importClause.namedBindings;
     if (!namedBindings || !ts.isNamedImports(namedBindings)) continue;
 
     for (const element of namedBindings.elements) {
+      // Resolve the original imported name so aliased imports
+      // like `Wrec as Base` still count as Wrec imports.
       const importedName = element.propertyName?.text ?? element.name.text;
       if (importedName === 'Wrec') {
+        // Store the local identifier that this file uses to refer to Wrec.
         names.add(element.name.text);
 
+        // Capture whether the source file used single or double quotes
+        // so generated code can follow the file's existing style.
         const moduleText = statement.moduleSpecifier.getText(sourceFile);
         if (moduleText.startsWith('"') || moduleText.startsWith("'")) {
           quote = moduleText[0];
