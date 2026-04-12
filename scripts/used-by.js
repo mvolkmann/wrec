@@ -449,12 +449,16 @@ function getIndent(text, pos) {
   return match ? match[0] : '';
 }
 
+// Returns a map where the keys are property names and
+// the values are Sets of public methods that use it transitively.
 function getMethodUsages(classNode, propertyNames) {
   const methodInfo = new Map();
 
   for (const member of classNode.members) {
+    // If the member doesn't represent an instance method, skip it.
     if (!isInstanceMethodMember(member)) continue;
 
+    // If the member doesn't have a string name, skip it.
     const methodName = getNameText(member.name);
     if (!methodName) continue;
 
