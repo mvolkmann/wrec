@@ -132,6 +132,8 @@ const SUPPORTED_EVENT_NAMES = new Set([
 const WREC_REF_NAME = '__wrec';
 const componentPropertyCache = new Map();
 
+// Analyzes an expression for invalid property access,
+// methods calls, and arithmetic usage.
 function analyzeExpression(
   expressionNode,
   checker,
@@ -148,6 +150,7 @@ function analyzeExpression(
     }
   }
 
+  // Walks the expression tree and records any issues that are found.
   function visit(node) {
     if (ts.isPropertyAccessExpression(node) && isWrecRooted(node.expression)) {
       const ownerType = checker.getTypeAtLocation(node.expression);
@@ -269,6 +272,12 @@ function analyzeExpression(
   visit(expressionNode);
 }
 
+// Builds a temporary source string used only for type-checking
+// extracted expressions.  It appends helper types and generated functions
+// to the original component source so each template or computed expression
+// can be analyzed as if it were normal code.  This gives TypeScript
+// enough // context to understand available properties, methods, and
+// context functions when the linter validates those expressions.
 function buildAugmentedSource(
   sourceFile,
   classNode,
@@ -309,6 +318,7 @@ ${propLines.join('\n')}
   return `${sourceFile.text}\n${propInterface}\n${helperBlocks.join('\n')}`;
 }
 
+// Collects all instance method and accessor names defined in a component class.
 function collectClassMethods(classNode) {
   const methods = new Set();
   for (const member of classNode.members) {
@@ -325,9 +335,15 @@ function collectClassMethods(classNode) {
   return methods;
 }
 
+// Finds the synthetic `__wrec_expr_*` helper functions that were added by
+// `buildAugmentedSource` and pulls out the expression each one returns.
+// This gives the linter a stable list of typed expression nodes
+// that line up with the original template and computed expressions
+// for later analysis.
 function collectHelperExpressions(augmentedSourceFile) {
   const helpers = [];
 
+  // Finds generated helper functions and stores their return expressions by index.
   function visit(node) {
     if (
       ts.isFunctionDeclaration(node) &&
@@ -349,30 +365,8 @@ function collectHelperExpressions(augmentedSourceFile) {
   return helpers;
 }
 
-function collectWrecClasses(sourceFile) {
-  const classes = [];
-
-  function visit(node) {
-    if (ts.isClassDeclaration(node) && node.name) {
-      const heritage = node.heritageClauses?.find(
-        clause => clause.token === ts.SyntaxKind.ExtendsKeyword
-      );
-      const typeNode = heritage?.types[0];
-      if (
-        typeNode &&
-        ts.isIdentifier(typeNode.expression) &&
-        typeNode.expression.text === 'Wrec'
-      ) {
-        classes.push(node);
-      }
-    }
-    ts.forEachChild(node, visit);
-  }
-
-  visit(sourceFile);
-  return classes;
-}
-
+// Collects the property names declared in
+// a component's static properties object.
 function collectSupportedPropertyNames(classNode) {
   const supportedProps = new Set();
 
@@ -399,28 +393,9 @@ function collectSupportedPropertyNames(classNode) {
   return supportedProps;
 }
 
-function findDefinedTagNames(sourceFile) {
-  const tagNames = new Map();
-
-  function visit(node) {
-    if (
-      ts.isCallExpression(node) &&
-      ts.isPropertyAccessExpression(node.expression) &&
-      node.expression.name.text === 'define' &&
-      ts.isIdentifier(node.expression.expression) &&
-      node.arguments.length > 0 &&
-      ts.isStringLiteral(node.arguments[0])
-    ) {
-      tagNames.set(node.expression.expression.text, node.arguments[0].text);
-    }
-    ts.forEachChild(node, visit);
-  }
-
-  visit(sourceFile);
-  return tagNames;
-}
-
+// Validates that useState mappings point at existing component properties.
 function collectUseStateMapErrors(classNode, supportedProps, findings) {
+  // Walks the class body looking for useState calls with mapping objects.
   function visit(node) {
     if (
       ts.isCallExpression(node) &&
@@ -457,6 +432,33 @@ function collectUseStateMapErrors(classNode, supportedProps, findings) {
   visit(classNode);
 }
 
+// Finds all classes in a source file that extend Wrec.
+function collectWrecClasses(sourceFile) {
+  const classes = [];
+
+  // Walks the source tree and collects matching class declarations.
+  function visit(node) {
+    if (ts.isClassDeclaration(node) && node.name) {
+      const heritage = node.heritageClauses?.find(
+        clause => clause.token === ts.SyntaxKind.ExtendsKeyword
+      );
+      const typeNode = heritage?.types[0];
+      if (
+        typeNode &&
+        ts.isIdentifier(typeNode.expression) &&
+        typeNode.expression.text === 'Wrec'
+      ) {
+        classes.push(node);
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return classes;
+}
+
+// Creates a TypeScript program that can type-check the given source text.
 function createProgram(filePath, sourceText) {
   const defaultHost = ts.createCompilerHost({}, true);
   const compilerOptions = {
@@ -513,6 +515,8 @@ function createProgram(filePath, sourceText) {
   return ts.createProgram([filePath], compilerOptions, host);
 }
 
+// Extracts component property metadata and related validation inputs
+// from a class.
 function extractProperties(sourceFile, checker, classNode) {
   const duplicateProperties = [];
   let formAssociated = false;
@@ -620,6 +624,7 @@ function extractProperties(sourceFile, checker, classNode) {
   };
 }
 
+// Extracts analyzable expressions from static html and css templates.
 function extractTemplateExpressions(
   classNode,
   findings,
@@ -696,11 +701,37 @@ function extractTemplateExpressions(
   return expressions;
 }
 
+// Prints an error message and exits the process.
 function fail(message) {
   console.error(message);
   process.exit(1);
 }
 
+// Maps component class names to tag names defined in the source file.
+function findDefinedTagNames(sourceFile) {
+  const tagNames = new Map();
+
+  // Walks the file looking for static define calls with string tag names.
+  function visit(node) {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      node.expression.name.text === 'define' &&
+      ts.isIdentifier(node.expression.expression) &&
+      node.arguments.length > 0 &&
+      ts.isStringLiteral(node.arguments[0])
+    ) {
+      tagNames.set(node.expression.expression.text, node.arguments[0].text);
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return tagNames;
+}
+
+// Recursively finds Wrec component files under a directory
+// and reports each match.
 function findWrecFiles(rootDir, onMatch) {
   const walk = currentDir => {
     const entries = fs
@@ -724,6 +755,13 @@ function findWrecFiles(rootDir, onMatch) {
   walk(rootDir);
 }
 
+// Formats an optional source location as line and column text.
+function formatLocation(location) {
+  if (!location) return '';
+  return `:${location.line + 1}:${location.character + 1}`;
+}
+
+// Formats the collected lint findings into the command-line report output.
 function formatReport(
   filePath,
   supportedProps,
@@ -931,6 +969,8 @@ function formatReport(
   return `${lines.join('\n')}\n`;
 }
 
+// Builds a map from tag names to supported properties
+// for the current file and imports.
 function getComponentPropertyMaps(filePath, sourceText, seen = new Set()) {
   const resolved = path.resolve(filePath);
   if (componentPropertyCache.has(resolved)) {
@@ -985,15 +1025,18 @@ function getComponentPropertyMaps(filePath, sourceText, seen = new Set()) {
   return propertyMaps;
 }
 
-function formatLocation(location) {
-  if (!location) return '';
-  return `:${location.line + 1}:${location.character + 1}`;
-}
-
+// Returns trimmed source text for a TypeScript expression node.
 function getExpressionText(sourceFile, expression) {
   return expression.getText(sourceFile).trim();
 }
 
+// Returns a lowercased HTML tag name for a parsed HTML node.
+function getHtmlTagName(node) {
+  const tagName = node.rawTagName || node.tagName;
+  return typeof tagName === 'string' ? tagName.toLowerCase() : '';
+}
+
+// Gets a plain string member name when one can be statically determined.
 function getMemberName(node) {
   const {name} = node;
   if (!name) return undefined;
@@ -1001,6 +1044,7 @@ function getMemberName(node) {
   return undefined;
 }
 
+// Gets an object-literal property with the given key.
 function getObjectProperty(objectLiteral, key) {
   for (const property of objectLiteral.properties) {
     if (
@@ -1014,31 +1058,8 @@ function getObjectProperty(objectLiteral, key) {
   }
 }
 
-function getStringArrayLiteral(property) {
-  if (!property || !ts.isPropertyAssignment(property)) return undefined;
-  if (!ts.isArrayLiteralExpression(property.initializer)) return undefined;
-
-  const values = [];
-  for (const element of property.initializer.elements) {
-    if (
-      !ts.isStringLiteral(element) &&
-      !ts.isNoSubstitutionTemplateLiteral(element)
-    ) {
-      return undefined;
-    }
-    values.push(element.text);
-  }
-  return values;
-}
-
-function getPropertyTypeText(checker, sourceFile, expression) {
-  const typeText = getTypeSyntaxText(sourceFile, expression);
-  if (typeText) return typeText;
-
-  const type = checker.getTypeAtLocation(expression);
-  return checker.typeToString(type);
-}
-
+// Resolves the effective parameter type,
+// including element types for rest parameters.
 function getParameterType(checker, parameterSymbol, location, isRestArgument) {
   const parameterType = checker.getTypeOfSymbolAtLocation(
     parameterSymbol,
@@ -1056,6 +1077,34 @@ function getParameterType(checker, parameterSymbol, location, isRestArgument) {
   return typeArguments[0] ?? parameterType;
 }
 
+// Derives a readable property type string from syntax or the type checker.
+function getPropertyTypeText(checker, sourceFile, expression) {
+  const typeText = getTypeSyntaxText(sourceFile, expression);
+  if (typeText) return typeText;
+
+  const type = checker.getTypeAtLocation(expression);
+  return checker.typeToString(type);
+}
+
+// Returns an array of string literal values from a property when possible.
+function getStringArrayLiteral(property) {
+  if (!property || !ts.isPropertyAssignment(property)) return undefined;
+  if (!ts.isArrayLiteralExpression(property.initializer)) return undefined;
+
+  const values = [];
+  for (const element of property.initializer.elements) {
+    if (
+      !ts.isStringLiteral(element) &&
+      !ts.isNoSubstitutionTemplateLiteral(element)
+    ) {
+      return undefined;
+    }
+    values.push(element.text);
+  }
+  return values;
+}
+
+// Returns either a single string value or a string array value as an array.
 function getStringOrStringArrayLiteral(property) {
   if (!property || !ts.isPropertyAssignment(property)) return undefined;
 
@@ -1069,10 +1118,13 @@ function getStringOrStringArrayLiteral(property) {
   return getStringArrayLiteral(property);
 }
 
+// Gets the supported HTML attributes for a given tag.
 function getSupportedHtmlAttributes(tagName) {
   return HTML_TAG_ATTRIBUTES.get(tagName.toLowerCase());
 }
 
+// Reconstructs the text of a template literal
+// with placeholders for expressions.
 function getTemplateLiteralText(template) {
   if (ts.isNoSubstitutionTemplateLiteral(template)) return template.text;
 
@@ -1084,6 +1136,8 @@ function getTemplateLiteralText(template) {
   return text;
 }
 
+// Converts a property type expression into a user-facing type string
+// when possible.
 function getTypeSyntaxText(sourceFile, expression) {
   const text = expression.getText(sourceFile).trim();
   const arrayMatch = text.match(/^Array<(.+)>$/s);
@@ -1125,15 +1179,7 @@ function getTypeSyntaxText(sourceFile, expression) {
   return undefined;
 }
 
-function isImportLikeDeclaration(node) {
-  return (
-    ts.isImportClause(node) ||
-    ts.isImportEqualsDeclaration(node) ||
-    ts.isImportSpecifier(node) ||
-    ts.isNamespaceImport(node)
-  );
-}
-
+// Returns whether a token kind is one of the supported arithmetic operators.
 function isArithmeticOperator(kind) {
   return (
     kind === ts.SyntaxKind.AsteriskToken ||
@@ -1144,10 +1190,22 @@ function isArithmeticOperator(kind) {
   );
 }
 
+// Returns whether a property access node is being called as a callee.
 function isCallCallee(node) {
   return ts.isCallExpression(node.parent) && node.parent.expression === node;
 }
 
+// Returns whether a declaration represents an imported binding.
+function isImportLikeDeclaration(node) {
+  return (
+    ts.isImportClause(node) ||
+    ts.isImportEqualsDeclaration(node) ||
+    ts.isImportSpecifier(node) ||
+    ts.isNamespaceImport(node)
+  );
+}
+
+// Returns whether a type is fully numeric or any-like for arithmetic checks.
 function isNumericLikeType(type) {
   const parts = type.isUnion() ? type.types : [type];
   return parts.every(part => {
@@ -1163,6 +1221,16 @@ function isNumericLikeType(type) {
   });
 }
 
+// Returns whether a class member is marked static.
+function isStaticMember(node) {
+  return ts.canHaveModifiers(node)
+    ? ts
+        .getModifiers(node)
+        ?.some(mod => mod.kind === ts.SyntaxKind.StaticKeyword)
+    : false;
+}
+
+// Returns whether a file defines at least one Wrec component class.
 function isWrecComponentFile(filePath) {
   const sourceText = fs.readFileSync(filePath, 'utf8');
   const scriptKind = filePath.endsWith('.ts')
@@ -1178,14 +1246,7 @@ function isWrecComponentFile(filePath) {
   return collectWrecClasses(sourceFile).length > 0;
 }
 
-function isStaticMember(node) {
-  return ts.canHaveModifiers(node)
-    ? ts
-        .getModifiers(node)
-        ?.some(mod => mod.kind === ts.SyntaxKind.StaticKeyword)
-    : false;
-}
-
+// Returns whether an expression is rooted at the synthetic Wrec receiver.
 function isWrecRooted(expression) {
   if (ts.isIdentifier(expression) && expression.text === WREC_REF_NAME) {
     return true;
@@ -1199,28 +1260,13 @@ function isWrecRooted(expression) {
   return false;
 }
 
-function requiresContextFunction(symbol, sourceFile) {
-  const declarations = symbol.declarations ?? [];
-  return declarations.some(declaration => {
-    if (isImportLikeDeclaration(declaration)) return true;
-    return declaration.getSourceFile() === sourceFile;
-  });
+// Lints a component file by path after resolving and reading it.
+export function lintFile(filePath, options = {}) {
+  const resolved = validateFilePath(filePath);
+  return lintSource(resolved, fs.readFileSync(resolved, 'utf8'), options);
 }
 
-function resolveImportPath(baseDir, importPath) {
-  if (!importPath.startsWith('.')) return undefined;
-
-  const candidates = [
-    path.resolve(baseDir, importPath),
-    path.resolve(baseDir, `${importPath}.js`),
-    path.resolve(baseDir, `${importPath}.ts`),
-    path.resolve(baseDir, importPath, 'index.js'),
-    path.resolve(baseDir, importPath, 'index.ts')
-  ];
-
-  return candidates.find(candidate => fs.existsSync(candidate));
-}
-
+// Lints provided component source text and returns a formatted report.
 export function lintSource(filePath, sourceText, options = {}) {
   const baseProgram = createProgram(filePath, sourceText);
   const sourceFile = baseProgram.getSourceFile(filePath);
@@ -1374,11 +1420,7 @@ export function lintSource(filePath, sourceText, options = {}) {
   );
 }
 
-export function lintFile(filePath, options = {}) {
-  const resolved = validateFilePath(filePath);
-  return lintSource(resolved, fs.readFileSync(resolved, 'utf8'), options);
-}
-
+// Runs the command-line interface for the linter.
 function main() {
   const args = process.argv.slice(2);
   const verbose = args.includes('--verbose');
@@ -1417,16 +1459,82 @@ function main() {
   });
 }
 
+// Determines whether a symbol should be treated as a required context function.
+function requiresContextFunction(symbol, sourceFile) {
+  const declarations = symbol.declarations ?? [];
+  return declarations.some(declaration => {
+    if (isImportLikeDeclaration(declaration)) return true;
+    return declaration.getSourceFile() === sourceFile;
+  });
+}
+
+// Resolves a relative import path to an existing source file.
+function resolveImportPath(baseDir, importPath) {
+  if (!importPath.startsWith('.')) return undefined;
+
+  const candidates = [
+    path.resolve(baseDir, importPath),
+    path.resolve(baseDir, `${importPath}.js`),
+    path.resolve(baseDir, `${importPath}.ts`),
+    path.resolve(baseDir, importPath, 'index.js'),
+    path.resolve(baseDir, importPath, 'index.ts')
+  ];
+
+  return candidates.find(candidate => fs.existsSync(candidate));
+}
+
+// Rewrites synthetic receiver references back to this for reporting.
 function toUserFacingExpression(text) {
   return text.replaceAll(WREC_REF_NAME, 'this');
 }
 
+// Classifies a constructor-based type expression by its identifier name.
 function typeExpressionKind(expression) {
   if (!expression) return undefined;
   if (ts.isIdentifier(expression)) return expression.text;
   return undefined;
 }
 
+// Converts a constructor-style type expression into a TypeScript type node.
+function typeNodeFromConstructorExpression(expression) {
+  if (ts.isIdentifier(expression)) {
+    switch (expression.text) {
+      case 'String':
+        return ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword);
+      case 'Number':
+        return ts.factory.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword);
+      case 'Boolean':
+        return ts.factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword);
+      case 'Object':
+        return ts.factory.createKeywordTypeNode(ts.SyntaxKind.ObjectKeyword);
+      default:
+        return ts.factory.createTypeReferenceNode(expression.text);
+    }
+  }
+
+  if (
+    ts.isCallExpression(expression) &&
+    ts.isIdentifier(expression.expression)
+  ) {
+    const name = expression.expression.text;
+    if (name === 'Array' && expression.typeArguments?.length === 1) {
+      return ts.factory.createArrayTypeNode(expression.typeArguments[0]);
+    }
+  }
+
+  if (ts.isPropertyAccessExpression(expression)) {
+    return ts.factory.createTypeReferenceNode(expression.getText());
+  }
+
+  return undefined;
+}
+
+// Pushes a value into an array only if it is not already present.
+function uniquePush(array, value) {
+  if (!array.includes(value)) array.push(value);
+}
+
+// Validates computed property references and method calls.
 function validateComputedProperty(
   propName,
   computedText,
@@ -1456,6 +1564,7 @@ function validateComputedProperty(
   }
 }
 
+// Validates that a default value matches the declared property type.
 function validateDefaultValue(checker, typeExpression, valueExpression) {
   if (!typeExpression || !valueExpression) return undefined;
 
@@ -1510,6 +1619,7 @@ function validateDefaultValue(checker, typeExpression, valueExpression) {
   return undefined;
 }
 
+// Resolves and validates a user-supplied file path argument.
 function validateFilePath(filePath) {
   const resolved = path.resolve(filePath);
   const ext = path.extname(resolved);
@@ -1522,6 +1632,109 @@ function validateFilePath(filePath) {
   return resolved;
 }
 
+// Validates the syntax of a form-assoc attribute value.
+function validateFormAssocAttribute(attrName, attrValue, findings) {
+  if (attrName !== 'form-assoc') return;
+
+  const pairs = attrValue.split(',');
+  for (const pair of pairs) {
+    const trimmed = pair.trim();
+    const [propName, fieldName, ...rest] = trimmed
+      .split(':')
+      .map(part => part.trim());
+    if (!trimmed || rest.length > 0 || !propName || !fieldName) {
+      findings.invalidFormAssocValues.push(
+        `form-assoc="${attrValue}" is invalid; expected "property:field" or a comma-separated list of them`
+      );
+      return;
+    }
+  }
+}
+
+// Validates that form-assoc property names exist on referenced components.
+function validateFormAssocPropertyMappings(
+  node,
+  attrName,
+  attrValue,
+  findings,
+  componentPropertyMaps
+) {
+  if (attrName !== 'form-assoc') return;
+  const tagName = (node.rawTagName || node.tagName || '').toLowerCase();
+  const supportedProps = componentPropertyMaps.get(tagName);
+  if (!supportedProps) return;
+
+  const pairs = attrValue.split(',');
+  for (const pair of pairs) {
+    const [propName] = pair.split(':').map(part => part.trim());
+    if (!propName) continue;
+    if (!supportedProps.has(propName)) {
+      findings.invalidFormAssocValues.push(
+        `form-assoc="${attrValue}" refers to missing component property "${propName}"`
+      );
+    }
+  }
+}
+
+// Validates that an HTML attribute is supported for the current element.
+function validateHtmlAttribute(node, attrName, findings) {
+  if (attrName.startsWith('aria-') || attrName.startsWith('data-')) return;
+  if (attrName.startsWith('on')) return;
+  if (attrName === 'form-assoc') return;
+  if (attrName === 'ref') return;
+
+  const [baseAttrName] = attrName.split(':');
+  if (HTML_GLOBAL_ATTRIBUTES.has(baseAttrName)) return;
+
+  const tagName = (node.rawTagName || node.tagName || '').toLowerCase();
+  if (!tagName || tagName.includes('-')) return;
+
+  const supported = getSupportedHtmlAttributes(tagName);
+  if (!supported) return;
+  if (supported.has(baseAttrName)) return;
+
+  findings.unsupportedHtmlAttributes.push(
+    `${tagName} attribute "${attrName}" is not supported`
+  );
+}
+
+// Validates required parent-child relationships for supported HTML tags.
+function validateHtmlNesting(node, findings) {
+  const tagName = getHtmlTagName(node);
+  if (!tagName || tagName.includes('-')) return;
+
+  const parentNode = node.parentNode?.nodeType === 1 ? node.parentNode : null;
+  const parentTagName = parentNode ? getHtmlTagName(parentNode) : '';
+  const allowedParents = HTML_ALLOWED_PARENTS.get(tagName);
+  if (
+    allowedParents &&
+    (!parentTagName || !allowedParents.has(parentTagName))
+  ) {
+    findings.invalidHtmlNesting.push(
+      `<${tagName}> must be nested inside ${[...allowedParents]
+        .map(name => `<${name}>`)
+        .join(
+          ' or '
+        )}, but parent is ${parentTagName ? `<${parentTagName}>` : 'the document root'}`
+    );
+  }
+
+  const allowedChildren = HTML_ALLOWED_CHILDREN.get(tagName);
+  if (!allowedChildren) return;
+
+  for (const child of node.childNodes ?? []) {
+    if (child.nodeType !== 1) continue;
+    const childTagName = getHtmlTagName(child);
+    if (!childTagName || childTagName.includes('-')) continue;
+    if (allowedChildren.has(childTagName)) continue;
+
+    findings.invalidHtmlNesting.push(
+      `<${childTagName}> is not allowed directly inside <${tagName}>`
+    );
+  }
+}
+
+// Validates all configured component property metadata entries.
 function validatePropertyConfigs(
   checker,
   supportedProps,
@@ -1612,117 +1825,7 @@ function validatePropertyConfigs(
   }
 }
 
-function typeNodeFromConstructorExpression(expression) {
-  if (ts.isIdentifier(expression)) {
-    switch (expression.text) {
-      case 'String':
-        return ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword);
-      case 'Number':
-        return ts.factory.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword);
-      case 'Boolean':
-        return ts.factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword);
-      case 'Object':
-        return ts.factory.createKeywordTypeNode(ts.SyntaxKind.ObjectKeyword);
-      default:
-        return ts.factory.createTypeReferenceNode(expression.text);
-    }
-  }
-
-  if (
-    ts.isCallExpression(expression) &&
-    ts.isIdentifier(expression.expression)
-  ) {
-    const name = expression.expression.text;
-    if (name === 'Array' && expression.typeArguments?.length === 1) {
-      return ts.factory.createArrayTypeNode(expression.typeArguments[0]);
-    }
-  }
-
-  if (ts.isPropertyAccessExpression(expression)) {
-    return ts.factory.createTypeReferenceNode(expression.getText());
-  }
-
-  return undefined;
-}
-
-function uniquePush(array, value) {
-  if (!array.includes(value)) array.push(value);
-}
-
-function validateFormAssocAttribute(attrName, attrValue, findings) {
-  if (attrName !== 'form-assoc') return;
-
-  const pairs = attrValue.split(',');
-  for (const pair of pairs) {
-    const trimmed = pair.trim();
-    const [propName, fieldName, ...rest] = trimmed
-      .split(':')
-      .map(part => part.trim());
-    if (!trimmed || rest.length > 0 || !propName || !fieldName) {
-      findings.invalidFormAssocValues.push(
-        `form-assoc="${attrValue}" is invalid; expected "property:field" or a comma-separated list of them`
-      );
-      return;
-    }
-  }
-}
-
-function validateFormAssocPropertyMappings(
-  node,
-  attrName,
-  attrValue,
-  findings,
-  componentPropertyMaps
-) {
-  if (attrName !== 'form-assoc') return;
-  const tagName = (node.rawTagName || node.tagName || '').toLowerCase();
-  const supportedProps = componentPropertyMaps.get(tagName);
-  if (!supportedProps) return;
-
-  const pairs = attrValue.split(',');
-  for (const pair of pairs) {
-    const [propName] = pair.split(':').map(part => part.trim());
-    if (!propName) continue;
-    if (!supportedProps.has(propName)) {
-      findings.invalidFormAssocValues.push(
-        `form-assoc="${attrValue}" refers to missing component property "${propName}"`
-      );
-    }
-  }
-}
-
-function validateHtmlAttribute(node, attrName, findings) {
-  if (attrName.startsWith('aria-') || attrName.startsWith('data-')) return;
-  if (attrName.startsWith('on')) return;
-  if (attrName === 'form-assoc') return;
-  if (attrName === 'ref') return;
-
-  const [baseAttrName] = attrName.split(':');
-  if (HTML_GLOBAL_ATTRIBUTES.has(baseAttrName)) return;
-
-  const tagName = (node.rawTagName || node.tagName || '').toLowerCase();
-  if (!tagName || tagName.includes('-')) return;
-
-  const supported = getSupportedHtmlAttributes(tagName);
-  if (!supported) return;
-  if (supported.has(baseAttrName)) return;
-
-  findings.unsupportedHtmlAttributes.push(
-    `${tagName} attribute "${attrName}" is not supported`
-  );
-}
-
-function validateValueBindingEvent(node, attrName, findings) {
-  const [realAttrName, eventName] = attrName.split(':');
-  if (realAttrName !== 'value' || !eventName) return;
-  if (SUPPORTED_EVENT_NAMES.has(eventName)) return;
-
-  const tagName = node.rawTagName || node.tagName || 'element';
-  findings.unsupportedEventNames.push(
-    `${tagName} attribute "${attrName}" refers to an unsupported event name "${eventName}"`
-  );
-}
-
+// Validates that a ref attribute targets a unique HTMLElement property.
 function validateRefAttribute(
   attrValue,
   supportedProps,
@@ -1759,46 +1862,19 @@ function validateRefAttribute(
   seenRefProps.add(propName);
 }
 
-function getHtmlTagName(node) {
-  const tagName = node.rawTagName || node.tagName;
-  return typeof tagName === 'string' ? tagName.toLowerCase() : '';
+// Validates event names used in value-binding attributes.
+function validateValueBindingEvent(node, attrName, findings) {
+  const [realAttrName, eventName] = attrName.split(':');
+  if (realAttrName !== 'value' || !eventName) return;
+  if (SUPPORTED_EVENT_NAMES.has(eventName)) return;
+
+  const tagName = node.rawTagName || node.tagName || 'element';
+  findings.unsupportedEventNames.push(
+    `${tagName} attribute "${attrName}" refers to an unsupported event name "${eventName}"`
+  );
 }
 
-function validateHtmlNesting(node, findings) {
-  const tagName = getHtmlTagName(node);
-  if (!tagName || tagName.includes('-')) return;
-
-  const parentNode = node.parentNode?.nodeType === 1 ? node.parentNode : null;
-  const parentTagName = parentNode ? getHtmlTagName(parentNode) : '';
-  const allowedParents = HTML_ALLOWED_PARENTS.get(tagName);
-  if (
-    allowedParents &&
-    (!parentTagName || !allowedParents.has(parentTagName))
-  ) {
-    findings.invalidHtmlNesting.push(
-      `<${tagName}> must be nested inside ${[...allowedParents]
-        .map(name => `<${name}>`)
-        .join(
-          ' or '
-        )}, but parent is ${parentTagName ? `<${parentTagName}>` : 'the document root'}`
-    );
-  }
-
-  const allowedChildren = HTML_ALLOWED_CHILDREN.get(tagName);
-  if (!allowedChildren) return;
-
-  for (const child of node.childNodes ?? []) {
-    if (child.nodeType !== 1) continue;
-    const childTagName = getHtmlTagName(child);
-    if (!childTagName || childTagName.includes('-')) continue;
-    if (allowedChildren.has(childTagName)) continue;
-
-    findings.invalidHtmlNesting.push(
-      `<${childTagName}> is not allowed directly inside <${tagName}>`
-    );
-  }
-}
-
+// Walks parsed HTML nodes to extract expressions and apply HTML validations.
 function walkHtmlNode(
   node,
   expressions,
