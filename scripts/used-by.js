@@ -379,9 +379,10 @@ export function evaluateSourceText(filePath, text) {
 }
 
 // Determines whether a class declaration extends one of the known Wrec imports.
-function extendsWrec(node, wrecNames) {
+// This is only called by analyzeSourceFile.
+function extendsWrec(classNode, wrecNames) {
   return Boolean(
-    node.heritageClauses?.some(
+    classNode.heritageClauses?.some(
       clause =>
         clause.token === ts.SyntaxKind.ExtendsKeyword &&
         clause.types.some(
@@ -412,8 +413,9 @@ function getComputedCalledMethods(classNode) {
       member.initializer &&
       ts.isObjectLiteralExpression(member.initializer)
     ) {
-      // Keep the last matching declaration because JavaScript class fields
-      // use last-one-wins semantics when the same static field is declared twice.
+      // Keep the last matching declaration because
+      // JavaScript class fields use last-one-wins semantics
+      // when the same static field is declared twice.
       propertiesNode = member.initializer;
     }
   }
@@ -488,6 +490,8 @@ function getMethodUsages(classNode, propertyNames) {
     });
   }
 
+  // Build a Set method names that are called from the "static html" template
+  // or from computed property expressions.
   const entryMethods = new Set([
     ...getTemplateCalledMethods(classNode),
     ...getComputedCalledMethods(classNode)
