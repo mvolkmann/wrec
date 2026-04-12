@@ -143,7 +143,7 @@ export function evaluateSourceText(filePath, text) {
     true,
     scriptKind
   );
-  return transformSourceFile(sourceFile);
+  return analyzeSourceFile(sourceFile);
 }
 
 // Determines whether a class declaration extends one of the known Wrec imports.
@@ -504,8 +504,9 @@ function isSupportedSourceFile(filePath, excludeTests = false) {
   );
 }
 
-// Computes all `usedBy` edits needed for a parsed source file.
-function transformSourceFile(sourceFile) {
+// Analyzes a parsed source file and returns any proposed `usedBy` edits.
+// This is the heart of the functionality in this script.
+function analyzeSourceFile(sourceFile) {
   const edits = [];
   const {names: wrecNames, quote} = getWrecImportInfo(sourceFile);
   const suggestions = [];
