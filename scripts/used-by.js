@@ -607,8 +607,7 @@ function getTemplateCalledMethods(classNode) {
   return methodNames;
 }
 
-// Recursively follow method-call chains
-// to accumulate all properties touched downstream.
+// Recursively follow method-call chains to accumulate all accessed properties.
 // This is only called by getMethodUsages.
 function getTransitiveProps(methodInfo, memo, methodName, seen = new Set()) {
   // Starting from methods that are reachable from
@@ -711,7 +710,7 @@ function isInstanceMethodMember(member) {
   );
 }
 
-// Checks whether a path points to a supported JavaScript or TypeScript source file.
+// Determines if a path refers to a JavaScript or TypeScript source file.
 function isSupportedSourceFile(filePath, excludeTests = false) {
   return (
     /\.(js|ts)$/.test(filePath) &&
@@ -720,7 +719,7 @@ function isSupportedSourceFile(filePath, excludeTests = false) {
   );
 }
 
-// Handles CLI arguments and runs the `usedBy` updater workflow.
+// Handles CLI arguments and runs the script.
 function main() {
   const args = process.argv.slice(2);
   const inputPaths = args.filter(arg => !arg.startsWith('--'));
@@ -734,7 +733,7 @@ function main() {
   if (dry) {
     // Report the proposed changes.
     for (const {propName, suggestion} of result.suggestions) {
-      console.log(`${propName} - ${suggestion}`);
+      console.info(`${propName} - ${suggestion}`);
     }
 
     // Exit with a non-zero when there is at least one change
@@ -756,7 +755,7 @@ function recordThisAccess(props, calledMethods, node, name) {
   }
 }
 
-// Validates that the source file exists and has a supported extension.
+// Validates that a source file exists and has a supported extension.
 function validateFile(absFilePath) {
   if (!fs.existsSync(absFilePath)) throw new Error('File not found');
 
