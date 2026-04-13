@@ -477,6 +477,49 @@ describe('lint.js', () => {
     );
   });
 
+  test('reports missing component properties referenced inside instance methods', () => {
+    const output = runLint(`
+      import {Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          count: {type: Number, value: 1}
+        };
+
+        increment() {
+          this.count += 1;
+          this.missingProp += 1;
+        }
+      }
+    `);
+
+    expect(output).toContain('undefined properties:');
+    expect(output).toContain('  missingProp');
+  });
+
+  test('does not treat normal helper calls inside methods as missing context functions', () => {
+    const output = runLint(`
+      import {Wrec} from '${wrecImportPath}';
+
+      function helper(count: number) {
+        return count + 1;
+      }
+
+      class Fixture extends Wrec {
+        static properties = {
+          count: {type: Number, value: 1}
+        };
+
+        increment() {
+          this.count = helper(this.count);
+        }
+      }
+    `);
+
+    expect(output).toContain('no issues found');
+    expect(output).not.toContain('undefined context functions:');
+  });
+
   test('reports undefined properties and methods', () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';

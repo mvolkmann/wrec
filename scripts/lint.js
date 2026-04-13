@@ -140,20 +140,20 @@ const SUPPORTED_EVENT_NAMES = new Set([
 const WREC_REF_NAME = '__wrec';
 const componentPropertyCache = new Map();
 
-// Analyzes an expression for invalid property access,
+// Analyzes code for invalid property access,
 // method calls, and arithmetic usage.
-function analyzeExpression(
-  expressionNode,
+function analyzeCodeNode(
+  codeNode,
   checker,
   classNode,
   findings,
   metadata
 ) {
-  if (metadata.eventHandler && ts.isIdentifier(expressionNode)) {
-    if (!metadata.classMethods.has(expressionNode.text)) {
+  if (metadata.eventHandler && ts.isIdentifier(codeNode)) {
+    if (!metadata.classMethods.has(codeNode.text)) {
       uniquePush(
         findings.invalidEventHandlers,
-        `"${expressionNode.text}" is not a defined instance method`
+        `"${codeNode.text}" is not a defined instance method`
       );
     }
   }
@@ -175,7 +175,7 @@ function analyzeExpression(
 
     if (ts.isCallExpression(node)) {
       const callee = node.expression;
-      if (ts.isIdentifier(callee)) {
+      if (metadata.checkContextCalls && ts.isIdentifier(callee)) {
         if (!metadata.contextKeys.has(callee.text)) {
           const symbol = checker.getSymbolAtLocation(callee);
           if (!symbol || requiresContextFunction(symbol, metadata.sourceFile)) {
@@ -283,7 +283,7 @@ function analyzeExpression(
     ts.forEachChild(node, visit);
   }
 
-  visit(expressionNode);
+  visit(codeNode);
 }
 
 // Builds a temporary source string used only for type-checking
@@ -297,7 +297,7 @@ function buildAugmentedSource(
   classNode,
   supportedProps,
   contextKeys,
-  expressions
+  codeItems
 ) {
   const propLines = [];
   for (const [name, info] of supportedProps.entries()) {
@@ -308,17 +308,21 @@ function buildAugmentedSource(
     ? `const {${contextKeys.join(', ')}} = ${classNode.name.text}.context;`
     : '';
 
-  const helperBlocks = expressions.map((expr, index) => {
+  const helperBlocks = codeItems.map((item, index) => {
     const targetType =
-      expr.context === 'static'
+      item.context === 'static'
         ? `typeof ${classNode.name.text}`
         : `${classNode.name.text} & __WrecSupportedProps`;
-    const rewrittenText = expr.text.replace(/\bthis\b/g, WREC_REF_NAME);
+    const rewrittenText = item.text.replace(/\bthis\b/g, WREC_REF_NAME);
+    const helperBody =
+      item.shape === 'block'
+        ? rewrittenText
+        : `return (${rewrittenText});`;
     return `
 function __wrec_expr_${index}() {
   const ${WREC_REF_NAME} = null as unknown as ${targetType};
-  ${expr.context === 'instance' ? contextLine : ''}
-  return (${rewrittenText});
+  ${item.checkContextCalls ? contextLine : ''}
+  ${helperBody}
 }
 `;
   });
@@ -350,15 +354,14 @@ function collectClassMethods(classNode) {
 }
 
 // Finds the synthetic `__wrec_expr_*` helper functions that were added by
-// `buildAugmentedSource` and pulls out the expression each one returns.
-// This gives the linter a stable list of typed expression nodes
-// that line up with the original template and computed expressions
-// for later analysis.
-function collectHelperExpressions(augmentedSourceFile) {
+// `buildAugmentedSource` and returns their bodies in index order.
+// This gives the linter a stable list of typed code nodes
+// that line up with the original extracted snippets for later analysis.
+function collectHelperCodeNodes(augmentedSourceFile) {
   const helpers = [];
 
   // Finds generated helper functions and
-  // stores their return expressions by index.
+  // stores their bodies by index.
   function visit(node) {
     if (
       ts.isFunctionDeclaration(node) &&
@@ -366,18 +369,44 @@ function collectHelperExpressions(augmentedSourceFile) {
     ) {
       const match = node.name.text.match(/(\d+)$/);
       const index = match ? Number(match[1]) : -1;
-      if (index >= 0 && node.body) {
-        const statement = node.body.statements.find(ts.isReturnStatement);
-        if (statement?.expression) {
-          helpers[index] = statement.expression;
-        }
-      }
+      if (index >= 0 && node.body) helpers[index] = node.body;
     }
     ts.forEachChild(node, visit);
   }
 
   visit(augmentedSourceFile);
   return helpers;
+}
+
+// Collects analyzable code blocks from instance methods and accessors.
+function collectMethodCodeItems(classNode) {
+  const codeItems = [];
+
+  for (const member of classNode.members) {
+    if (hasStaticModifier(member)) continue;
+
+    if (
+      ts.isMethodDeclaration(member) ||
+      ts.isGetAccessorDeclaration(member) ||
+      ts.isSetAccessorDeclaration(member)
+    ) {
+      if (!member.body) continue;
+      if (!member.body.getText().includes('this.')) continue;
+      codeItems.push({
+        checkContextCalls: false,
+        context: 'instance',
+        eventHandler: false,
+        kind: 'method',
+        location: member.getSourceFile().getLineAndCharacterOfPosition(
+          member.name.getStart(member.getSourceFile())
+        ),
+        shape: 'block',
+        text: member.body.getText()
+      });
+    }
+  }
+
+  return codeItems;
 }
 
 // Collects the property names declared in
@@ -1291,7 +1320,13 @@ export function lintSource(filePath, sourceText, options = {}) {
     componentPropertyMaps,
     supportedProps
   );
+  const methodCodeItems = collectMethodCodeItems(classNode);
   const allExpressions = [...templateExprs, ...computedExprs];
+  const allCodeItems = [...allExpressions, ...methodCodeItems].map(item => ({
+    checkContextCalls: item.kind !== 'method',
+    shape: 'shape' in item ? item.shape : 'expression',
+    ...item
+  }));
 
   if (allMethods.has('formAssociatedCallback') && !formAssociated) {
     findings.missingFormAssociatedProperty.push(
@@ -1304,7 +1339,7 @@ export function lintSource(filePath, sourceText, options = {}) {
     classNode,
     supportedProps,
     contextKeys,
-    allExpressions
+    allCodeItems
   );
   const augmentedProgram = createProgram(filePath, augmentedSource);
   const augmentedSourceFile = augmentedProgram.getSourceFile(filePath);
@@ -1316,7 +1351,7 @@ export function lintSource(filePath, sourceText, options = {}) {
     throw new Error('unable to find Wrec subclass after augmentation');
   }
 
-  const helperExpressions = collectHelperExpressions(augmentedSourceFile);
+  const helperCodeNodes = collectHelperCodeNodes(augmentedSourceFile);
 
   validatePropertyConfigs(
     checker,
@@ -1340,17 +1375,18 @@ export function lintSource(filePath, sourceText, options = {}) {
     }
   });
 
-  helperExpressions.forEach((expressionNode, index) => {
-    if (!expressionNode) return;
-    analyzeExpression(
-      expressionNode,
+  helperCodeNodes.forEach((codeNode, index) => {
+    if (!codeNode) return;
+    analyzeCodeNode(
+      codeNode,
       augmentedChecker,
       augmentedClassNode,
       findings,
       {
         classMethods: allMethods,
         contextKeys: new Set(contextKeys),
-        eventHandler: allExpressions[index]?.eventHandler ?? false,
+        checkContextCalls: allCodeItems[index]?.checkContextCalls ?? true,
+        eventHandler: allCodeItems[index]?.eventHandler ?? false,
         sourceFile: augmentedSourceFile
       }
     );
