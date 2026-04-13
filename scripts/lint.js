@@ -12,6 +12,7 @@
 // - undefined context functions called in expressions
 // - extra arguments passed to methods and context functions
 // - incompatible method arguments in expressions
+// - incompatible context function arguments in expressions
 // - arithmetic type errors in expressions
 // - invalid computed property references and calls to non-method members
 // - invalid event handler references
@@ -27,6 +28,7 @@
 // - invalid `useState` map entries
 // - unsupported HTML attributes in templates
 // - invalid HTML element nesting in templates
+// - invalid ref attribute targets
 // - duplicate ref attribute values
 
 import fs from 'node:fs';
