@@ -79,6 +79,14 @@ Let's create a component that demonstrates this.
   FormControls.define('form-controls');
   ```
 
+  By default, wrec updates the property specified in
+  an `input` element `value` attribute when it receives a change event.
+  Those are dispatched when the value is committed, which happens when
+  focus leaves the `input` or when the user presses the return key.
+  To instead have wrec update the property on every value change,
+  such as dragging the slider in an `input` with `type="range"`,
+  add ":input" after the "value" attribute name.
+
   Note the raw JavaScript expressions in:
   - the CSS for `p` elements,
   - the `textarea` element content
