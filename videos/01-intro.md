@@ -42,15 +42,10 @@ Let's start simple.
   </html>
   ```
 
-- If you have the Bun JavaScript engine installed
-  - Start a local server by entering `bun index.html`.
-  - Browse localhost:3000.
-
-- Otherwise
-  - Install Vite by entering `npm i -D vite`.
-  - Edit `package.json` and add the script `"dev": "vite"`.
-  - Start a local server by entering `npm run dev`.
-  - Browse localhost:5173.
+- Install Vite by entering `npm i -D vite`.
+- Edit `package.json` and add the script `"dev": "vite"`.
+- Start a local server by entering `npm run dev`.
+- Browse localhost:5173.
 
 ## Better Hello World
 

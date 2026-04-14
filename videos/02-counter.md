@@ -1,17 +1,12 @@
 # Counter component
 
-For all the examples going forward,
-we will assume you have Bun installed.
-If not, you can either install it or
-use vite as shown in the introduction video.
-
 Let's create a counter component.
 
 - Create a new directory named "my-counter".
 - cd to it.
 - Create a `package.json` file by entering `npm init -y`.
 - Install the wrec library by entering `npm i wrec`.
-- Create a `my-counter.js` file containing the following:
+- Create a `my-counter.ts` file containing the following:
 
   ```ts
   import {css, html, Wrec} from 'wrec';
@@ -78,5 +73,7 @@ Let's create a counter component.
 
   The `script` listens for "change" events and outputs information from them.
 
-- Start a local server by entering `bun index.html`.
-- Browse localhost:3000.
+- Install Vite by entering `npm i -D vite`.
+- Edit `package.json` and add the script `"dev": "vite"`.
+- Start a local server by entering `npm run dev`.
+- Browse localhost:5173.
