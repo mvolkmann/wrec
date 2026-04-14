@@ -12,7 +12,7 @@ that can recreate it with less code.
 
 Let's start simple.
 
-- Create empty project directory.
+- Create a new directory named "hello-world".
 - cd to it.
 - Create a `package.json` file by entering `npm init -y`.
 - Install the wrec library by entering `npm i wrec`.
