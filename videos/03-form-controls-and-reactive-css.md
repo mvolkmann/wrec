@@ -113,3 +113,16 @@ Let's create a component that demonstrates this.
 - Browse localhost:5173.
 - Change the Story text, the Size slider, and the Color dropdown.
 - Note that the `p` element automatically updates.
+
+For `input` elements with `type="checkbox"`,
+the `checked` attribute can be set to a reference to a Boolean property.
+That creates a two-way binding where
+clicking the checkbox updates the property and
+changing the property updates the checkbox.
+
+For `input` elements with `type="radio"`,
+the `checked` attribute can be set to a reference to a String property.
+That creates a two-way binding where clicking the radio button
+sets the property to the value of the `value` attribute and
+changing the property updates the `checked` value based on
+whether the property value matches the value of the `value` attribute.
