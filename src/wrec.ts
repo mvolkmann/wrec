@@ -159,13 +159,17 @@ function interpolate(strings: TemplateStringsArray, values: unknown[]) {
   return result;
 }
 
-function isCheckboxInput(element: Element) {
+function isCheckboxInput(element: Element): element is HTMLInputElement {
   return element instanceof HTMLInputElement && element.type === 'checkbox';
 }
 
 function isPrimitive(value: unknown) {
   const t = typeof value;
   return t === 'string' || t === 'number' || t === 'boolean';
+}
+
+function isRadioInput(element: Element): element is HTMLInputElement {
+  return element instanceof HTMLInputElement && element.type === 'radio';
 }
 
 function isTextArea(element: Element) {
@@ -200,7 +204,22 @@ function updateAttribute(
   attrName: string,
   value: string | number | boolean
 ) {
-  const [realAttrName, _eventName] = attrName.split(':');
+  const [realAttrName] = attrName.split(':');
+
+  if (
+    realAttrName === 'checked' &&
+    isRadioInput(element) &&
+    typeof value === 'string'
+  ) {
+    const isChecked = element.value === value;
+    if (isChecked) {
+      element.setAttribute(realAttrName, realAttrName);
+    } else {
+      element.removeAttribute(realAttrName);
+    }
+    element.checked = isChecked;
+    return;
+  }
 
   // Attributes can only be set to primitive values.
   if (isPrimitive(value)) {
@@ -239,7 +258,7 @@ function updateValue(
   attrName: string,
   value: string
 ) {
-  const [realAttrName, _eventName] = attrName.split(':');
+  const [realAttrName] = attrName.split(':');
 
   if (element instanceof CSSStyleRule) {
     element.style.setProperty(realAttrName, value); // CSS variable
@@ -695,13 +714,20 @@ export abstract class Wrec extends HTMLElementBase {
         let [realAttrName, eventName] = attrName.split(':');
         const childPropName = Wrec.getPropName(realAttrName);
 
-        if (realAttrName === 'checked' && isCheckboxInput(element)) {
+        if (realAttrName === 'checked') {
           const {type} = this.#ctor.properties[propName];
-          if (type !== Boolean) {
+          if (isCheckboxInput(element) && type !== Boolean) {
             this.#throw(
               element,
               attrName,
               `refers to property "${propName}" whose type is not Boolean`
+            );
+          }
+          if (isRadioInput(element) && type !== String) {
+            this.#throw(
+              element,
+              attrName,
+              `refers to property "${propName}" whose type is not String`
             );
           }
         }
@@ -713,7 +739,11 @@ export abstract class Wrec extends HTMLElementBase {
           ? (element as Wrec).#isComputedProp(childPropName)
           : false;
         if (!childComputed) {
-          (element as any)[childPropName] = value;
+          if (realAttrName === 'checked' && isRadioInput(element)) {
+            (element as HTMLInputElement).checked = element.value === value;
+          } else {
+            (element as any)[childPropName] = value;
+          }
         }
 
         if (realAttrName === 'value') {
@@ -1085,11 +1115,13 @@ export abstract class Wrec extends HTMLElementBase {
     if (!REF_RE.test(match)) return;
 
     const isCheckbox = isCheckboxInput(element);
+    const isRadio = isRadioInput(element);
     const isFormControl = isValueElement(element) || isTextArea(element);
     let [realAttrName, eventName] = (attrName ?? '').split(':');
     const shouldListen =
       (isFormControl && realAttrName === 'value') ||
       (isCheckbox && realAttrName === 'checked') ||
+      (isRadio && realAttrName === 'checked') ||
       isTextArea(element);
     if (!shouldListen) return;
 
@@ -1107,10 +1139,15 @@ export abstract class Wrec extends HTMLElementBase {
       const {target} = event;
       if (!target) return;
       const {type} = this.#ctor.properties[propName];
+      const input = target as HTMLInputElement;
+      const {value} = input;
       if (realAttrName === 'checked') {
-        this[propName] = (target as HTMLInputElement).checked;
+        if (isCheckbox) {
+          this[propName] = input.checked;
+        } else if (isRadio && input.checked) {
+          this[propName] = value;
+        }
       } else {
-        const value = (target as HTMLValueElement).value;
         this[propName] = type === Number ? stringToNumber(value) : value;
       }
       this.#react(propName);
