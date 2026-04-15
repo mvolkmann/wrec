@@ -228,3 +228,40 @@ Let's look at an example that utilizes this.
 - Modify the size slider and note that text size updates.
 - Click the Submit button and note that
   values for r, g, b, and size are submitted.
+
+## Disabled Attribute
+
+If the `disabled` attribute is added a custom element for a wrec component,
+wrec adds that to every descendant element that can be disabled.
+
+For example, you can add a checkbox in the `color-demo` component
+that causes all the sliders in the `color-picker` component
+to be disabled when clicked.
+
+To do this:
+
+- Add the following property in `static properties`:
+
+  ```ts
+  disablePicker: { type: Boolean },
+  ```
+
+- Add the following in the `html` template literal:
+
+  ```ts
+  <div>
+    <label>Disable Picker</label>
+    <input
+      type="checkbox"
+      checked="this.disablePicker"
+      onChange="this.disablePicker = !this.disablePicker"
+    />
+  </div>
+  ```
+
+- Add the following attribute to the `color-picker` element
+  in the `html` template literal:
+
+  ```html
+  disabled="this.disablePicker"
+  ```
