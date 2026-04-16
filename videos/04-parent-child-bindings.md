@@ -250,7 +250,7 @@ To do this:
 
   ```ts
   <div>
-    <label>Disable Picker</label>
+    <label>Lock in color</label>
     <input type="checkbox" checked="this.disablePicker" />
   </div>
   ```
