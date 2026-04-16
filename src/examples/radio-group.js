@@ -74,12 +74,6 @@ class RadioGroup extends Wrec {
     });
   }
 
-  // This method cannot be private because it is called when
-  // a change event is dispatched from a radio button.
-  handleChange(event) {
-    this.value = event.target.value;
-  }
-
   makeButtons() {
     const labelArray = this.labels.split(',');
     const valueArray = this.values.split(',').map(value => value.trim());
@@ -87,10 +81,9 @@ class RadioGroup extends Wrec {
       (value, index) => html`
         <div>
           <input
-            checked="this.value === '${value}'"
+            checked="this.value"
             id=${value}
             name=${this.name}
-            onChange="handleChange"
             type="radio"
             value=${value}
           />
