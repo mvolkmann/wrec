@@ -2,7 +2,7 @@
   "name": "wrec",
   "description": "a small library that greatly simplifies building web components",
   "author": "R. Mark Volkmann",
-  "version": "0.31.4",
+  "version": "0.31.5",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -30,6 +30,7 @@
   },
   "bin": {
     "wrec-lint": "./scripts/lint.js",
+    "wrec-scaffold": "./scripts/scaffold.js",
     "wrec-usedby": "./scripts/used-by.js"
   },
   "files": [
