@@ -178,6 +178,32 @@ describe('lint.js', () => {
     );
   });
 
+  test('reports invalid checked bindings for checkbox and radio inputs', () => {
+    const output = runLint(`
+      import {html, Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          checkedFlag: {type: String, value: 'nope'},
+          selectedValue: {type: Boolean, value: false}
+        };
+
+        static html = html\`
+          <input type="checkbox" checked="this.checkedFlag" />
+          <input type="radio" value="small" checked="this.selectedValue" />
+        \`;
+      }
+    `);
+
+    expect(output).toContain('invalid checked bindings:');
+    expect(output).toContain(
+      '  input type="checkbox" attribute "checked" refers to property "checkedFlag" whose type is not boolean'
+    );
+    expect(output).toContain(
+      '  input type="radio" attribute "checked" refers to property "selectedValue" whose type is not string'
+    );
+  });
+
   test('reports form-assoc mappings to missing component properties', () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
@@ -431,11 +457,15 @@ describe('lint.js', () => {
 
       class Fixture extends Wrec {
         static properties = {
+          checkedFlag: {type: Boolean, value: true},
+          choice: {type: String, value: 'small'},
           count: {type: Number, value: 1},
           label: {type: String, value: 'ok'}
         };
 
         static html = html\`
+          <input type="checkbox" checked="this.checkedFlag" />
+          <input type="radio" value="small" checked="this.choice" />
           <div>\${42}</div>
           <div>this.label</div>
         \`;

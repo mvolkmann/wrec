@@ -30,6 +30,8 @@
 // - invalid HTML element nesting in templates
 // - invalid ref attribute targets
 // - duplicate ref attribute values
+// - checkbox checked bindings that do not reference Boolean properties
+// - radio checked bindings that do not reference String properties
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -43,8 +45,9 @@ import {
 } from './ast-utils.js';
 
 const CSS_PROPERTY_RE = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g;
-const REFS_TEST_RE = /this\.[a-zA-Z_$][\w$]*(\.[a-zA-Z_$][\w$]*)*/;
 const IDENTIFIER_RE = /^[A-Za-z_$][\w$]*$/;
+const PROPERTY_REF_RE = /^this\.([A-Za-z_$][\w$]*)$/;
+const REFS_TEST_RE = /this\.[a-zA-Z_$][\w$]*(\.[a-zA-Z_$][\w$]*)*/;
 const HTML_GLOBAL_ATTRIBUTES = new Set([
   'aria-label',
   'class',
@@ -142,13 +145,7 @@ const componentPropertyCache = new Map();
 
 // Analyzes code for invalid property access,
 // method calls, and arithmetic usage.
-function analyzeCodeNode(
-  codeNode,
-  checker,
-  classNode,
-  findings,
-  metadata
-) {
+function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
   if (metadata.eventHandler && ts.isIdentifier(codeNode)) {
     if (!metadata.classMethods.has(codeNode.text)) {
       uniquePush(
@@ -315,9 +312,7 @@ function buildAugmentedSource(
         : `${classNode.name.text} & __WrecSupportedProps`;
     const rewrittenText = item.text.replace(/\bthis\b/g, WREC_REF_NAME);
     const helperBody =
-      item.shape === 'block'
-        ? rewrittenText
-        : `return (${rewrittenText});`;
+      item.shape === 'block' ? rewrittenText : `return (${rewrittenText});`;
     return `
 function __wrec_expr_${index}() {
   const ${WREC_REF_NAME} = null as unknown as ${targetType};
@@ -397,9 +392,11 @@ function collectMethodCodeItems(classNode) {
         context: 'instance',
         eventHandler: false,
         kind: 'method',
-        location: member.getSourceFile().getLineAndCharacterOfPosition(
-          member.name.getStart(member.getSourceFile())
-        ),
+        location: member
+          .getSourceFile()
+          .getLineAndCharacterOfPosition(
+            member.name.getStart(member.getSourceFile())
+          ),
         shape: 'block',
         text: member.body.getText()
       });
@@ -799,6 +796,7 @@ function formatReport(
     findings.duplicateProperties.length > 0 ||
     findings.reservedProperties.length > 0 ||
     findings.invalidUsedByReferences.length > 0 ||
+    findings.invalidCheckedBindings.length > 0 ||
     findings.invalidComputedProperties.length > 0 ||
     findings.invalidRefAttributes.length > 0 ||
     findings.invalidValuesConfigurations.length > 0 ||
@@ -864,6 +862,13 @@ function formatReport(
   if (findings.invalidComputedProperties.length > 0) {
     lines.push('invalid computed properties:');
     findings.invalidComputedProperties.forEach(message =>
+      lines.push(`  ${message}`)
+    );
+  }
+
+  if (findings.invalidCheckedBindings.length > 0) {
+    lines.push('invalid checked bindings:');
+    findings.invalidCheckedBindings.forEach(message =>
       lines.push(`  ${message}`)
     );
   }
@@ -1046,6 +1051,12 @@ function getComponentPropertyMaps(filePath, sourceText, seen = new Set()) {
   return propertyMaps;
 }
 
+// Returns the referenced property name for a single `this.prop` binding.
+function getPropertyNameInAttribute(attrValue) {
+  const match = attrValue.trim().match(PROPERTY_REF_RE);
+  return match ? match[1] : undefined;
+}
+
 // Returns trimmed source text for a TypeScript expression node.
 function getExpressionText(sourceFile, expression) {
   return expression.getText(sourceFile).trim();
@@ -1055,6 +1066,12 @@ function getExpressionText(sourceFile, expression) {
 function getHtmlTagName(node) {
   const tagName = node.rawTagName || node.tagName;
   return typeof tagName === 'string' ? tagName.toLowerCase() : '';
+}
+
+// Returns the literal input type attribute value when one is present.
+function getInputType(node) {
+  const type = node.getAttribute('type');
+  return typeof type === 'string' ? type.toLowerCase() : undefined;
 }
 
 // Gets an object-literal property with the given key.
@@ -1295,6 +1312,7 @@ export function lintSource(filePath, sourceText, options = {}) {
     duplicateProperties,
     extraArguments: [],
     incompatibleArguments: [],
+    invalidCheckedBindings: [],
     invalidComputedProperties: [],
     invalidDefaultValues: [],
     invalidEventHandlers: [],
@@ -1377,19 +1395,13 @@ export function lintSource(filePath, sourceText, options = {}) {
 
   helperCodeNodes.forEach((codeNode, index) => {
     if (!codeNode) return;
-    analyzeCodeNode(
-      codeNode,
-      augmentedChecker,
-      augmentedClassNode,
-      findings,
-      {
-        classMethods: allMethods,
-        contextKeys: new Set(contextKeys),
-        checkContextCalls: allCodeItems[index]?.checkContextCalls ?? true,
-        eventHandler: allCodeItems[index]?.eventHandler ?? false,
-        sourceFile: augmentedSourceFile
-      }
-    );
+    analyzeCodeNode(codeNode, augmentedChecker, augmentedClassNode, findings, {
+      classMethods: allMethods,
+      contextKeys: new Set(contextKeys),
+      checkContextCalls: allCodeItems[index]?.checkContextCalls ?? true,
+      eventHandler: allCodeItems[index]?.eventHandler ?? false,
+      sourceFile: augmentedSourceFile
+    });
   });
 
   findings.duplicateProperties.sort();
@@ -1403,6 +1415,7 @@ export function lintSource(filePath, sourceText, options = {}) {
       a.methodName.localeCompare(b.methodName) ||
       a.parameterName.localeCompare(b.parameterName)
   );
+  findings.invalidCheckedBindings.sort();
   findings.invalidComputedProperties.sort();
   findings.invalidDefaultValues.sort();
   findings.invalidEventHandlers.sort();
@@ -1550,6 +1563,37 @@ function typeNodeFromConstructorExpression(expression) {
 // Pushes a value into an array only if it is not already present.
 function uniquePush(array, value) {
   if (!array.includes(value)) array.push(value);
+}
+
+// Validates checked bindings for checkbox and radio input elements.
+function validateCheckedBinding(
+  node,
+  attrName,
+  attrValue,
+  findings,
+  supportedProps
+) {
+  if (getHtmlTagName(node) !== 'input') return;
+
+  const [baseAttrName] = attrName.split(':');
+  if (baseAttrName !== 'checked') return;
+
+  const inputType = getInputType(node);
+  if (inputType !== 'checkbox' && inputType !== 'radio') return;
+
+  const propName = getPropertyNameInAttribute(attrValue);
+  if (!propName) return;
+
+  const propInfo = supportedProps.get(propName);
+  if (!propInfo) return;
+
+  const expectedType = inputType === 'checkbox' ? 'boolean' : 'string';
+  if (propInfo.typeText === expectedType) return;
+
+  findings.invalidCheckedBindings.push(
+    `input type="${inputType}" attribute "${attrName}" refers to ` +
+      `property "${propName}" whose type is not ${expectedType}`
+  );
 }
 
 // Validates computed property references and method calls.
@@ -1925,6 +1969,13 @@ function walkHtmlNode(
         attrValue,
         findings,
         componentPropertyMaps
+      );
+      validateCheckedBinding(
+        node,
+        attrName,
+        attrValue,
+        findings,
+        supportedProps
       );
       validateHtmlAttribute(node, attrName, findings);
       validateValueBindingEvent(node, attrName, findings);
