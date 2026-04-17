@@ -127,7 +127,7 @@ const defaultForType = (type: AnyClass) =>
             ? {}
             : undefined;
 
-// This returns an array of all descendant elements of a given element,
+// Returns an array of all descendant elements of a given element,
 // including those in nested shadow DOMs.
 function getAllDescendants(
   root: DocumentFragment | Element | ShadowRoot
@@ -148,8 +148,27 @@ function getAllDescendants(
   return elements;
 }
 
-// This takes a string like "this.foo.bar" and returns "foo".
+// Looks up a property descriptor on an object or its prototypes.
+function getPropertyDescriptor(
+  object: object,
+  propName: string
+): PropertyDescriptor | undefined {
+  let current: object | null = object;
+  while (current) {
+    const descriptor = Object.getOwnPropertyDescriptor(current, propName);
+    if (descriptor) return descriptor;
+    current = Object.getPrototypeOf(current);
+  }
+  return undefined;
+}
+
+// Takes a string like "this.foo.bar" and returns "foo".
 const getPropName = (str: string) => str.substring(SKIP).split('.')[0];
+
+// Converts a getter method name to a property name.
+function getterToProperty(target: string) {
+  return target.substring('get '.length).trim();
+}
 
 function interpolate(strings: TemplateStringsArray, values: unknown[]) {
   let result = strings[0];
@@ -161,6 +180,11 @@ function interpolate(strings: TemplateStringsArray, values: unknown[]) {
 
 function isCheckboxInput(element: Element): element is HTMLInputElement {
   return element instanceof HTMLInputElement && element.type === 'checkbox';
+}
+
+// Determines whether a string refers to a getter method.
+function isGetter(target: string) {
+  return target.startsWith('get ');
 }
 
 function isPrimitive(value: unknown) {
@@ -181,9 +205,12 @@ function isValueElement(element: Element) {
   return localName === 'input' || localName === 'select';
 }
 
+// Converts a property name to a getter method name.
+const propertyToGetter = (propName: string) => `get ${propName}`;
+
 const removeHtmlComments = (str: string) => str.replace(/<!--[\s\S]*?-->/g, '');
 
-// This returns a new string where a specified substring is replaced.
+// Returns a new string where a specified substring is replaced.
 function replace(
   full: string,
   index: number,
@@ -1274,7 +1301,21 @@ export abstract class Wrec extends HTMLElementBase {
       if (this[referencedProp] === undefined) {
         this.#throwInvalidRef(null, computedPropName, referencedProp);
       }
-      if (typeof this[referencedProp] !== 'function') {
+
+      // Check for dependencies on getter methods.
+      const getterDependency = propertyToGetter(referencedProp);
+      let registeredGetterDependency = false;
+      for (const [propName, propConfig] of Object.entries(ctor.properties)) {
+        if (usedByArray(propConfig.usedBy)?.includes(getterDependency)) {
+          register(propName, expr);
+          registeredGetterDependency = true;
+        }
+      }
+
+      if (
+        !registeredGetterDependency &&
+        typeof this[referencedProp] !== 'function'
+      ) {
         register(referencedProp, expr);
       }
     }
@@ -1554,22 +1595,31 @@ export abstract class Wrec extends HTMLElementBase {
   #usedBy() {
     const ctor = this.#ctor;
 
-    function buildMap(this: Wrec) {
+    // Adds an expression for a method or getter dependency target.
+    const addExpr = (map: StringToStrings, target: string, expr: string) => {
+      let exprs = map.get(target);
+      if (!exprs) {
+        exprs = [];
+        map.set(target, exprs);
+      }
+      if (!exprs.includes(expr)) exprs.push(expr);
+    };
+
+    // Builds a map from usedBy targets to matching expressions.
+    const buildMap = () => {
       const map = newStringToStrings();
       ctor.methodToExprsMap = map;
       const allExprs = Array.from(this.#exprToRefsMap.keys());
       for (const expr of allExprs) {
         for (const match of expr.matchAll(CALL_RE)) {
-          const methodName = match[1];
-          let exprs = map.get(methodName);
-          if (!exprs) {
-            exprs = [];
-            map.set(methodName, exprs);
-          }
-          if (!exprs.includes(expr)) exprs.push(expr);
+          addExpr(map, match[1], expr);
+        }
+        for (const match of expr.matchAll(REFS_RE)) {
+          const propName = getPropName(match[0]);
+          addExpr(map, propertyToGetter(propName), expr);
         }
       }
-    }
+    };
 
     // For each property whose configuration object
     // contains a "usedBy" property ...
@@ -1578,7 +1628,7 @@ export abstract class Wrec extends HTMLElementBase {
       const usedBy = usedByArray(config.usedBy);
       if (!usedBy) continue;
 
-      if (!ctor.methodToExprsMap) buildMap.call(this);
+      if (!ctor.methodToExprsMap) buildMap();
       const {methodToExprsMap} = ctor;
 
       // Get the array of expressions where the property is used.
@@ -1588,15 +1638,23 @@ export abstract class Wrec extends HTMLElementBase {
         propToExprsMap.set(propName, propExprs);
       }
 
-      // For each method that uses the property ...
+      // For each method or getter that uses the property ...
       for (const method of usedBy) {
-        if (typeof this[method] !== 'function') {
+        if (isGetter(method)) {
+          const property = getterToProperty(method);
+          const descriptor = getPropertyDescriptor(this, property);
+          if (typeof descriptor?.get !== 'function') {
+            throw new WrecError(
+              `property ${propName} usedBy contains non-getter ${method}`
+            );
+          }
+        } else if (typeof this[method] !== 'function') {
           throw new WrecError(
             `property ${propName} usedBy contains non-method ${method}`
           );
         }
 
-        // For each expressions that calls the method ...
+        // For each expression that calls the method or reads the getter ...
         const methodExprs = methodToExprsMap!.get(method) || [];
         for (const expr of methodExprs) {
           // Add the expression to the array of expressions
