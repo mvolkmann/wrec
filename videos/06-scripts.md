@@ -27,8 +27,11 @@ to determine when to reevaluate the expressions.
 
 The "wrec" VS Code extension provides commands in the Command Palette
 that run the three scripts described above.
-The `package.json` file for the project that is opened in VS Code
-must have a dependency on the wrec package and
+It is available in the Visual Studio Marketplace at
+https://marketplace.visualstudio.com/items?itemName=RMarkVolkmann.wrec.
+
+In order to use this extension, the `package.json` file for the project
+that is opened in VS Code must have a dependency on the wrec package and
 it must be installed to use these commands.
 
 - wrec: Scaffold New Component
