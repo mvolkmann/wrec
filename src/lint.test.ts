@@ -130,11 +130,11 @@ describe('lint.js', () => {
 
     expect(output).toContain('invalid default values:');
     expect(output).toContain('property "badBoolean" default value has type');
-    expect(output).toContain('but declared type is boolean');
+    expect(output).toContain('but declared type is Boolean');
     expect(output).toContain('property "badArray" default value has type');
-    expect(output).toContain('but declared type is array');
+    expect(output).toContain('but declared type is Array');
     expect(output).toContain('property "badObject" default value has type');
-    expect(output).toContain('but declared type is object');
+    expect(output).toContain('but declared type is Object');
   });
 
   test('reports duplicate and reserved property names', () => {
@@ -197,10 +197,10 @@ describe('lint.js', () => {
 
     expect(output).toContain('invalid checked bindings:');
     expect(output).toContain(
-      '  input type="checkbox" attribute "checked" refers to property "checkedFlag" whose type is not boolean'
+      '  input type="checkbox" attribute "checked" refers to property "checkedFlag" whose type is not Boolean'
     );
     expect(output).toContain(
-      '  input type="radio" attribute "checked" refers to property "selectedValue" whose type is not string'
+      '  input type="radio" attribute "checked" refers to property "selectedValue" whose type is not String'
     );
   });
 
@@ -396,7 +396,7 @@ describe('lint.js', () => {
     expect(output).toContain(
       'property "wrongDefaultType" default value has type'
     );
-    expect(output).toContain('but declared type is number');
+    expect(output).toContain('but declared type is Number');
     expect(output).toContain(
       '  property "wrongDefaultValue" default value "large" is not in values'
     );

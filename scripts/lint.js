@@ -1107,6 +1107,24 @@ function getParameterType(checker, parameterSymbol, location, isRestArgument) {
   return typeArguments[0] ?? parameterType;
 }
 
+// Returns the Wrec property config type name for a normalized type string.
+function getPropertyConfigTypeName(typeName) {
+  switch (typeName) {
+    case 'array':
+      return 'Array';
+    case 'boolean':
+      return 'Boolean';
+    case 'number':
+      return 'Number';
+    case 'object':
+      return 'Object';
+    case 'string':
+      return 'String';
+    default:
+      return typeName;
+  }
+}
+
 // Derives a readable property type string from syntax or the type checker.
 function getPropertyTypeText(checker, sourceFile, expression) {
   const typeText = getTypeSyntaxText(sourceFile, expression);
@@ -1590,9 +1608,11 @@ function validateCheckedBinding(
   const expectedType = inputType === 'checkbox' ? 'boolean' : 'string';
   if (propInfo.typeText === expectedType) return;
 
+  const expectedTypeName = getPropertyConfigTypeName(expectedType);
+
   findings.invalidCheckedBindings.push(
     `input type="${inputType}" attribute "${attrName}" refers to ` +
-      `property "${propName}" whose type is not ${expectedType}`
+      `property "${propName}" whose type is not ${expectedTypeName}`
   );
 }
 
@@ -1640,7 +1660,7 @@ function validateDefaultValue(checker, typeExpression, valueExpression) {
     if (
       !(valueType.flags & (ts.TypeFlags.String | ts.TypeFlags.StringLiteral))
     ) {
-      return {typeName: 'string', valueTypeName};
+      return {typeName: 'String', valueTypeName};
     }
     return undefined;
   }
@@ -1649,7 +1669,7 @@ function validateDefaultValue(checker, typeExpression, valueExpression) {
     if (
       !(valueType.flags & (ts.TypeFlags.Number | ts.TypeFlags.NumberLiteral))
     ) {
-      return {typeName: 'number', valueTypeName};
+      return {typeName: 'Number', valueTypeName};
     }
     return undefined;
   }
@@ -1658,14 +1678,14 @@ function validateDefaultValue(checker, typeExpression, valueExpression) {
     if (
       !(valueType.flags & (ts.TypeFlags.Boolean | ts.TypeFlags.BooleanLiteral))
     ) {
-      return {typeName: 'boolean', valueTypeName};
+      return {typeName: 'Boolean', valueTypeName};
     }
     return undefined;
   }
 
   if (typeKind === 'Array') {
     if (!checker.isArrayType(valueType) && !checker.isTupleType(valueType)) {
-      return {typeName: 'array', valueTypeName};
+      return {typeName: 'Array', valueTypeName};
     }
     return undefined;
   }
@@ -1676,7 +1696,7 @@ function validateDefaultValue(checker, typeExpression, valueExpression) {
       !checker.isArrayType(valueType) &&
       !checker.isTupleType(valueType);
     if (!isObjectLike) {
-      return {typeName: 'object', valueTypeName};
+      return {typeName: 'Object', valueTypeName};
     }
   }
 
