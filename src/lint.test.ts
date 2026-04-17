@@ -257,6 +257,30 @@ describe('lint.js', () => {
     );
   });
 
+  test('accepts getter references in usedBy values', () => {
+    const output = runLint(`
+      import {Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        get summary() {
+          return 'ok';
+        }
+
+        static properties = {
+          goodGetter: {type: String, usedBy: 'get summary'},
+          badGetter: {type: String, usedBy: 'get missingSummary'}
+        };
+      }
+    `);
+    expect(output).toContain('invalid usedBy references:');
+    expect(output).toContain(
+      '  property "badGetter" usedBy references missing getter "missingSummary"'
+    );
+    expect(output).not.toContain(
+      'property "goodGetter" usedBy references missing'
+    );
+  });
+
   test('reports invalid computed property references and non-method calls', () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';

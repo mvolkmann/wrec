@@ -119,6 +119,7 @@ const THIS_CALL_RE = /this\.([A-Za-z_$][\w$]*)\s*\(/g;
 const THIS_REF_RE = /this\.([A-Za-z_$][\w$]*)(\.[A-Za-z_$][\w$]*)*/g;
 const PLACEHOLDER_PREFIX = '__WREC_PLACEHOLDER__';
 const RESERVED_PROPERTY_NAMES = new Set(['class', 'style']);
+const GETTER_PREFIX = 'get ';
 const SUPPORTED_EVENT_NAMES = new Set([
   'blur',
   'change',
@@ -346,6 +347,17 @@ function collectClassMethods(classNode) {
     if (name) methods.add(name);
   }
   return methods;
+}
+
+// Collects all getter names defined in a component class.
+function collectGetterNames(classNode) {
+  const getters = new Set();
+  for (const member of classNode.members) {
+    if (!ts.isGetAccessorDeclaration(member)) continue;
+    const name = getMemberName(member);
+    if (name) getters.add(name);
+  }
+  return getters;
 }
 
 // Finds the synthetic `__wrec_expr_*` helper functions that were added by
@@ -1062,6 +1074,11 @@ function getExpressionText(sourceFile, expression) {
   return expression.getText(sourceFile).trim();
 }
 
+// Returns the name from a getter reference.
+function getGetterName(reference) {
+  return reference.slice(GETTER_PREFIX.length).trim();
+}
+
 // Returns a lowercased HTML tag name for a parsed HTML node.
 function getHtmlTagName(node) {
   const tagName = node.rawTagName || node.tagName;
@@ -1243,6 +1260,11 @@ function isCallCallee(node) {
   return ts.isCallExpression(node.parent) && node.parent.expression === node;
 }
 
+// Returns whether a reference refers to a getter method.
+function isGetterReference(reference) {
+  return reference.startsWith(GETTER_PREFIX);
+}
+
 // Returns whether a declaration represents an imported binding.
 function isImportLikeDeclaration(node) {
   return (
@@ -1325,6 +1347,7 @@ export function lintSource(filePath, sourceText, options = {}) {
     propertyEntries,
     reservedProperties
   } = extractProperties(sourceFile, checker, classNode);
+  const getterNames = collectGetterNames(classNode);
   const allMethods = collectClassMethods(classNode);
   const findings = {
     duplicateProperties,
@@ -1393,6 +1416,7 @@ export function lintSource(filePath, sourceText, options = {}) {
     checker,
     supportedProps,
     propertyEntries,
+    getterNames,
     allMethods,
     findings
   );
@@ -1826,6 +1850,7 @@ function validatePropertyConfigs(
   checker,
   supportedProps,
   propertyEntries,
+  getterNames,
   classMethods,
   findings
 ) {
@@ -1852,6 +1877,16 @@ function validatePropertyConfigs(
 
       if (methods) {
         for (const methodName of methods) {
+          if (isGetterReference(methodName)) {
+            const getterName = getGetterName(methodName);
+            if (getterNames.has(getterName)) continue;
+            findings.invalidUsedByReferences.push(
+              `property "${propName}" usedBy references ` +
+                `missing getter "${getterName}"`
+            );
+            continue;
+          }
+
           if (!classMethods.has(methodName)) {
             findings.invalidUsedByReferences.push(
               `property "${propName}" usedBy references ` +

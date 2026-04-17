@@ -28,6 +28,10 @@ import {
 } from './ast-utils.js';
 
 const cwd = process.cwd();
+const CALL_RE = /this\.([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
+const REFS_RE =
+  /this\.([A-Za-z_$][A-Za-z0-9_$]*)(\.[A-Za-z_$][A-Za-z0-9_$]*)*/g;
+const GETTER_PREFIX = 'get ';
 
 // Records property names introduced by
 // an identifier or object binding pattern.
@@ -264,17 +268,17 @@ function buildConfigText(sourceFile, member, methodNames, quote) {
   return `{${openSpacing}${propertyStrings.join(', ')}${closeSpacing}}`;
 }
 
-// Walks a method body to collect component property reads
-// and method calls made through `this`.
+// Walks a method or accessor body to collect component property reads
+// and dependency targets reached through `this`.
 // This is only called by getMethodUsages.
-function collectMethodBodyUsage(node, props, calledMethods) {
+function collectMethodBodyUsage(node, getterNames, props, calledMethods) {
   if (
     ts.isPropertyAccessExpression(node) &&
     node.expression.kind === ts.SyntaxKind.ThisKeyword
   ) {
     // Handles direct property access like `this.foo`
     // and records method calls like `this.foo()`.
-    recordThisAccess(props, calledMethods, node, node.name.text);
+    recordThisAccess(props, calledMethods, getterNames, node, node.name.text);
   } else if (
     ts.isElementAccessExpression(node) &&
     node.expression.kind === ts.SyntaxKind.ThisKeyword &&
@@ -283,7 +287,13 @@ function collectMethodBodyUsage(node, props, calledMethods) {
   ) {
     // Handles string-based element access like `this['foo']`
     // and records method calls like `this['foo']()`.
-    recordThisAccess(props, calledMethods, node, node.argumentExpression.text);
+    recordThisAccess(
+      props,
+      calledMethods,
+      getterNames,
+      node,
+      node.argumentExpression.text
+    );
   } else if (
     ts.isVariableDeclaration(node) &&
     node.initializer &&
@@ -315,7 +325,7 @@ function collectMethodBodyUsage(node, props, calledMethods) {
   }
 
   ts.forEachChild(node, child =>
-    collectMethodBodyUsage(child, props, calledMethods)
+    collectMethodBodyUsage(child, getterNames, props, calledMethods)
   );
 }
 
@@ -385,7 +395,6 @@ export function evaluateSourceText(filePath, text) {
 // This is only called by getMethodUsages.
 function getCssCalledMethods(classNode) {
   const methodNames = new Set();
-  const CALL_RE = /this\.([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
   let template;
 
   for (const member of classNode.members) {
@@ -410,11 +419,10 @@ function getCssCalledMethods(classNode) {
   // If no matching declaration was found, return an empty Set.
   if (!template) return methodNames;
 
-  // Finds all method names called in CSS property value expressions
-  // matching `this.method()`.
-  const text = template.getText();
-  for (const match of text.matchAll(CALL_RE)) {
-    methodNames.add(match[1]);
+  // Finds all method calls and getter references
+  // in CSS property value expressions.
+  for (const target of getExpressionTargets(template.getText())) {
+    methodNames.add(target);
   }
 
   return methodNames;
@@ -425,7 +433,6 @@ function getCssCalledMethods(classNode) {
 // This is only called by getMethodUsages.
 function getComputedCalledMethods(classNode) {
   const methodNames = new Set();
-  const CALL_RE = /this\.([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
   let propertiesNode;
 
   for (const member of classNode.members) {
@@ -473,15 +480,33 @@ function getComputedCalledMethods(classNode) {
       // If the property value isn't a string then skip it.
       if (!ts.isStringLiteralLike(configProperty.initializer)) continue;
 
-      // Find all the method calls in the string JavaScript expression.
+      // Find all method calls and getter references
+      // in the string JavaScript expression.
       const computed = configProperty.initializer.text;
-      for (const match of computed.matchAll(CALL_RE)) {
-        methodNames.add(match[1]);
+      for (const target of getExpressionTargets(computed)) {
+        methodNames.add(target);
       }
     }
   }
 
   return methodNames;
+}
+
+// Collects method-call and getter-reference targets from expression text.
+function getExpressionTargets(text) {
+  const targets = new Set();
+  for (const match of text.matchAll(CALL_RE)) {
+    targets.add(match[1]);
+  }
+  for (const match of text.matchAll(REFS_RE)) {
+    targets.add(getGetterDependency(match[1]));
+  }
+  return targets;
+}
+
+// Returns the dependency target string for a getter reference.
+function getGetterDependency(name) {
+  return `${GETTER_PREFIX}${name}`;
 }
 
 // Returns the leading indentation in the line
@@ -495,19 +520,26 @@ function getIndent(text, pos) {
 // Returns a map where the keys are property names and
 // the values are Sets of public methods that use it transitively.
 function getMethodUsages(classNode, propertyNames) {
+  const getterNames = new Set();
   const methodInfo = new Map();
+
+  for (const member of classNode.members) {
+    if (!ts.isGetAccessorDeclaration(member)) continue;
+    const getterName = getNameText(member.name);
+    if (getterName) getterNames.add(getterName);
+  }
 
   for (const member of classNode.members) {
     // If the member doesn't represent an instance method, skip it.
     if (!isInstanceMethodMember(member)) continue;
 
     // If the member doesn't have a string name, skip it.
-    const methodName = getNameText(member.name);
+    const methodName = getUsageTargetName(member);
     if (!methodName) continue;
 
     const props = new Set();
     const calledMethods = new Set();
-    collectMethodBodyUsage(member.body, props, calledMethods);
+    collectMethodBodyUsage(member.body, getterNames, props, calledMethods);
     methodInfo.set(methodName, {
       calledMethods,
       isPrivate: ts.isPrivateIdentifier(member.name),
@@ -573,12 +605,9 @@ function getTemplateCalledMethods(classNode) {
 
   const methodNames = new Set();
   if (template) {
-    // Finds all method names called in the HTML template
-    // matching `this.method()`.
-    const text = template.getText();
-    const CALL_RE = /this\.([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
-    for (const match of text.matchAll(CALL_RE)) {
-      methodNames.add(match[1]);
+    // Finds all method calls and getter references in the HTML template.
+    for (const target of getExpressionTargets(template.getText())) {
+      methodNames.add(target);
     }
   }
   return methodNames;
@@ -612,6 +641,13 @@ function getTransitiveProps(methodInfo, memo, methodName, seen = new Set()) {
   seen.delete(methodName);
   memo.set(methodName, props);
   return props;
+}
+
+// Returns the usedBy dependency target name for a class member.
+function getUsageTargetName(member) {
+  const name = getNameText(member.name);
+  if (!name) return undefined;
+  return ts.isGetAccessorDeclaration(member) ? getGetterDependency(name) : name;
 }
 
 // Determines if a class member represents an instance method.
@@ -671,10 +707,12 @@ function main() {
 
 // Records a `this` property access and
 // tracks it as a method call when applicable.
-function recordThisAccess(props, calledMethods, node, name) {
+function recordThisAccess(props, calledMethods, getterNames, node, name) {
   props.add(name);
   if (ts.isCallExpression(node.parent) && node.parent.expression === node) {
     calledMethods.add(name);
+  } else if (getterNames.has(name)) {
+    calledMethods.add(getGetterDependency(name));
   }
 }
 

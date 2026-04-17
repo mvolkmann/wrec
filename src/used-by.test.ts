@@ -63,10 +63,14 @@ describe('used-by.js', () => {
   });
 
   test('errors on unknown command-line options', () => {
-    const result = spawnSync(process.execPath, ['scripts/used-by.js', '--bogus'], {
-      cwd: path.resolve(import.meta.dirname, '..'),
-      encoding: 'utf8'
-    });
+    const result = spawnSync(
+      process.execPath,
+      ['scripts/used-by.js', '--bogus'],
+      {
+        cwd: path.resolve(import.meta.dirname, '..'),
+        encoding: 'utf8'
+      }
+    );
 
     expect(result.status).toBe(1);
     expect(result.stdout).toBe('');
@@ -100,7 +104,33 @@ describe('used-by.js', () => {
 
     expect(result.foundWrecSubclass).toBe(true);
     expect(result.changed).toBe(true);
-    expect(result.text).toContain("theme: {type: String, usedBy: 'getThemeColor'}");
+    expect(result.text).toContain(
+      "theme: {type: String, usedBy: 'getThemeColor'}"
+    );
+  });
+
+  test('infers usedBy values from getter references in entry expressions', () => {
+    const source = `
+      import {html, Wrec} from 'wrec';
+
+      class Fixture extends Wrec {
+        static properties = {
+          count: {type: Number}
+        };
+
+        static html = html\`<div>\${this.summary}</div>\`;
+
+        get summary() {
+          return this.count.toString();
+        }
+      }
+    `;
+    const result = evaluateSourceText('/virtual/component.js', source);
+    expect(result.foundWrecSubclass).toBe(true);
+    expect(result.changed).toBe(true);
+    expect(result.text).toContain(
+      "count: {type: Number, usedBy: 'get summary'}"
+    );
   });
 
   test('infers usedBy values from template and computed entry methods', () => {
@@ -201,7 +231,9 @@ describe('used-by.js', () => {
 
     expect(result.foundWrecSubclass).toBe(true);
     expect(result.changed).toBe(true);
-    expect(result.text).toContain("count: {type: Number, usedBy: 'renderCount'}");
+    expect(result.text).toContain(
+      "count: {type: Number, usedBy: 'renderCount'}"
+    );
   });
 
   test('throws when the source file does not define a Wrec subclass', () => {
@@ -280,7 +312,9 @@ describe('used-by.js', () => {
 
     const result = evaluateSourceText('/virtual/component.js', source);
 
-    expect(result.text).toContain("count: {type: Number, computed: 'this.newSummary()'}");
+    expect(result.text).toContain(
+      "count: {type: Number, computed: 'this.newSummary()'}"
+    );
     expect(result.text).not.toContain("usedBy: 'oldSummary'");
     expect(result.text).toContain("usedBy: 'newSummary'");
   });
