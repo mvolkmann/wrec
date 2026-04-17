@@ -1,3 +1,4 @@
+import {createDeepProxy} from './proxies.js';
 import {WrecState} from './wrec-state';
 import {getPathValue, setPathValue} from './paths';
 import sanitize from './sanitize-xss';
@@ -24,6 +25,7 @@ type StateSubscription = {
   map: StringToString;
   unsubscribe: () => void;
 };
+type LooseObject = Record<string, unknown>;
 type ComputedGraph = {
   computedToDependenciesMap: StringToStrings;
   computedToDependentsMap: StringToStrings;
@@ -442,6 +444,9 @@ export abstract class Wrec extends HTMLElementBase {
   // It must be instance-specific because each component instance
   // can bind the same property to a different WrecState/path.
   #propToStateMap = new Map<string, StateBinding>();
+
+  #objectProxyMap = new WeakMap<object, object>();
+  #proxiedObjects = new WeakSet<object>();
   #stateSubscriptionMap = new Map<WrecState, StateSubscription>();
 
   // This tells TypeScript that it's okay to access properties by string keys.
@@ -632,7 +637,7 @@ export abstract class Wrec extends HTMLElementBase {
           ? this.#typedAttribute(propName, attrName)
           : (value ?? defaultForConfig(config));
     const privateName = '#' + propName;
-    this[privateName] = typedValue;
+    this[privateName] = this.#makePropReactive(propName, type, typedValue);
 
     Object.defineProperty(this, propName, {
       enumerable: true,
@@ -655,6 +660,7 @@ export abstract class Wrec extends HTMLElementBase {
 
         this.#validateType(propName, type, value);
 
+        value = this.#makePropReactive(propName, type, value);
         this[privateName] = value;
         const stateBinding = this.#propToStateMap.get(propName);
         if (stateBinding) {
@@ -680,6 +686,26 @@ export abstract class Wrec extends HTMLElementBase {
         }
       }
     });
+  }
+
+  // Handles a nested mutation within an object or array property.
+  #handleDeepPropChange(
+    propName: string,
+    oldValue: unknown,
+    newValue: unknown
+  ) {
+    const value = this['#' + propName];
+    const stateBinding = this.#propToStateMap.get(propName);
+    if (stateBinding) {
+      setPathValue(stateBinding.state, stateBinding.stateProp, value);
+    }
+
+    if (!this.#batching) {
+      this.#updateComputedProperties(propName);
+      this.#react(propName);
+    }
+    this.#updateParentProperty(propName, value);
+    this.propertyChangedCallback(propName, oldValue, newValue);
   }
 
   #disableOrEnable() {
@@ -1193,6 +1219,32 @@ export abstract class Wrec extends HTMLElementBase {
     return Boolean(this.#ctor.properties[propName]?.computed);
   }
 
+  // Wraps object and array property values in deep proxies.
+  #makePropReactive(propName: string, type: AnyClass, value: unknown) {
+    if (
+      value === null ||
+      typeof value !== 'object' ||
+      (type !== Array && type !== Object)
+    ) {
+      return value;
+    }
+
+    if (this.#proxiedObjects.has(value as object)) return value;
+
+    const existingProxy = this.#objectProxyMap.get(value as object);
+    if (existingProxy) return existingProxy;
+
+    const proxy = createDeepProxy(
+      value as LooseObject,
+      (_path, oldValue, newValue) => {
+        this.#handleDeepPropChange(propName, oldValue, newValue);
+      }
+    );
+    this.#objectProxyMap.set(value as object, proxy);
+    this.#proxiedObjects.add(proxy);
+    return proxy;
+  }
+
   #makeReactive(root: ShadowRoot | HTMLElement) {
     const elements = Array.from(root.querySelectorAll('*')) as HTMLElement[];
     for (const element of elements) {
@@ -1212,17 +1264,6 @@ export abstract class Wrec extends HTMLElementBase {
       console.log('\n');
     }
     */
-  }
-
-  // formAssociated is only needed when the component is inside a form.
-  #verifyFormAssociated() {
-    if (this.#ctor.formAssociated || this.closest('form') === null) return;
-    const className = this.#ctor.name;
-    this.#throw(
-      this,
-      undefined,
-      `inside form, class ${className} requires "static formAssociated = true;"`
-    );
   }
 
   static get observedAttributes() {
@@ -1798,6 +1839,17 @@ export abstract class Wrec extends HTMLElementBase {
         `was set to a ${t}, but must be a ${type.name}`
       );
     }
+  }
+
+  // formAssociated is only needed when the component is inside a form.
+  #verifyFormAssociated() {
+    if (this.#ctor.formAssociated || this.closest('form') === null) return;
+    const className = this.#ctor.name;
+    this.#throw(
+      this,
+      undefined,
+      `inside form, class ${className} requires "static formAssociated = true;"`
+    );
   }
 
   #wireEvents(root: ShadowRoot | HTMLElement) {
