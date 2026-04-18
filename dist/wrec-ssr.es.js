@@ -1,4 +1,6 @@
 import { a as e, i as t, n, r, t as i } from "./wrec-BL9AvT9R.js";
+const yb = (e) => e;
+const zb = () => (e) => e;
 //#region \0rolldown/runtime.js
 var a = Object.defineProperty, o = Object.getOwnPropertyDescriptor, s = Object.getOwnPropertyNames, c = Object.prototype.hasOwnProperty, l = (e, t) => () => (e && (t = e(e = 0)), t), u = (e, t) => () => (t || e((t = { exports: {} }).exports, t), t.exports), d = (e, t) => {
 	let n = {};
@@ -9200,4 +9202,4 @@ i.ssr = function(e = {}) {
     `;
 };
 //#endregion
-export { i as Wrec, e as WrecState, n as createElement, r as css, t as html };
+export { i as Wrec, e as WrecState, n as createElement, r as css, t as html, yb as prop, zb as props };

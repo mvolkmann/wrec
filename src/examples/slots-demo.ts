@@ -5,7 +5,7 @@ class SlotsDemo extends Wrec {
     color: {type: String, value: 'cornflowerblue'},
     width: {type: String, value: '20rem'}
   };
-  // Typescript wants these to be explicitly declared.
+  // TypeScript wants these to be explicitly declared.
   //color = 'cornflowerblue';
   //width = '20rem';
 

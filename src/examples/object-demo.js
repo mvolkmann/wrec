@@ -1,4 +1,4 @@
-import {html, Wrec} from '../wrec.js';
+import {html, Wrec} from '../wrec';
 
 class ObjectDemo extends Wrec {
   static properties = {
@@ -18,8 +18,8 @@ class ObjectDemo extends Wrec {
   };
 
   static html = html`
-    <p id="name">${this.person.name}</p>
-    <p id="count">${this.doubleCount}</p>
+    <p id="name">this.person.name</p>
+    <p id="count">this.doubleCount</p>
   `;
 }
 

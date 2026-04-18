@@ -2,12 +2,15 @@ import {css, html, Wrec} from '../wrec';
 
 class RectangleArea extends Wrec {
   static properties = {
-    width: {type: Number, value: 10},
     height: {type: Number, value: 5},
+    width: {type: Number, value: 10},
     // tests/computed-properties.spec.ts assumes area is a computed property.
     // If it is computed inline in the span element below, the test will fail.
     area: {type: Number, computed: 'this.width * this.height'}
   };
+  declare width: number;
+  declare height: number;
+  declare area: number;
 
   static css = css`
     .area {

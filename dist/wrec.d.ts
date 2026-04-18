@@ -15,15 +15,23 @@ declare const HTMLElementBase: {
 
 declare type LooseObject = Record<string, unknown>;
 
-declare type PropertyConfig = {
+export declare type PropertyConfig<T = any> = {
     computed?: string;
     dispatch?: boolean;
     required?: boolean;
     type: AnyClass;
     usedBy?: string | string[];
-    value?: any;
-    values?: string[];
+    value?: T;
+    values?: T extends string ? string[] : never;
 };
+
+export declare type PropertyConfigs<TProps extends object> = Partial<{
+    [K in keyof TProps]: PropertyConfig<TProps[K]>;
+}>;
+
+export declare function prop<T>(config: PropertyConfig<T>): PropertyConfig<T>;
+
+export declare function props<TProps extends object>(): <TMap extends PropertyConfigs<TProps>>(map: TMap) => TMap;
 
 declare type StateChange = {
     state: WrecState;

@@ -17,7 +17,7 @@ state.subscribe(
       state.labels = getLabels(newValue as string);
     }
   },
-  {paths: ['colors']}
+  ['colors']
 );
 
 function getLabels(colors: string): string {
@@ -60,8 +60,8 @@ class DataBinding2 extends Wrec {
     <p>You selected the color <span id="selected-color">this.color</span>.</p>
   `;
 
-  connectedCallback() {
-    super.connectedCallback();
+  async connectedCallback() {
+    await super.connectedCallback();
 
     requestAnimationFrame(() => {
       const db = document.querySelector('data-binding2')!;

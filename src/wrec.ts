@@ -7,14 +7,14 @@ import sanitize from './sanitize-xss';
 // the bundle exports everything exported by this file.
 export {WrecState};
 
-type PropertyConfig = {
+type PropertyConfig<T = any> = {
   computed?: string;
   dispatch?: boolean;
   required?: boolean;
   type: AnyClass;
   usedBy?: string | string[];
-  value?: any;
-  values?: string[];
+  value?: T;
+  values?: T extends string ? string[] : never;
 };
 type StringToAny = Record<string, any>;
 type StringToString = Record<string, string>;
