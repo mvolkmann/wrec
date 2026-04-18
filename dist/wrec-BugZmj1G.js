@@ -45,7 +45,7 @@ var r = typeof window < "u" && window.document !== void 0, i = class extends Err
 	constructor(n, a, o) {
 		if (!n) throw new i("name cannot be empty");
 		if (e.#e.has(n)) throw new i(`WrecState with name "${n}" already exists`);
-		if (this.#r = n, this.#i = a, this.#a = t({}, this.#o.bind(this)), a && r) {
+		if (this.#r = n, this.#i = a, this.#a = t({}, this.#s.bind(this)), a && r) {
 			let e = sessionStorage.getItem("wrec-state-" + n), t = e ? JSON.parse(e) : void 0;
 			t && (o = t);
 		}
@@ -76,18 +76,21 @@ var r = typeof window < "u" && window.document !== void 0, i = class extends Err
 	get id() {
 		return this.#n;
 	}
+	#o(e, t) {
+		return t.some((t) => e === t || e.startsWith(t + ".") || t.startsWith(e + "."));
+	}
 	log() {
 		console.log("WrecState:", this.#r);
 		for (let [e, t] of Object.entries(this.#a)) console.log(`  ${e} = ${JSON.stringify(t)}`);
 	}
-	#o(e, t, n) {
+	#s(e, t, n) {
 		let r = {
 			state: this,
 			statePath: e,
 			oldValue: t,
 			newValue: n
 		};
-		for (let { callback: t, statePaths: n } of this.#t) (n.length === 0 || n.includes(e)) && t(r);
+		for (let { callback: t, statePaths: n } of this.#t) (n.length === 0 || this.#o(e, n)) && t(r);
 	}
 };
 r && process.env.NODE_ENV === "development" && (window.WrecState = a);
@@ -811,9 +814,16 @@ var X = class e extends m {
 			...t
 		};
 		n?.unsubscribe();
-		let i = e.subscribe(({ statePath: e, newValue: t }) => {
-			let n = r[e];
-			n && this.#R(n, t);
+		let i = e.subscribe(({ statePath: t, newValue: n }) => {
+			let i = r[t];
+			if (i) {
+				this.#R(i, n);
+				return;
+			}
+			let a = Object.keys(r).find((e) => t.startsWith(e + ".") || e.startsWith(t + "."));
+			if (!a) return;
+			let s = r[a];
+			this.#R(s, o(e, a));
 		}, Object.keys(r));
 		this.#f.set(e, {
 			map: r,

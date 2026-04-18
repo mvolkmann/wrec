@@ -1766,7 +1766,21 @@ export abstract class Wrec extends HTMLElementBase {
 
     const unsubscribe = state.subscribe(({statePath, newValue}) => {
       const componentProp = mergedMap[statePath];
-      if (componentProp) this.#setDynamic(componentProp, newValue);
+      if (componentProp) {
+        this.#setDynamic(componentProp, newValue);
+        return;
+      }
+
+      const parentStateProp = Object.keys(mergedMap).find(
+        key => statePath.startsWith(key + '.') || key.startsWith(statePath + '.')
+      );
+      if (!parentStateProp) return;
+
+      const parentComponentProp = mergedMap[parentStateProp];
+      this.#setDynamic(
+        parentComponentProp,
+        getPathValue(state, parentStateProp)
+      );
     }, Object.keys(mergedMap));
     this.#stateSubscriptionMap.set(state, {map: mergedMap, unsubscribe});
   }

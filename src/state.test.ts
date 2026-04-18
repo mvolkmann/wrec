@@ -78,3 +78,32 @@ test('change callback', () => {
     }
   ]);
 });
+
+test('listen parent path when nested property changes', () => {
+  const calls: Array<{
+    statePath: string;
+    newValue: unknown;
+    oldValue: unknown;
+    state: WrecState;
+  }> = [];
+
+  const unsubscribe = myState.subscribe(
+    ({statePath, newValue, oldValue, state}) => {
+      calls.push({statePath, newValue, oldValue, state});
+    },
+    ['team']
+  );
+  const oldValue = myState.team.leader.name;
+  const newValue = 'Pat';
+  myState.team.leader.name = newValue;
+  unsubscribe();
+
+  expect(calls).toEqual([
+    {
+      statePath: 'team.leader.name',
+      newValue,
+      oldValue,
+      state: myState
+    }
+  ]);
+});

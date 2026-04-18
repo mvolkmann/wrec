@@ -125,6 +125,16 @@ export class WrecState {
     return this.#id;
   }
 
+  // Determines whether any subscribed state path matches the changed path.
+  #hasMatchingStatePath(statePath: string, statePaths: string[]) {
+    return statePaths.some(
+      path =>
+        statePath === path ||
+        statePath.startsWith(path + '.') ||
+        path.startsWith(statePath + '.')
+    );
+  }
+
   // This is useful for debugging from the DevTools console.
   // For example: state.log()
   log() {
@@ -134,6 +144,7 @@ export class WrecState {
     }
   }
 
+  // Notifies subscribers whose watched paths overlap the changed state path.
   #notifyListeners(statePath: string, oldValue: unknown, newValue: unknown) {
     /* For debugging ...
     console.log(
@@ -144,7 +155,10 @@ export class WrecState {
     const change = {state: this, statePath, oldValue, newValue};
 
     for (const {callback, statePaths} of this.#callbackHolders) {
-      if (statePaths.length === 0 || statePaths.includes(statePath)) {
+      if (
+        statePaths.length === 0 ||
+        this.#hasMatchingStatePath(statePath, statePaths)
+      ) {
         callback(change);
       }
     }
