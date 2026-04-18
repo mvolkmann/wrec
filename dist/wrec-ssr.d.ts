@@ -15,7 +15,7 @@ declare const HTMLElementBase: {
 
 declare type LooseObject = Record<string, unknown>;
 
-export declare type PropertyConfig<T = any> = {
+declare type PropertyConfig<T = any> = {
     computed?: string;
     dispatch?: boolean;
     required?: boolean;
@@ -24,14 +24,6 @@ export declare type PropertyConfig<T = any> = {
     value?: T;
     values?: T extends string ? string[] : never;
 };
-
-export declare type PropertyConfigs<TProps extends object> = Partial<{
-    [K in keyof TProps]: PropertyConfig<TProps[K]>;
-}>;
-
-export declare function prop<T>(config: PropertyConfig<T>): PropertyConfig<T>;
-
-export declare function props<TProps extends object>(): <TMap extends PropertyConfigs<TProps>>(map: TMap) => TMap;
 
 declare type StateChange = {
     state: WrecState;
@@ -61,7 +53,6 @@ export declare abstract class Wrec extends HTMLElementBase {
     private static registeredComputedProps;
     private static computedPropsRegistered;
     private static template;
-    [key: string]: any;
     static define(elementName: string): void;
     constructor();
     attributeChangedCallback(attrName: string, _oldValue: string | null, newValue: string | null): void;

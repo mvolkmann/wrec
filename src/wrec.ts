@@ -449,9 +449,6 @@ export abstract class Wrec extends HTMLElementBase {
   #proxiedObjects = new WeakSet<object>();
   #stateSubscriptionMap = new Map<WrecState, StateSubscription>();
 
-  // This tells TypeScript that it's okay to access properties by string keys.
-  [key: string]: any;
-
   static define(elementName: string) {
     this.elementName = elementName;
     if (customElementsApi.get(elementName)) {
@@ -494,7 +491,7 @@ export abstract class Wrec extends HTMLElementBase {
     if (!this.#isComputedProp(propName) && this.#hasProperty(propName)) {
       // Update the corresponding property.
       const value = this.#typedValue(propName, newValue);
-      this[propName] = value;
+      this.#setDynamic(propName, value);
       const formKey = this.#formAssoc[propName];
       if (formKey) this.setFormValue(formKey, String(value));
     }
@@ -509,7 +506,7 @@ export abstract class Wrec extends HTMLElementBase {
     const propToExprsMap = this.#ctor.propToExprsMap;
     const exprSet = new Set<string>();
     for (const [propName, value] of Object.entries(changes)) {
-      this[propName] = value;
+      this.#setDynamic(propName, value);
       const exprs = propToExprsMap.get(propName) ?? [];
       for (const expr of exprs) {
         exprSet.add(expr);
@@ -559,7 +556,7 @@ export abstract class Wrec extends HTMLElementBase {
   }
 
   changed(_statePath: string, componentProp: string, newValue: unknown) {
-    this[componentProp] = newValue;
+    this.#setDynamic(componentProp, newValue);
   }
 
   async connectedCallback() {
@@ -623,8 +620,8 @@ export abstract class Wrec extends HTMLElementBase {
     // have been set before the element upgraded."
     let value = config.value;
     if (this.hasOwnProperty(propName)) {
-      value = this[propName];
-      delete this[propName];
+      value = this.#getDynamic(propName);
+      this.#deleteDynamic(propName);
     }
 
     // Copy the property value to a private property.
@@ -637,12 +634,15 @@ export abstract class Wrec extends HTMLElementBase {
           ? this.#typedAttribute(propName, attrName)
           : (value ?? defaultForConfig(config));
     const privateName = '#' + propName;
-    this[privateName] = this.#makePropReactive(propName, type, typedValue);
+    this.#setDynamic(
+      privateName,
+      this.#makePropReactive(propName, type, typedValue)
+    );
 
     Object.defineProperty(this, propName, {
       enumerable: true,
       get() {
-        return this[privateName];
+        return this.#getDynamic(privateName);
       },
       set(value) {
         if (config.computed && !this.#computedUpdates.has(propName)) {
@@ -655,13 +655,13 @@ export abstract class Wrec extends HTMLElementBase {
         if (type === Number && typeof value === 'string') {
           value = stringToNumber(value);
         }
-        const oldValue = this[privateName];
+        const oldValue = this.#getDynamic(privateName);
         if (value === oldValue) return;
 
         this.#validateType(propName, type, value);
 
         value = this.#makePropReactive(propName, type, value);
-        this[privateName] = value;
+        this.#setDynamic(privateName, value);
         const stateBinding = this.#propToStateMap.get(propName);
         if (stateBinding) {
           setPathValue(stateBinding.state, stateBinding.stateProp, value);
@@ -688,24 +688,9 @@ export abstract class Wrec extends HTMLElementBase {
     });
   }
 
-  // Handles a nested mutation within an object or array property.
-  #handleDeepPropChange(
-    propName: string,
-    oldValue: unknown,
-    newValue: unknown
-  ) {
-    const value = this['#' + propName];
-    const stateBinding = this.#propToStateMap.get(propName);
-    if (stateBinding) {
-      setPathValue(stateBinding.state, stateBinding.stateProp, value);
-    }
-
-    if (!this.#batching) {
-      this.#updateComputedProperties(propName);
-      this.#react(propName);
-    }
-    this.#updateParentProperty(propName, value);
-    this.propertyChangedCallback(propName, oldValue, newValue);
+  // Deletes a dynamically named property from this component instance.
+  #deleteDynamic(propName: string) {
+    delete (this as StringToAny)[propName];
   }
 
   #disableOrEnable() {
@@ -713,7 +698,17 @@ export abstract class Wrec extends HTMLElementBase {
     const isDisabled = this.hasAttribute('disabled');
     const elements = getAllDescendants(this.shadowRoot!);
     for (const element of elements) {
-      if (canDisable(element)) element.disabled = isDisabled;
+      if (!canDisable(element)) continue;
+
+      if (element instanceof Wrec) {
+        if (isDisabled) {
+          element.setAttribute('disabled', '');
+        } else {
+          element.removeAttribute('disabled');
+        }
+      } else {
+        element.disabled = isDisabled;
+      }
     }
   }
 
@@ -759,7 +754,7 @@ export abstract class Wrec extends HTMLElementBase {
       // configure two-way data binding.
       const propName = this.#propRefName(element, text);
       if (propName) {
-        const value = this[propName];
+        const value = this.#getDynamic(propName);
         if (value === undefined) {
           this.#throwInvalidRef(element, attrName, propName);
         }
@@ -805,7 +800,7 @@ export abstract class Wrec extends HTMLElementBase {
               const msg = 'refers to an unsupported event name';
               this.#throw(element, attrName, msg);
             }
-            element.setAttribute(realAttrName, this[propName]);
+            element.setAttribute(realAttrName, this.#getDynamic(propName));
           } else {
             eventName = 'change';
           }
@@ -935,7 +930,7 @@ export abstract class Wrec extends HTMLElementBase {
         // its text content is a single property reference.
         const propName = this.#propRefName(element, commentText);
         if (propName && isTextArea(element)) {
-          element.textContent = this[propName];
+          element.textContent = this.#getDynamic(propName);
         } else {
           this.#registerPlaceholders(commentText, element);
         }
@@ -990,7 +985,7 @@ export abstract class Wrec extends HTMLElementBase {
     // Seed the initial associated property values so submitting
     // without user interaction includes default values.
     for (const [propName, formKey] of Object.entries(formAssoc)) {
-      const value = this[propName];
+      const value = this.#getDynamic(propName);
       if (isPrimitive(value)) this.setFormValue(formKey, String(value));
     }
 
@@ -999,7 +994,7 @@ export abstract class Wrec extends HTMLElementBase {
     const propNames = Object.keys(this.#ctor.properties);
     const map = this.#initialValuesMap;
     for (const propName of propNames) {
-      map[propName] = this[propName];
+      map[propName] = this.#getDynamic(propName);
     }
   }
 
@@ -1008,7 +1003,7 @@ export abstract class Wrec extends HTMLElementBase {
     for (const propName of Object.keys(map)) {
       let value = map[propName];
       if (REF_RE.test(value)) value = this.#evaluateInContext(value);
-      this[propName] = value;
+      this.#setDynamic(propName, value);
     }
   }
 
@@ -1149,6 +1144,11 @@ export abstract class Wrec extends HTMLElementBase {
     ]);
   }
 
+  // Gets a dynamically named property from this component instance.
+  #getDynamic(propName: string): any {
+    return (this as StringToAny)[propName];
+  }
+
   static getPropName(attrName: string) {
     let propName = this.attrToPropMap.get(attrName);
     if (!propName) {
@@ -1156,6 +1156,26 @@ export abstract class Wrec extends HTMLElementBase {
       this.attrToPropMap.set(attrName, propName);
     }
     return propName;
+  }
+
+  // Handles a nested mutation within an object or array property.
+  #handleDeepPropChange(
+    propName: string,
+    oldValue: unknown,
+    newValue: unknown
+  ) {
+    const value = this.#getDynamic('#' + propName);
+    const stateBinding = this.#propToStateMap.get(propName);
+    if (stateBinding) {
+      setPathValue(stateBinding.state, stateBinding.stateProp, value);
+    }
+
+    if (!this.#batching) {
+      this.#updateComputedProperties(propName);
+      this.#react(propName);
+    }
+    this.#updateParentProperty(propName, value);
+    this.propertyChangedCallback(propName, oldValue, newValue);
   }
 
   #handleEvents(
@@ -1196,12 +1216,15 @@ export abstract class Wrec extends HTMLElementBase {
       const {value} = input;
       if (realAttrName === 'checked') {
         if (isCheckbox) {
-          this[propName] = input.checked;
+          this.#setDynamic(propName, input.checked);
         } else if (isRadio && input.checked) {
-          this[propName] = value;
+          this.#setDynamic(propName, value);
         }
       } else {
-        this[propName] = type === Number ? stringToNumber(value) : value;
+        this.#setDynamic(
+          propName,
+          type === Number ? stringToNumber(value) : value
+        );
       }
       this.#react(propName);
     });
@@ -1285,7 +1308,7 @@ export abstract class Wrec extends HTMLElementBase {
   #propRefName(element: HTMLElement, text: string | null) {
     if (!text || !REF_RE.test(text)) return;
     const propName = getPropName(text);
-    if (this[propName] === undefined) {
+    if (this.#getDynamic(propName) === undefined) {
       this.#throwInvalidRef(element, '', propName);
     }
     return propName;
@@ -1339,7 +1362,7 @@ export abstract class Wrec extends HTMLElementBase {
     // Iterate over the properties referenced in the expression.
     for (const match of expr.matchAll(REFS_RE)) {
       const referencedProp = getPropName(match[0]);
-      if (this[referencedProp] === undefined) {
+      if (this.#getDynamic(referencedProp) === undefined) {
         this.#throwInvalidRef(null, computedPropName, referencedProp);
       }
 
@@ -1355,7 +1378,7 @@ export abstract class Wrec extends HTMLElementBase {
 
       if (
         !registeredGetterDependency &&
-        typeof this[referencedProp] !== 'function'
+        typeof this.#getDynamic(referencedProp) !== 'function'
       ) {
         register(referencedProp, expr);
       }
@@ -1364,7 +1387,7 @@ export abstract class Wrec extends HTMLElementBase {
     // Iterate over all the method calls in the expression.
     for (const match of expr.matchAll(CALL_RE)) {
       const methodName = match[1];
-      if (typeof this[methodName] !== 'function') {
+      if (typeof this.#getDynamic(methodName) !== 'function') {
         throw new WrecError(
           `property ${computedPropName} computed calls non-method ${methodName}`
         );
@@ -1383,10 +1406,15 @@ export abstract class Wrec extends HTMLElementBase {
   #setComputed(propName: string, value: unknown) {
     this.#computedUpdates.add(propName);
     try {
-      this[propName] = value;
+      this.#setDynamic(propName, value);
     } finally {
       this.#computedUpdates.delete(propName);
     }
+  }
+
+  // Sets a dynamically named property on this component instance.
+  #setDynamic(propName: string, value: unknown) {
+    (this as StringToAny)[propName] = value;
   }
 
   // WARNING: Do not place untrusted JavaScript expressions
@@ -1413,7 +1441,7 @@ export abstract class Wrec extends HTMLElementBase {
     const ctor = this.#ctor;
     matches.forEach(capture => {
       const propName = getPropName(capture);
-      if (typeof this[propName] === 'function') return;
+      if (typeof this.#getDynamic(propName) === 'function') return;
 
       const map = ctor.propToExprsMap;
       let exprs = map!.get(propName);
@@ -1471,14 +1499,14 @@ export abstract class Wrec extends HTMLElementBase {
         `refers to property "${propName}" whose type is not HTMLElement`
       );
     }
-    if (this[propName]) {
+    if (this.#getDynamic(propName)) {
       this.#throw(
         element,
         'ref',
         `is a duplicate reference to the property "${propName}"`
       );
     }
-    this[propName] = element;
+    this.#setDynamic(propName, element);
     element.removeAttribute('ref');
   }
 
@@ -1689,7 +1717,7 @@ export abstract class Wrec extends HTMLElementBase {
               `property ${propName} usedBy contains non-getter ${method}`
             );
           }
-        } else if (typeof this[method] !== 'function') {
+        } else if (typeof this.#getDynamic(method) !== 'function') {
           throw new WrecError(
             `property ${propName} usedBy contains non-method ${method}`
           );
@@ -1725,7 +1753,7 @@ export abstract class Wrec extends HTMLElementBase {
     for (const [stateProp, componentProp] of Object.entries(map)) {
       if (this.#hasProperty(componentProp)) {
         const value = getPathValue(state, stateProp);
-        if (value !== undefined) this[componentProp] = value;
+        if (value !== undefined) this.#setDynamic(componentProp, value);
         this.#propToStateMap.set(componentProp, {state, stateProp});
       }
     }
@@ -1738,7 +1766,7 @@ export abstract class Wrec extends HTMLElementBase {
 
     const unsubscribe = state.subscribe(({statePath, newValue}) => {
       const componentProp = mergedMap[statePath];
-      if (componentProp) this[componentProp] = newValue;
+      if (componentProp) this.#setDynamic(componentProp, newValue);
     }, Object.keys(mergedMap));
     this.#stateSubscriptionMap.set(state, {map: mergedMap, unsubscribe});
   }
@@ -1773,7 +1801,7 @@ export abstract class Wrec extends HTMLElementBase {
 
     matches.forEach(capture => {
       const propName = getPropName(capture);
-      if (this[propName] === undefined) {
+      if (this.#getDynamic(propName) === undefined) {
         this.#throwInvalidRef(element, attrName, propName);
       }
     });
@@ -1788,7 +1816,7 @@ export abstract class Wrec extends HTMLElementBase {
         this.#throw(this, undefined, `invalid state path "${statePath}"`);
       }
 
-      value = this[componentProp];
+      value = this.#getDynamic(componentProp);
       if (!this.#hasProperty(componentProp)) {
         this.#throw(
           null,
@@ -1868,8 +1896,9 @@ export abstract class Wrec extends HTMLElementBase {
           this.#validateExpression(element, attrName, attrValue);
 
           let fn;
-          if (typeof this[attrValue] === 'function') {
-            fn = (event: Event) => this[attrValue](event);
+          if (typeof this.#getDynamic(attrValue) === 'function') {
+            fn = (event: Event) =>
+              this.#getDynamic(attrValue).call(this, event);
           } else {
             this.#validateExpression(element, attrName, attrValue);
             // oxlint-disable-next-line no-eval no-unused-vars
