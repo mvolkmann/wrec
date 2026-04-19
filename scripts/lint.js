@@ -119,6 +119,13 @@ const THIS_CALL_RE = /this\.([A-Za-z_$][\w$]*)\s*\(/g;
 const THIS_REF_RE = /this\.([A-Za-z_$][\w$]*)(\.[A-Za-z_$][\w$]*)*/g;
 const PLACEHOLDER_PREFIX = '__WREC_PLACEHOLDER__';
 const RESERVED_PROPERTY_NAMES = new Set(['class', 'style']);
+const SUPPORTED_PROPERTY_TYPE_NAMES = new Set([
+  'Array',
+  'Boolean',
+  'Number',
+  'Object',
+  'String'
+]);
 const GETTER_PREFIX = 'get ';
 const SUPPORTED_EVENT_NAMES = new Set([
   'blur',
@@ -806,27 +813,28 @@ function formatReport(
 
   const hasIssues =
     findings.duplicateProperties.length > 0 ||
-    findings.reservedProperties.length > 0 ||
-    findings.invalidUsedByReferences.length > 0 ||
-    findings.invalidCheckedBindings.length > 0 ||
-    findings.invalidComputedProperties.length > 0 ||
-    findings.invalidRefAttributes.length > 0 ||
-    findings.invalidValuesConfigurations.length > 0 ||
-    findings.invalidDefaultValues.length > 0 ||
-    findings.invalidFormAssocValues.length > 0 ||
-    findings.invalidUseStateMaps.length > 0 ||
-    findings.missingFormAssociatedProperty.length > 0 ||
-    findings.missingTypeProperties.length > 0 ||
-    findings.undefinedProperties.length > 0 ||
-    findings.undefinedContextFunctions.length > 0 ||
-    findings.undefinedMethods.length > 0 ||
     findings.extraArguments.length > 0 ||
     findings.incompatibleArguments.length > 0 ||
+    findings.invalidCheckedBindings.length > 0 ||
+    findings.invalidComputedProperties.length > 0 ||
+    findings.invalidDefaultValues.length > 0 ||
     findings.invalidEventHandlers.length > 0 ||
+    findings.invalidFormAssocValues.length > 0 ||
     findings.invalidHtmlNesting.length > 0 ||
-    findings.unsupportedHtmlAttributes.length > 0 ||
+    findings.invalidRefAttributes.length > 0 ||
+    findings.invalidTypeProperties.length > 0 ||
+    findings.invalidUsedByReferences.length > 0 ||
+    findings.invalidUseStateMaps.length > 0 ||
+    findings.invalidValuesConfigurations.length > 0 ||
+    findings.missingFormAssociatedProperty.length > 0 ||
+    findings.missingTypeProperties.length > 0 ||
+    findings.reservedProperties.length > 0 ||
+    findings.typeErrors.length > 0 ||
+    findings.undefinedContextFunctions.length > 0 ||
+    findings.undefinedMethods.length > 0 ||
+    findings.undefinedProperties.length > 0 ||
     findings.unsupportedEventNames.length > 0 ||
-    findings.typeErrors.length > 0;
+    findings.unsupportedHtmlAttributes.length > 0;
 
   if (showFileHeader) lines.push(`file: ${fileLabel}`);
 
@@ -859,106 +867,6 @@ function formatReport(
     findings.duplicateProperties.forEach(name => lines.push(`  ${name}`));
   }
 
-  if (findings.reservedProperties.length > 0) {
-    lines.push('reserved property names:');
-    findings.reservedProperties.forEach(name => lines.push(`  ${name}`));
-  }
-
-  if (findings.invalidUsedByReferences.length > 0) {
-    lines.push('invalid usedBy references:');
-    findings.invalidUsedByReferences.forEach(message =>
-      lines.push(`  ${message}`)
-    );
-  }
-
-  if (findings.invalidComputedProperties.length > 0) {
-    lines.push('invalid computed properties:');
-    findings.invalidComputedProperties.forEach(message =>
-      lines.push(`  ${message}`)
-    );
-  }
-
-  if (findings.invalidCheckedBindings.length > 0) {
-    lines.push('invalid checked bindings:');
-    findings.invalidCheckedBindings.forEach(message =>
-      lines.push(`  ${message}`)
-    );
-  }
-
-  if (findings.invalidRefAttributes.length > 0) {
-    lines.push('invalid ref attributes:');
-    findings.invalidRefAttributes.forEach(message =>
-      lines.push(`  ${message}`)
-    );
-  }
-
-  if (findings.invalidValuesConfigurations.length > 0) {
-    lines.push('invalid values configurations:');
-    findings.invalidValuesConfigurations.forEach(message =>
-      lines.push(`  ${message}`)
-    );
-  }
-
-  if (findings.invalidDefaultValues.length > 0) {
-    lines.push('invalid default values:');
-    findings.invalidDefaultValues.forEach(message =>
-      lines.push(`  ${message}`)
-    );
-  }
-
-  if (findings.invalidFormAssocValues.length > 0) {
-    lines.push('invalid form-assoc values:');
-    findings.invalidFormAssocValues.forEach(message =>
-      lines.push(`  ${message}`)
-    );
-  }
-
-  if (findings.missingFormAssociatedProperty.length > 0) {
-    lines.push('missing formAssociated property:');
-    findings.missingFormAssociatedProperty.forEach(message =>
-      lines.push(`  ${message}`)
-    );
-  }
-
-  if (findings.missingTypeProperties.length > 0) {
-    lines.push('missing type properties:');
-    findings.missingTypeProperties.forEach(message =>
-      lines.push(`  ${message}`)
-    );
-  }
-
-  if (findings.undefinedProperties.length > 0) {
-    lines.push('undefined properties:');
-    findings.undefinedProperties.forEach(name => lines.push(`  ${name}`));
-  }
-
-  if (findings.undefinedContextFunctions.length > 0) {
-    lines.push('undefined context functions:');
-    findings.undefinedContextFunctions.forEach(name => lines.push(`  ${name}`));
-  }
-
-  if (findings.undefinedMethods.length > 0) {
-    lines.push('undefined methods:');
-    findings.undefinedMethods.forEach(name => lines.push(`  ${name}`));
-  }
-
-  if (findings.invalidEventHandlers.length > 0) {
-    lines.push('invalid event handler references:');
-    findings.invalidEventHandlers.forEach(message =>
-      lines.push(`  ${message}`)
-    );
-  }
-
-  if (findings.invalidUseStateMaps.length > 0) {
-    lines.push('invalid useState map entries:');
-    findings.invalidUseStateMaps.forEach(message => lines.push(`  ${message}`));
-  }
-
-  if (findings.invalidHtmlNesting.length > 0) {
-    lines.push('invalid html nesting:');
-    findings.invalidHtmlNesting.forEach(message => lines.push(`  ${message}`));
-  }
-
   if (findings.extraArguments.length > 0) {
     lines.push('extra arguments:');
     findings.extraArguments.forEach(finding => {
@@ -981,6 +889,98 @@ function formatReport(
     });
   }
 
+  if (findings.invalidCheckedBindings.length > 0) {
+    lines.push('invalid checked bindings:');
+    findings.invalidCheckedBindings.forEach(message =>
+      lines.push(`  ${message}`)
+    );
+  }
+
+  if (findings.invalidComputedProperties.length > 0) {
+    lines.push('invalid computed properties:');
+    findings.invalidComputedProperties.forEach(message =>
+      lines.push(`  ${message}`)
+    );
+  }
+
+  if (findings.invalidDefaultValues.length > 0) {
+    lines.push('invalid default values:');
+    findings.invalidDefaultValues.forEach(message =>
+      lines.push(`  ${message}`)
+    );
+  }
+
+  if (findings.invalidEventHandlers.length > 0) {
+    lines.push('invalid event handler references:');
+    findings.invalidEventHandlers.forEach(message =>
+      lines.push(`  ${message}`)
+    );
+  }
+
+  if (findings.invalidFormAssocValues.length > 0) {
+    lines.push('invalid form-assoc values:');
+    findings.invalidFormAssocValues.forEach(message =>
+      lines.push(`  ${message}`)
+    );
+  }
+
+  if (findings.invalidHtmlNesting.length > 0) {
+    lines.push('invalid html nesting:');
+    findings.invalidHtmlNesting.forEach(message => lines.push(`  ${message}`));
+  }
+
+  if (findings.invalidRefAttributes.length > 0) {
+    lines.push('invalid ref attributes:');
+    findings.invalidRefAttributes.forEach(message =>
+      lines.push(`  ${message}`)
+    );
+  }
+
+  if (findings.invalidTypeProperties.length > 0) {
+    lines.push('invalid type properties:');
+    findings.invalidTypeProperties.forEach(message =>
+      lines.push(`  ${message}`)
+    );
+  }
+
+  if (findings.invalidUsedByReferences.length > 0) {
+    lines.push('invalid usedBy references:');
+    findings.invalidUsedByReferences.forEach(message =>
+      lines.push(`  ${message}`)
+    );
+  }
+
+  if (findings.invalidUseStateMaps.length > 0) {
+    lines.push('invalid useState map entries:');
+    findings.invalidUseStateMaps.forEach(message => lines.push(`  ${message}`));
+  }
+
+  if (findings.invalidValuesConfigurations.length > 0) {
+    lines.push('invalid values configurations:');
+    findings.invalidValuesConfigurations.forEach(message =>
+      lines.push(`  ${message}`)
+    );
+  }
+
+  if (findings.missingFormAssociatedProperty.length > 0) {
+    lines.push('missing formAssociated property:');
+    findings.missingFormAssociatedProperty.forEach(message =>
+      lines.push(`  ${message}`)
+    );
+  }
+
+  if (findings.missingTypeProperties.length > 0) {
+    lines.push('missing type properties:');
+    findings.missingTypeProperties.forEach(message =>
+      lines.push(`  ${message}`)
+    );
+  }
+
+  if (findings.reservedProperties.length > 0) {
+    lines.push('reserved property names:');
+    findings.reservedProperties.forEach(name => lines.push(`  ${name}`));
+  }
+
   if (findings.typeErrors.length > 0) {
     lines.push('type errors:');
     findings.typeErrors.forEach(finding => {
@@ -988,16 +988,31 @@ function formatReport(
     });
   }
 
-  if (findings.unsupportedHtmlAttributes.length > 0) {
-    lines.push('unsupported html attributes:');
-    findings.unsupportedHtmlAttributes.forEach(message =>
-      lines.push(`  ${message}`)
-    );
+  if (findings.undefinedContextFunctions.length > 0) {
+    lines.push('undefined context functions:');
+    findings.undefinedContextFunctions.forEach(name => lines.push(`  ${name}`));
+  }
+
+  if (findings.undefinedMethods.length > 0) {
+    lines.push('undefined methods:');
+    findings.undefinedMethods.forEach(name => lines.push(`  ${name}`));
+  }
+
+  if (findings.undefinedProperties.length > 0) {
+    lines.push('undefined properties:');
+    findings.undefinedProperties.forEach(name => lines.push(`  ${name}`));
   }
 
   if (findings.unsupportedEventNames.length > 0) {
     lines.push('unsupported event names:');
     findings.unsupportedEventNames.forEach(message =>
+      lines.push(`  ${message}`)
+    );
+  }
+
+  if (findings.unsupportedHtmlAttributes.length > 0) {
+    lines.push('unsupported html attributes:');
+    findings.unsupportedHtmlAttributes.forEach(message =>
       lines.push(`  ${message}`)
     );
   }
@@ -1360,8 +1375,9 @@ export function lintSource(filePath, sourceText, options = {}) {
     invalidFormAssocValues: [],
     invalidHtmlNesting: [],
     invalidRefAttributes: [],
-    invalidUseStateMaps: [],
+    invalidTypeProperties: [],
     invalidUsedByReferences: [],
+    invalidUseStateMaps: [],
     invalidValuesConfigurations: [],
     missingFormAssociatedProperty: [],
     missingTypeProperties: [],
@@ -1370,8 +1386,8 @@ export function lintSource(filePath, sourceText, options = {}) {
     undefinedContextFunctions: [],
     undefinedMethods: [],
     undefinedProperties: [],
-    unsupportedHtmlAttributes: [],
-    unsupportedEventNames: []
+    unsupportedEventNames: [],
+    unsupportedHtmlAttributes: []
   };
   const templateExprs = extractTemplateExpressions(
     classNode,
@@ -1464,8 +1480,9 @@ export function lintSource(filePath, sourceText, options = {}) {
   findings.invalidFormAssocValues.sort();
   findings.invalidHtmlNesting.sort();
   findings.invalidRefAttributes.sort();
-  findings.invalidUseStateMaps.sort();
+  findings.invalidTypeProperties.sort();
   findings.invalidUsedByReferences.sort();
+  findings.invalidUseStateMaps.sort();
   findings.invalidValuesConfigurations.sort();
   findings.missingFormAssociatedProperty.sort();
   findings.missingTypeProperties.sort();
@@ -1474,8 +1491,8 @@ export function lintSource(filePath, sourceText, options = {}) {
   findings.undefinedContextFunctions.sort();
   findings.undefinedMethods.sort();
   findings.undefinedProperties.sort();
-  findings.unsupportedHtmlAttributes.sort();
   findings.unsupportedEventNames.sort();
+  findings.unsupportedHtmlAttributes.sort();
 
   return formatReport(
     filePath,
@@ -1869,6 +1886,13 @@ function validatePropertyConfigs(
     if (!typeExpression) {
       findings.missingTypeProperties.push(
         `property "${propName}" does not specify a type`
+      );
+    } else if (
+      !SUPPORTED_PROPERTY_TYPE_NAMES.has(typeExpressionKind(typeExpression))
+    ) {
+      findings.invalidTypeProperties.push(
+        `property "${propName}" type must be one of ` +
+          'Boolean, Number, String, Object, or Array'
       );
     }
 

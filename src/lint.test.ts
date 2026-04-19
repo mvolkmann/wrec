@@ -137,6 +137,37 @@ describe('lint.js', () => {
     expect(output).toContain('but declared type is Object');
   });
 
+  test('reports invalid type constructors in static properties', () => {
+    const output = runLint(`
+      import {Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          badElement: {type: HTMLElement},
+          badDate: {type: Date},
+          goodArray: {type: Array},
+          goodBoolean: {type: Boolean},
+          goodNumber: {type: Number},
+          goodObject: {type: Object},
+          goodString: {type: String}
+        };
+      }
+    `);
+
+    expect(output).toContain('invalid type properties:');
+    expect(output).toContain(
+      'property "badDate" type must be one of Boolean, Number, String, Object, or Array'
+    );
+    expect(output).toContain(
+      'property "badElement" type must be one of Boolean, Number, String, Object, or Array'
+    );
+    expect(output).not.toContain('property "goodArray" type must be one of');
+    expect(output).not.toContain('property "goodBoolean" type must be one of');
+    expect(output).not.toContain('property "goodNumber" type must be one of');
+    expect(output).not.toContain('property "goodObject" type must be one of');
+    expect(output).not.toContain('property "goodString" type must be one of');
+  });
+
   test('reports duplicate and reserved property names', () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
