@@ -1602,6 +1602,23 @@ function requiresContextFunction(symbol, sourceFile) {
   });
 }
 
+// Returns whether a type represents an object-like value other than an array.
+function isNonArrayObjectLikeType(checker, type) {
+  if (type.isUnion()) {
+    return type.types.every(member => isNonArrayObjectLikeType(checker, member));
+  }
+
+  if (type.isIntersection()) {
+    return type.types.every(member => isNonArrayObjectLikeType(checker, member));
+  }
+
+  return (
+    Boolean(type.flags & (ts.TypeFlags.Object | ts.TypeFlags.NonPrimitive)) &&
+    !checker.isArrayType(type) &&
+    !checker.isTupleType(type)
+  );
+}
+
 // Resolves a relative import path to an existing source file.
 function resolveImportPath(baseDir, importPath) {
   if (!importPath.startsWith('.')) return undefined;
@@ -1620,6 +1637,22 @@ function resolveImportPath(baseDir, importPath) {
 // Rewrites synthetic receiver references back to this for reporting.
 function toUserFacingExpression(text) {
   return text.replaceAll(WREC_REF_NAME, 'this');
+}
+
+// Returns whether a static property config type is compatible with a declare type.
+function typeExpressionMatchesDeclaredType(
+  checker,
+  typeExpression,
+  declaredTypeNode
+) {
+  const declaredType = checker.getTypeFromTypeNode(declaredTypeNode);
+
+  if (typeExpressionKind(typeExpression) === 'Object') {
+    return isNonArrayObjectLikeType(checker, declaredType);
+  }
+
+  const runtimeType = checker.getTypeAtLocation(typeExpression);
+  return checker.isTypeAssignableTo(runtimeType, declaredType);
 }
 
 // Classifies a constructor-based type expression by its identifier name.
@@ -1776,11 +1809,7 @@ function validateDefaultValue(checker, typeExpression, valueExpression) {
   }
 
   if (typeKind === 'Object') {
-    const isObjectLike =
-      Boolean(valueType.flags & ts.TypeFlags.Object) &&
-      !checker.isArrayType(valueType) &&
-      !checker.isTupleType(valueType);
-    if (!isObjectLike) {
+    if (!isNonArrayObjectLikeType(checker, valueType)) {
       return {typeName: 'Object', valueTypeName};
     }
   }
@@ -1942,9 +1971,7 @@ function validatePropertyConfigs(
           'Boolean, Number, String, Object, or Array'
       );
     } else if (declaredTypeNode) {
-      const runtimeType = checker.getTypeAtLocation(typeExpression);
-      const declaredType = checker.getTypeFromTypeNode(declaredTypeNode);
-      if (!checker.isTypeAssignableTo(runtimeType, declaredType)) {
+      if (!typeExpressionMatchesDeclaredType(checker, typeExpression, declaredTypeNode)) {
         findings.incompatibleDeclareTypes.push(
           `property "${propName}" declare type ` +
             `"${getPropertyTypeTextFromNode(sourceFile, declaredTypeNode)}" ` +
