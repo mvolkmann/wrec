@@ -112,12 +112,17 @@ Note how the wrec components did not need to be modified
 to use state. All the wiring happens outside of those components.
 
 You can modify state from the browser DevTools console as well.
+Doing so triggers updates to the mapped component properties.
 For example, entering the following updates both components.
 
 ```js
 state = WrecState.get('demo');
 state.name = 'Earth';
 ```
+
+The same code can be used anywhere in an application
+to get a reference to a `WrecState` object,
+get the properties it holds, and modify its properties.
 
 The types of `WrecState` properties and wrec component properties
 can be primitive values or objects.
