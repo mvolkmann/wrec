@@ -1,6 +1,6 @@
 # Scripts and VS Code Extension
 
-Wrec provides three scripts that aid in web component development.
+Wrec provides four scripts that aid in web component development.
 After installing the wrec package in a project,
 the scripts can be run using `npx`.
 
@@ -11,6 +11,12 @@ The file will define the class `TagName`.
 
 To check a source file that defines a wrec component for errors,
 enter `npx wrec-lint {file-path}`.
+
+To automatically add `declare` statements in a given TypeScript source file
+for each property described in the `static properties` object,
+enter `npx wrec-declare {file-path}`.
+The `declare` statements allow TypeScript-aware code editors
+to provide type checking.
 
 To add/update `usedBy` properties in the property configuration objects
 found in the `static properties =` object,
@@ -30,7 +36,7 @@ that run the three scripts described above.
 It is available in the Visual Studio Marketplace at
 https://marketplace.visualstudio.com/items?itemName=RMarkVolkmann.wrec.
 
-In order to use this extension, the `package.json` file for the project
+To use this extension, the `package.json` file for the project
 that is opened in VS Code must have a dependency on the wrec package and
 it must be installed to use these commands.
 
@@ -49,6 +55,10 @@ it must be installed to use these commands.
   The issues are also appended to the "OUTPUT" panel,
   which you can open manually by selecting View ... Output (cmd-shift-u)
   to review them there.
+
+- wrec: Add declare Statements in Current File
+
+  This runs the `declare` script on the currently open and focused source file.
 
 - wrec: Set usedBy Properties in Current File
 
