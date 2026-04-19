@@ -259,7 +259,7 @@ function validateFile(absFilePath) {
   if (!stat.isFile()) throw new Error('Not a file');
 
   if (!/\.ts$/.test(absFilePath)) {
-    throw new Error('validate statements can only be added in .ts files');
+    throw new Error('declare statements can only be added in .ts files');
   }
 }
 
