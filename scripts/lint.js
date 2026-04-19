@@ -451,6 +451,21 @@ function collectSupportedPropertyNames(classNode) {
   return supportedProps;
 }
 
+// Collects declared TypeScript property types from a component class.
+function collectDeclaredPropertyTypes(classNode) {
+  const declaredProps = new Map();
+
+  for (const member of classNode.members) {
+    if (!isDeclarePropertyDeclaration(member)) continue;
+
+    const propName = getMemberName(member);
+    if (!propName || !member.type) continue;
+    declaredProps.set(propName, member.type);
+  }
+
+  return declaredProps;
+}
+
 // Validates that useState mappings point at existing component properties.
 function collectUseStateMapErrors(classNode, supportedProps, findings) {
   // Walks the class body looking for useState calls with mapping objects.
@@ -815,6 +830,7 @@ function formatReport(
     findings.duplicateProperties.length > 0 ||
     findings.extraArguments.length > 0 ||
     findings.incompatibleArguments.length > 0 ||
+    findings.incompatibleDeclareTypes.length > 0 ||
     findings.invalidCheckedBindings.length > 0 ||
     findings.invalidComputedProperties.length > 0 ||
     findings.invalidDefaultValues.length > 0 ||
@@ -887,6 +903,13 @@ function formatReport(
           `"${finding.parameterName}" expects ${finding.parameterType}`
       );
     });
+  }
+
+  if (findings.incompatibleDeclareTypes.length > 0) {
+    lines.push('incompatible declare types:');
+    findings.incompatibleDeclareTypes.forEach(message =>
+      lines.push(`  ${message}`)
+    );
   }
 
   if (findings.invalidCheckedBindings.length > 0) {
@@ -1166,6 +1189,11 @@ function getPropertyTypeText(checker, sourceFile, expression) {
   return checker.typeToString(type);
 }
 
+// Gets the TypeScript type text for a declared property member.
+function getPropertyTypeTextFromNode(sourceFile, typeNode) {
+  return typeNode.getText(sourceFile).trim();
+}
+
 // Returns an array of string literal values from a property when possible.
 function getStringArrayLiteral(property) {
   if (!property || !ts.isPropertyAssignment(property)) return undefined;
@@ -1275,6 +1303,17 @@ function isCallCallee(node) {
   return ts.isCallExpression(node.parent) && node.parent.expression === node;
 }
 
+// Returns whether a class member is a declared property declaration.
+function isDeclarePropertyDeclaration(member) {
+  return (
+    ts.isPropertyDeclaration(member) &&
+    ts.canHaveModifiers(member) &&
+    ts
+      .getModifiers(member)
+      ?.some(mod => mod.kind === ts.SyntaxKind.DeclareKeyword)
+  );
+}
+
 // Returns whether a reference refers to a getter method.
 function isGetterReference(reference) {
   return reference.startsWith(GETTER_PREFIX);
@@ -1362,12 +1401,14 @@ export function lintSource(filePath, sourceText, options = {}) {
     propertyEntries,
     reservedProperties
   } = extractProperties(sourceFile, checker, classNode);
+  const declaredPropertyTypes = collectDeclaredPropertyTypes(classNode);
   const getterNames = collectGetterNames(classNode);
   const allMethods = collectClassMethods(classNode);
   const findings = {
     duplicateProperties,
     extraArguments: [],
     incompatibleArguments: [],
+    incompatibleDeclareTypes: [],
     invalidCheckedBindings: [],
     invalidComputedProperties: [],
     invalidDefaultValues: [],
@@ -1430,6 +1471,8 @@ export function lintSource(filePath, sourceText, options = {}) {
 
   validatePropertyConfigs(
     checker,
+    sourceFile,
+    declaredPropertyTypes,
     supportedProps,
     propertyEntries,
     getterNames,
@@ -1473,6 +1516,7 @@ export function lintSource(filePath, sourceText, options = {}) {
       a.methodName.localeCompare(b.methodName) ||
       a.parameterName.localeCompare(b.parameterName)
   );
+  findings.incompatibleDeclareTypes.sort();
   findings.invalidCheckedBindings.sort();
   findings.invalidComputedProperties.sort();
   findings.invalidDefaultValues.sort();
@@ -1865,6 +1909,8 @@ function validateHtmlNesting(node, findings) {
 // Validates all configured component property metadata entries.
 function validatePropertyConfigs(
   checker,
+  sourceFile,
+  declaredPropertyTypes,
   supportedProps,
   propertyEntries,
   getterNames,
@@ -1872,9 +1918,10 @@ function validatePropertyConfigs(
   findings
 ) {
   for (const {config, propName} of propertyEntries) {
+    const computedProp = getObjectProperty(config, 'computed');
+    const declaredTypeNode = declaredPropertyTypes.get(propName);
     const typeProp = getObjectProperty(config, 'type');
     const usedByProp = getObjectProperty(config, 'usedBy');
-    const computedProp = getObjectProperty(config, 'computed');
     const valueProp = getObjectProperty(config, 'value');
     const valuesProp = getObjectProperty(config, 'values');
 
@@ -1894,6 +1941,17 @@ function validatePropertyConfigs(
         `property "${propName}" type must be one of ` +
           'Boolean, Number, String, Object, or Array'
       );
+    } else if (declaredTypeNode) {
+      const runtimeType = checker.getTypeAtLocation(typeExpression);
+      const declaredType = checker.getTypeFromTypeNode(declaredTypeNode);
+      if (!checker.isTypeAssignableTo(runtimeType, declaredType)) {
+        findings.incompatibleDeclareTypes.push(
+          `property "${propName}" declare type ` +
+            `"${getPropertyTypeTextFromNode(sourceFile, declaredTypeNode)}" ` +
+            `is not compatible with static properties type ` +
+            `"${getPropertyConfigTypeName(typeExpressionKind(typeExpression))}"`
+        );
+      }
     }
 
     if (usedByProp && ts.isPropertyAssignment(usedByProp)) {

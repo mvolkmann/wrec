@@ -9,6 +9,7 @@ const wrecImportPath = path
   .join(repoRoot, 'src', 'wrec.ts')
   .replaceAll('\\', '\\\\');
 
+// Runs the linter against inline source text.
 function runLint(source: string) {
   const fixturePath = path.join(
     os.tmpdir(),
@@ -380,6 +381,30 @@ describe('lint.js', () => {
 
     expect(output).toContain('invalid html nesting:');
     expect(output).toContain('  <div> is not allowed directly inside <tr>');
+  });
+
+  test('reports declare statements with incompatible property types', () => {
+    const output = runLint(`
+      import {Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          count: {type: Number, value: 1},
+          label: {type: String, value: 'ok'}
+        };
+
+        declare count: string;
+        declare label: unknown;
+      }
+    `);
+
+    expect(output).toContain('incompatible declare types:');
+    expect(output).toContain(
+      '  property "count" declare type "string" is not compatible with static properties type "Number"'
+    );
+    expect(output).not.toContain(
+      'property "label" declare type "unknown" is not compatible'
+    );
   });
 
   test('reports invalid ref attributes', () => {
