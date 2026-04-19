@@ -723,7 +723,7 @@ function validateFile(absFilePath) {
   const stat = fs.statSync(absFilePath);
   if (!stat.isFile()) throw new Error('Not a file');
 
-  if (!/\.(js|ts)$/.test(absFilePath) || /\.d\.ts$/.test(absFilePath)) {
+  if (!/\.(js|ts)$/.test(absFilePath)) {
     throw new Error('Unsupported file type');
   }
 }

@@ -83,7 +83,12 @@ function analyzeSourceFile(sourceFile) {
 }
 
 // Builds the `declare` block that should appear after `static properties`.
-function buildDeclareBlock(sourceFile, classNode, propertiesMember, declareLines) {
+function buildDeclareBlock(
+  sourceFile,
+  classNode,
+  propertiesMember,
+  declareLines
+) {
   const {text} = sourceFile;
   const memberIndent = getIndent(text, propertiesMember.getStart(sourceFile));
   const startIndex = classNode.members.indexOf(propertiesMember) + 1;
@@ -105,9 +110,7 @@ function buildDeclareBlock(sourceFile, classNode, propertiesMember, declareLines
     return nextMember ? `\n\n${nextIndent}` : '\n';
   }
 
-  const content = declareLines
-    .map(line => `${memberIndent}${line}`)
-    .join('\n');
+  const content = declareLines.map(line => `${memberIndent}${line}`).join('\n');
   return nextMember ? `\n${content}\n\n${nextIndent}` : `\n${content}\n`;
 }
 
@@ -138,15 +141,12 @@ export function evaluateSourceFile(filePath, options = {}) {
 
 // Determines what changes, if any, should be made in source file text.
 export function evaluateSourceText(filePath, text) {
-  const scriptKind = filePath.endsWith('.ts')
-    ? ts.ScriptKind.TS
-    : ts.ScriptKind.JS;
   const sourceFile = ts.createSourceFile(
     filePath,
     text,
     ts.ScriptTarget.Latest,
     true,
-    scriptKind
+    ts.ScriptKind.TS
   );
   return analyzeSourceFile(sourceFile);
 }
@@ -258,8 +258,8 @@ function validateFile(absFilePath) {
   const stat = fs.statSync(absFilePath);
   if (!stat.isFile()) throw new Error('Not a file');
 
-  if (!/\.(js|ts)$/.test(absFilePath) || /\.d\.ts$/.test(absFilePath)) {
-    throw new Error('Unsupported file type');
+  if (!/\.ts$/.test(absFilePath)) {
+    throw new Error('validate statements can only be added in .ts files');
   }
 }
 
