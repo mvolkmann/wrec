@@ -4,6 +4,7 @@ Component properties can be configured to be computed.
 We saw a example of this in the `color-picker` component.
 
 Let's look at another example and review some options.
+This code can be found in the "rectangle-area" directory.
 
 - Create a new directory named "rectangle-area".
 - cd to it.

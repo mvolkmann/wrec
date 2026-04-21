@@ -8,9 +8,15 @@ With each example shown in this video series,
 I challenge you to find a web UI library
 that can recreate it with less code.
 
+All the example code from the videos in this series
+can be found in the "ch09" directory in the
+[web-component-book-code](https://github.com/mvolkmann/web-component-book-code)
+GitHub repository.
+
 ## Basic Hello World
 
 Let's start simple.
+This code can be found in the "hello-world" directory.
 
 - Create a new directory named "hello-world".
 - cd to it.

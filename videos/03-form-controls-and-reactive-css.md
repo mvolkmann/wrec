@@ -6,6 +6,7 @@ Form controls that have values include
 `input`, `textarea`, and `select` elements.
 
 Let's create a component that demonstrates this.
+This code can be found in the "form-controls" directory.
 
 - Create a new directory named "form-controls".
 - cd to it.

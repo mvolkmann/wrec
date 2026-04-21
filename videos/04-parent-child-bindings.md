@@ -8,6 +8,7 @@ If the child changes its property value,
 the corresponding parent property is updated.
 
 Let's look at an example that utilizes this.
+This code can be found in the "color-demo" directory.
 
 - Create a new directory named "color-demo".
 - cd to it.

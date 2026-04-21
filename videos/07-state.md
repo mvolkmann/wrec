@@ -10,6 +10,7 @@ where attributes are used to pass data through
 multiple levels of a component hierarchy.
 
 Let's look at an example.
+This code can be found in the "state" directory.
 
 Here's the file `labeled-input.ts` which defines a wrec component
 that renders `label` and `input` elements.
