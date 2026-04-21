@@ -2,7 +2,7 @@
 
 wrec is a library that simplifies creating web components.
 It is an alternative to libraries like Lit, Stencil, and FAST.
-wrec emphasizes simplicity and reactivity.
+wrec emphasizes simplicity and reactivity with targeted DOM updates.
 
 With each example shown in this video series,
 I challenge you to find a web UI library

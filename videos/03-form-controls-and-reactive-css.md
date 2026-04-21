@@ -93,6 +93,14 @@ Let's create a component that demonstrates this.
   - the `input` element `value` attribute
   - the `select` element `value` attribute
 
+Wrec remembers the location of each of these expressions,
+the properties the use.
+When the value of a property used by an expression changes,
+the expression is recomputed.
+If it results a new value
+k
+all DOM locations affected by the
+
 - Create an `index.html` file containing the following:
 
   ```html

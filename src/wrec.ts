@@ -282,6 +282,7 @@ function updateAttribute(
   }
 }
 
+// Updates an attribute or CSS property reference with a new value.
 function updateValue(
   element: HTMLElement | CSSStyleRule,
   attrName: string,
@@ -290,11 +291,16 @@ function updateValue(
   const [realAttrName] = attrName.split(':');
 
   if (element instanceof CSSStyleRule) {
-    element.style.setProperty(realAttrName, value); // CSS variable
+    const currentValue = element.style.getPropertyValue(realAttrName);
+    if (currentValue !== value) {
+      element.style.setProperty(realAttrName, value); // CSS variable
+    }
   } else {
     updateAttribute(element, realAttrName, value);
     if (realAttrName === 'value' && isValueElement(element)) {
-      (element as HTMLValueElement).value = value;
+      if ((element as HTMLValueElement).value !== value) {
+        (element as HTMLValueElement).value = value;
+      }
     }
   }
 }
@@ -1612,6 +1618,7 @@ export abstract class Wrec extends HTMLElementBase {
     }
   }
 
+  // Updates text, textarea, or HTML content only when it has changed.
   #updateElementContent(element: HTMLElement | CSSStyleRule, value: unknown) {
     if (value === undefined) return;
 
@@ -1629,18 +1636,20 @@ export abstract class Wrec extends HTMLElementBase {
     const text = String(value);
 
     if (element instanceof HTMLElement && isTextArea(element)) {
-      (element as HTMLTextAreaElement).value = text;
+      if ((element as HTMLTextAreaElement).value !== text) {
+        (element as HTMLTextAreaElement).value = text;
+      }
     } else if (isHTML && t === 'string' && text.trim().startsWith('<')) {
       //element.innerHTML = value as string; // This approach allows XSS attacks!
       const safeValue = sanitize(text);
-      //element.replaceChildren(...safeValue); // for dompurify
+      if (element.innerHTML === safeValue) return;
       element.innerHTML = safeValue; // for xss
 
       this.#wireEvents(element);
       // This is necessary in case the new HTML contains JavaScript expressions.
       this.#makeReactive(element);
     } else if (isHTML) {
-      element.textContent = text;
+      if (element.textContent !== text) element.textContent = text;
     }
   }
 
@@ -1772,7 +1781,8 @@ export abstract class Wrec extends HTMLElementBase {
       }
 
       const parentStateProp = Object.keys(mergedMap).find(
-        key => statePath.startsWith(key + '.') || key.startsWith(statePath + '.')
+        key =>
+          statePath.startsWith(key + '.') || key.startsWith(statePath + '.')
       );
       if (!parentStateProp) return;
 

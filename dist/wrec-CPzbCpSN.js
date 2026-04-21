@@ -252,7 +252,7 @@ function K(e, t, n) {
 }
 function q(e, t, n) {
 	let [r] = t.split(":");
-	e instanceof CSSStyleRule ? e.style.setProperty(r, n) : (K(e, r, n), r === "value" && V(e) && (e.value = n));
+	e instanceof CSSStyleRule ? e.style.getPropertyValue(r) !== n && e.style.setProperty(r, n) : (K(e, r, n), r === "value" && V(e) && e.value !== n && (e.value = n));
 }
 var J = (e) => typeof e == "string" ? [e] : e;
 async function Y(e) {
@@ -755,7 +755,12 @@ var X = class e extends m {
 		let r = typeof t;
 		r !== "string" && r !== "number" && this.#V(e, void 0, " computed content is not a string or number");
 		let i = String(t);
-		e instanceof HTMLElement && B(e) ? e.value = i : n && r === "string" && i.trim().startsWith("<") ? (e.innerHTML = d(i), this.#te(e), this.#M(e)) : n && (e.textContent = i);
+		if (e instanceof HTMLElement && B(e)) e.value !== i && (e.value = i);
+		else if (n && r === "string" && i.trim().startsWith("<")) {
+			let t = d(i);
+			if (e.innerHTML === t) return;
+			e.innerHTML = t, this.#te(e), this.#M(e);
+		} else n && e.textContent !== i && (e.textContent = i);
 	}
 	#J(e, t) {
 		let n = this.#c.get(e);
