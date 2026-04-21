@@ -28,6 +28,12 @@ Let's start simple.
   HelloWorld.define('hello-world');
   ```
 
+  Wrec components are defined by a class that extends `Wrec`
+  and defines the `static html` property.
+
+  The call to `HelloWorld.define` associates
+  the `HelloWorld` class with the `hello-world` tag name.
+
 - Create an `index.html` file containing the following:
 
   ```html
@@ -72,9 +78,9 @@ class HelloWorld extends Wrec {
 HelloWorld.define('hello-world');
 ```
 
-Each property listed in the `static properties` object
-has a configuration object.
-The only required property in the configuration objects is `type`,
+The `static properties` property defines the component properties
+where each has a configuration object.
+The only required property in configuration objects is `type`,
 which must be set to one of these runtime type constructors:
 `Boolean`, `Number`, `String`, `Object`, or `Array`.
 
@@ -83,17 +89,27 @@ to use if no value is supplied.
 
 Other supported configuration properties include:
 
-- `dispatch`: When set to `true`, a `change` event is dispatched
-  every time the property value changes.
-  The `detail` property in the event object contains the properties
+- `dispatch`: When set to `true`, a `change` event
+  is dispatched every time the property value changes.
+  The `detail` property in the event objects contains the properties
   `tagName`, `property`, `oldValue`, and `value`.
+
 - `required`: When set to `true`, a `WrecError`
   is thrown when a custom element for the component
   does not specify the corresponding attribute.
-- `usedBy`: lists the methods that use the property.
-  This is discussed in the "Scripts" video.
-- `values`: lists allowed values for properties with `type: String`
-  which is similar to an enumerated type.
+
+- `usedBy`: This is an array of strings that lists
+  the methods that use the property.
+  Its use is explained in the "Scripts" video.
+
+- `values`: This is a string containing
+  a comma-separated list of allowed values
+  that can only be specified for properties with `type: String`,
+  similar to an enumerated type.
+  For example, "red,green,blue".
+
+The `static css` property value is template literal
+containing CSS rules that are scoped to the component.
 
 Note the raw JavaScript expression inside the `span` element.
 That is automatically replaced by the expression value
