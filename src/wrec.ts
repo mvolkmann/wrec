@@ -11,11 +11,17 @@ type PropertyConfig<T = any> = {
   computed?: string;
   dispatch?: boolean;
   required?: boolean;
-  type: AnyClass;
+  type: PropertyType;
   usedBy?: string | string[];
   value?: T;
   values?: T extends string ? string[] : never;
 };
+type PropertyType =
+  | typeof Array
+  | typeof Boolean
+  | typeof Number
+  | typeof Object
+  | typeof String;
 type StringToAny = Record<string, any>;
 type StringToString = Record<string, string>;
 type StringToStrings = Map<string, string[]>;
@@ -56,9 +62,6 @@ const customElementsApi: CustomElementRegistry =
         new Error('customElements is not available in this environment')
       )
   } as CustomElementRegistry);
-
-type AnyClass = new (...args: any[]) => any;
-
 type HTMLValueElement =
   | HTMLInputElement
   | HTMLSelectElement
@@ -116,7 +119,7 @@ const defaultForConfig = (config: PropertyConfig) =>
     ? config.values[0]
     : defaultForType(config.type);
 
-const defaultForType = (type: AnyClass) =>
+const defaultForType = (type: PropertyType) =>
   type === String
     ? ''
     : type === Number
@@ -1249,7 +1252,7 @@ export abstract class Wrec extends HTMLElementBase {
   }
 
   // Wraps object and array property values in deep proxies.
-  #makePropReactive(propName: string, type: AnyClass, value: unknown) {
+  #makePropReactive(propName: string, type: PropertyType, value: unknown) {
     if (
       value === null ||
       typeof value !== 'object' ||
@@ -1498,7 +1501,7 @@ export abstract class Wrec extends HTMLElementBase {
     const propName = text?.trim() ?? '';
     const config = this.#ctor.properties[propName];
     if (!config) this.#throwInvalidRef(element, 'ref', propName);
-    if (config.type !== HTMLElementBase) {
+    if ((config.type as unknown as typeof HTMLElementBase) !== HTMLElementBase) {
       this.#throw(
         element,
         'ref',
@@ -1853,7 +1856,7 @@ export abstract class Wrec extends HTMLElementBase {
 
   // When type is an array, this can't validate the type of the array elements.
   // This is called by #defineProp.
-  #validateType(propName: string, type: AnyClass, value: any) {
+  #validateType(propName: string, type: PropertyType, value: any) {
     const {values} = this.#ctor.properties[propName] as PropertyConfig;
     if (values) {
       let msg;

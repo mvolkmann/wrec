@@ -72,6 +72,10 @@ class HelloWorld extends Wrec {
 HelloWorld.define('hello-world');
 ```
 
+The `type` specified for each property must be
+one of these runtime type constructors:
+`Boolean`, `Number`, `String`, `Object`, or `Array`.
+
 Note the raw JavaScript expression inside the `span` element.
 That is automatically replaced by the expression value
 every time the value changes

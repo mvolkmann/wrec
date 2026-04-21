@@ -41,7 +41,9 @@ function analyzeSourceFile(sourceFile) {
       if (!ts.isPropertyAssignment(property)) continue;
 
       const propName = getMemberName(property);
-      if (!propName || !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(propName)) continue;
+      if (!propName || !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(propName)) {
+        continue;
+      }
 
       const declareType = getDeclareType(property.initializer);
       if (!declareType) continue;

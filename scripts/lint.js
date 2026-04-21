@@ -1180,6 +1180,15 @@ function getPropertyConfigTypeName(typeName) {
   }
 }
 
+// Gets the base constructor name from a generic-looking type expression.
+function getPropertyTypeGenericBaseName(sourceFile, expression) {
+  if (!expression) return undefined;
+
+  const text = expression.getText(sourceFile).trim();
+  const match = text.match(/^([A-Za-z_$][\w$]*)\s*<[\s\S]+>$/);
+  return match?.[1];
+}
+
 // Derives a readable property type string from syntax or the type checker.
 function getPropertyTypeText(checker, sourceFile, expression) {
   const typeText = getTypeSyntaxText(sourceFile, expression);
@@ -1981,6 +1990,16 @@ function validatePropertyConfigs(
     if (!typeExpression) {
       findings.missingTypeProperties.push(
         `property "${propName}" does not specify a type`
+      );
+    } else if (
+      SUPPORTED_PROPERTY_TYPE_NAMES.has(
+        getPropertyTypeGenericBaseName(sourceFile, typeExpression)
+      )
+    ) {
+      findings.invalidTypeProperties.push(
+        `property "${propName}" type cannot use generic syntax like ` +
+          `"${typeExpression.getText(sourceFile).trim()}"; use ` +
+          `"${getPropertyTypeGenericBaseName(sourceFile, typeExpression)}" instead`
       );
     } else if (
       !SUPPORTED_PROPERTY_TYPE_NAMES.has(typeExpressionKind(typeExpression))

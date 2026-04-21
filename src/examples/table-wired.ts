@@ -5,10 +5,13 @@ type LooseObject = Record<string, unknown>;
 // This component is replaced by the newer sortable-table component.
 class TableWired extends Wrec {
   static properties = {
-    headings: {type: Array<string>},
-    propNames: {type: Array<string>},
-    data: {type: Array<object>}
+    headings: {type: Array},
+    propNames: {type: Array},
+    data: {type: Array}
   };
+  declare headings: string[];
+  declare propNames: string[];
+  declare data: LooseObject[];
 
   static css = css`
     .sort-indicator {

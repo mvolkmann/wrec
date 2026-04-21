@@ -1,5 +1,3 @@
-declare type AnyClass = new (...args: any[]) => any;
-
 declare type ChangeCallback = (change: StateChange) => void;
 
 export declare function createElement(name: string, attributes: StringToString, innerHTML: string): HTMLElement;
@@ -19,11 +17,13 @@ declare type PropertyConfig<T = any> = {
     computed?: string;
     dispatch?: boolean;
     required?: boolean;
-    type: AnyClass;
+    type: PropertyType;
     usedBy?: string | string[];
     value?: T;
     values?: T extends string ? string[] : never;
 };
+
+declare type PropertyType = typeof Array | typeof Boolean | typeof Number | typeof Object | typeof String;
 
 declare type StateChange = {
     state: WrecState;

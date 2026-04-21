@@ -169,6 +169,23 @@ describe('lint.js', () => {
     expect(output).not.toContain('property "goodString" type must be one of');
   });
 
+  test('reports generic type syntax in static properties', () => {
+    const output = runLint(`
+      import {Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          items: {type: Array<string>}
+        };
+      }
+    `);
+
+    expect(output).toContain('invalid type properties:');
+    expect(output).toContain(
+      'property "items" type cannot use generic syntax like "Array<string>"; use "Array" instead'
+    );
+  });
+
   test('reports duplicate and reserved property names', () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';

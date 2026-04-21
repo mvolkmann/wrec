@@ -64,18 +64,18 @@ class SortableTable2 extends Wrec {
   static context = {getAriaSort, makeTd, makeTr, makeTrs, sort, sortIndicator};
 
   static properties = {
-    data: {type: Array<LooseObject>},
+    data: {type: Array},
     descending: {type: Boolean, dispatch: true, usedBy: 'makeThs'},
     headings: {type: String, usedBy: 'makeThs'},
     properties: {type: String, value: ''},
     propertyArray: {
-      type: Array<string>,
+      type: Array,
       computed: "this.properties.split(',')",
       usedBy: 'makeThs'
     },
     sortedData: {
       computed: 'sort(this.data, this.sortProperty, this.descending)',
-      type: Array<LooseObject>
+      type: Array
     },
     sortProperty: {type: String, dispatch: true, usedBy: 'makeThs'},
     ths: {
@@ -83,6 +83,14 @@ class SortableTable2 extends Wrec {
       type: String
     }
   };
+  declare data: LooseObject[];
+  declare descending: boolean;
+  declare headings: string;
+  declare properties: string;
+  declare propertyArray: string[];
+  declare sortedData: LooseObject[];
+  declare sortProperty: string;
+  declare ths: string;
 
   static css = css`
     :host {
