@@ -49,13 +49,17 @@ Let's create a counter component.
   an attribute value,
   a CSS property value,
   or a `computed` configuration object property.
-  This component only uses JavaScript expressions in the first two places.
+  The `my-counter` component only uses JavaScript expressions
+  in the first two locations.
 
-  Note the event handling using `onClick`.
+  Note the event handling on the `button` elements using `onClick` attributes.
   Any event can be handled by adding `on{event-name}` attributes.
+  The event name can begin with either an uppercase or lowercase letter.
 
-  The `disabled` attribute is only present on the minus button
-  when its JavaScript expression evaluates to `true`.
+  The minus button specifies the `disabled` attribute
+  with a value that is a JavaScript expression.
+  That attribute will only be present in the DOM
+  when the expression evaluates to `true`.
 
 - Create an `index.html` file containing the following:
 
@@ -77,9 +81,14 @@ Let's create a counter component.
   </html>
   ```
 
+  This loads the `my-counter` component and renders an instance of it.
   The `script` listens for "change" events and outputs information from them.
 
 - Install Vite by entering `npm i -D vite`.
 - Edit `package.json` and add the script `"dev": "vite"`.
 - Start a local server by entering `npm run dev`.
 - Browse localhost:5173.
+- Click the buttons and note the changes to the displayed value,
+  which is prevented from becoming a negative number.
+- When the value is greater than or equal to 10,
+  the text at the end changes from "single-digit" to "multi-digit".

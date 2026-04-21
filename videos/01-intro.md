@@ -98,6 +98,7 @@ Other supported configuration properties include:
   Code outside the component can listen for those events.
   The `detail` property in the event objects contains the properties
   `tagName`, `property`, `oldValue`, and `value`.
+  This is demonstrated in the "Counter" video.
 
 - `required`: When set to `true`, a `WrecError`
   is thrown when a custom element for the component
