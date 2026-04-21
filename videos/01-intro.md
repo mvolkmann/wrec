@@ -72,9 +72,28 @@ class HelloWorld extends Wrec {
 HelloWorld.define('hello-world');
 ```
 
-The `type` specified for each property must be
-one of these runtime type constructors:
+Each property listed in the `static properties` object
+has a configuration object.
+The only required property in the configuration objects is `type`,
+which must be set to one of these runtime type constructors:
 `Boolean`, `Number`, `String`, `Object`, or `Array`.
+
+The `value` property specifies the default value
+to use if no value is supplied.
+
+Other supported configuration properties include:
+
+- `dispatch`: When set to `true`, a `change` event is dispatched
+  every time the property value changes.
+  The `detail` property in the event object contains the properties
+  `tagName`, `property`, `oldValue`, and `value`.
+- `required`: When set to `true`, a `WrecError`
+  is thrown when a custom element for the component
+  does not specify the corresponding attribute.
+- `usedBy`: lists the methods that use the property.
+  This is discussed in the "Scripts" video.
+- `values`: lists allowed values for properties with `type: String`
+  which is similar to an enumerated type.
 
 Note the raw JavaScript expression inside the `span` element.
 That is automatically replaced by the expression value
