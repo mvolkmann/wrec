@@ -1,7 +1,7 @@
 # Introduction
 
 wrec is a library that simplifies creating web components.
-It is an alternative to libraries like Lit, Stencil, and FAST.
+It's an alternative to libraries like Lit, Stencil, and FAST.
 wrec emphasizes simplicity and reactivity with targeted DOM updates.
 
 With each example shown in this video series,
@@ -29,7 +29,8 @@ Let's start simple.
   ```
 
   Wrec components are defined by a class that extends `Wrec`
-  and defines the `static html` property.
+  and defines the `static html` property whose value is
+  a template literal that uses the `html` tag function.
 
   The call to `HelloWorld.define` associates
   the `HelloWorld` class with the `hello-world` tag name.
@@ -47,6 +48,8 @@ Let's start simple.
     </body>
   </html>
   ```
+
+  This just loads the component definition and renders an instance.
 
 - Install Vite by entering `npm i -D vite`.
 - Edit `package.json` and add the script `"dev": "vite"`.
@@ -80,17 +83,19 @@ HelloWorld.define('hello-world');
 
 The `static properties` property defines the component properties
 where each has a configuration object.
-The only required property in configuration objects is `type`,
+The only required property in these configuration objects is `type`,
 which must be set to one of these runtime type constructors:
-`Boolean`, `Number`, `String`, `Object`, or `Array`.
+`Boolean`, `Number`, `String`, `Object`, `Array`, or `HTMLElement`.
 
-The `value` property specifies the default value
-to use if no value is supplied.
+The `value` property specifies the default property value
+to use if a custom element doesn't specify
+a value for the corresponding attribute.
 
 Other supported configuration properties include:
 
 - `dispatch`: When set to `true`, a `change` event
   is dispatched every time the property value changes.
+  Code outside the component can listen for those events.
   The `detail` property in the event objects contains the properties
   `tagName`, `property`, `oldValue`, and `value`.
 
@@ -98,32 +103,35 @@ Other supported configuration properties include:
   is thrown when a custom element for the component
   does not specify the corresponding attribute.
 
-- `usedBy`: This is an array of strings that lists
-  the methods that use the property.
+- `usedBy`: This is an array of strings that
+  lists the methods that use the property.
   Its use is explained in the "Scripts" video.
 
 - `values`: This is a string containing
-  a comma-separated list of allowed values
-  that can only be specified for properties with `type: String`,
-  similar to an enumerated type.
+  a comma-separated list of allowed values.
+  It can only be specified for properties with `type: String`,
+  and makes it similar to an enumerated type.
   For example, "red,green,blue".
 
-The `static css` property value is template literal
-containing CSS rules that are scoped to the component.
+The `static css` property value is a
+template literal that uses the `css` tag function.
+It contains CSS rules that are scoped to the component.
 
 Note the raw JavaScript expression inside the `span` element.
 That is automatically replaced by the expression value
-every time the value changes
+every time its value changes,
 using an efficient, targeted DOM update.
 
-Then edit `index.html` and add a `name` attribute
+Edit `index.html` and add a `name` attribute
 to the `hello-world` element as follows:
 
 ```html
 <hello-world name="Earth"></hello-world>
 ```
 
-## Two-way Bindings Demonstrated with Browser DevTools
+This will of course render "Hello, Earth!" instead of "Hello, World!".
+
+## Two-way Bindings Demonstrated
 
 1. Inspect the `hello-world` element.
 1. Change its `name` attribute value to "Moon"
