@@ -123,14 +123,16 @@ to the `hello-world` element as follows:
 <hello-world name="Earth"></hello-world>
 ```
 
-## Using Browser DevTools
+## Two-way Bindings Demonstrated with Browser DevTools
 
 1. Inspect the `hello-world` element.
-1. Change its `name` attribute value to "Moon".
+1. Change its `name` attribute value to "Moon"
+   and notice that the DOM is updated.
 1. Switch to the Console tab.
 1. Enter `$0.name` to see the current value of
    the `hello-world` component `name` property
    which is automatically kept in sync with the attribute value.
-1. Enter `$0.name = "Jupiter"`.
+1. Enter `$0.name = "Jupiter"`
+   and notice that the DOM is updated.
 1. Switch to the Elements tab and
-   notice that the `name` attribute was updated.
+   notice that the `name` attribute is also updated.
