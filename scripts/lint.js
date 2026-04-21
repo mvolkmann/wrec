@@ -122,6 +122,7 @@ const RESERVED_PROPERTY_NAMES = new Set(['class', 'style']);
 const SUPPORTED_PROPERTY_TYPE_NAMES = new Set([
   'Array',
   'Boolean',
+  'HTMLElement',
   'Number',
   'Object',
   'String'
@@ -1101,6 +1102,12 @@ function getComponentPropertyMaps(filePath, sourceText, seen = new Set()) {
   return propertyMaps;
 }
 
+// Returns the constructed instance type for a constructor expression.
+function getConstructedType(checker, expression) {
+  const constructorType = checker.getTypeAtLocation(expression);
+  return constructorType.getConstructSignatures()[0]?.getReturnType();
+}
+
 // Returns the referenced property name for a single `this.prop` binding.
 function getPropertyNameInAttribute(attrValue) {
   const match = attrValue.trim().match(PROPERTY_REF_RE);
@@ -1674,9 +1681,16 @@ function typeExpressionMatchesDeclaredType(
   declaredTypeNode
 ) {
   const declaredType = checker.getTypeFromTypeNode(declaredTypeNode);
+  const typeKind = typeExpressionKind(typeExpression);
 
-  if (typeExpressionKind(typeExpression) === 'Object') {
+  if (typeKind === 'Object') {
     return isNonArrayObjectLikeType(checker, declaredType);
+  }
+  if (typeKind === 'HTMLElement') {
+    const elementType = getConstructedType(checker, typeExpression);
+    return elementType
+      ? checker.isTypeAssignableTo(elementType, declaredType)
+      : false;
   }
 
   const runtimeType = checker.getTypeAtLocation(typeExpression);
@@ -1839,6 +1853,13 @@ function validateDefaultValue(checker, typeExpression, valueExpression) {
   if (typeKind === 'Object') {
     if (!isNonArrayObjectLikeType(checker, valueType)) {
       return {typeName: 'Object', valueTypeName};
+    }
+  }
+
+  if (typeKind === 'HTMLElement') {
+    const elementType = getConstructedType(checker, typeExpression);
+    if (!elementType || !checker.isTypeAssignableTo(valueType, elementType)) {
+      return {typeName: 'HTMLElement', valueTypeName};
     }
   }
 
@@ -2006,7 +2027,7 @@ function validatePropertyConfigs(
     ) {
       findings.invalidTypeProperties.push(
         `property "${propName}" type must be one of ` +
-          'Boolean, Number, String, Object, or Array'
+          'Boolean, Number, String, Object, Array, or HTMLElement'
       );
     } else if (declaredTypeNode) {
       if (

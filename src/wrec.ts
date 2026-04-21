@@ -19,6 +19,7 @@ type PropertyConfig<T = any> = {
 type PropertyType =
   | typeof Array
   | typeof Boolean
+  | typeof HTMLElementBase
   | typeof Number
   | typeof Object
   | typeof String;

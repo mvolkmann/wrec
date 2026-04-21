@@ -23,7 +23,7 @@ declare type PropertyConfig<T = any> = {
     values?: T extends string ? string[] : never;
 };
 
-declare type PropertyType = typeof Array | typeof Boolean | typeof Number | typeof Object | typeof String;
+declare type PropertyType = typeof Array | typeof Boolean | typeof HTMLElementBase | typeof Number | typeof Object | typeof String;
 
 declare type StateChange = {
     state: WrecState;

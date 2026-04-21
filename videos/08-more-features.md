@@ -1,13 +1,19 @@
-# Miscellaneous Features
+# Wrap Up
 
-- Slots
+## More Features
 
-- Refs
+Wrec components support the use of slots
+in the same way as vanilla web components.
 
-- SSR support at a high level
+HTML elements rendered by wrec can have a `ref` attribute
+whose value is the name of component property with type `HTMLElement`.
+That property will be set to a reference to the element
+so it can be accessed from component methods.
 
-- Point to `traffic-light`, `slots-demo`, `ref-demo`, and the SSR section of
-  the README
+Wrec supports server-side rendering (SSR). For an example, see
+https://github.com/mvolkmann/web-component-book-code/tree/main/ch14/wrec-ssr-demo.
+
+## More Examples
 
 For more examples of wrec components,
 see https://github.com/mvolkmann/wrec/tree/main/src/examples

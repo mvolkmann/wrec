@@ -157,11 +157,9 @@ describe('lint.js', () => {
 
     expect(output).toContain('invalid type properties:');
     expect(output).toContain(
-      'property "badDate" type must be one of Boolean, Number, String, Object, or Array'
+      'property "badDate" type must be one of Boolean, Number, String, Object, Array, or HTMLElement'
     );
-    expect(output).toContain(
-      'property "badElement" type must be one of Boolean, Number, String, Object, or Array'
-    );
+    expect(output).not.toContain('property "badElement" type must be one of');
     expect(output).not.toContain('property "goodArray" type must be one of');
     expect(output).not.toContain('property "goodBoolean" type must be one of');
     expect(output).not.toContain('property "goodNumber" type must be one of');
