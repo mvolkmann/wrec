@@ -422,6 +422,26 @@ describe('lint.js', () => {
     );
   });
 
+  test('treats primitive declare types as compatible with boxed property config types', () => {
+    const output = runLint(`
+      import {Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          enabled: {type: Boolean, value: true},
+          label: {type: String, value: 'ok'},
+          total: {type: Number, value: 1}
+        };
+
+        declare enabled: boolean;
+        declare label: string;
+        declare total: number;
+      }
+    `);
+
+    expect(output).not.toContain('incompatible declare types:');
+  });
+
   test('reports invalid ref attributes', () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';

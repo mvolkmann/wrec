@@ -1680,12 +1680,37 @@ function typeExpressionMatchesDeclaredType(
   typeExpression,
   declaredTypeNode
 ) {
-  const declaredType = checker.getTypeFromTypeNode(declaredTypeNode);
   const typeKind = typeExpressionKind(typeExpression);
+  const declaredType = checker.getTypeFromTypeNode(declaredTypeNode);
+
+  if (typeKind === 'Boolean') {
+    return checker.isTypeAssignableTo(checker.getBooleanType(), declaredType);
+  }
+
+  if (typeKind === 'Number') {
+    return checker.isTypeAssignableTo(checker.getNumberType(), declaredType);
+  }
+
+  if (typeKind === 'String') {
+    return checker.isTypeAssignableTo(checker.getStringType(), declaredType);
+  }
 
   if (typeKind === 'Object') {
     return isNonArrayObjectLikeType(checker, declaredType);
   }
+
+  if (typeKind === 'Array') {
+    const declaredTypes = declaredType.isUnion()
+      ? declaredType.types
+      : [declaredType];
+    return declaredTypes.every(
+      type =>
+        Boolean(type.flags & (ts.TypeFlags.Any | ts.TypeFlags.Unknown)) ||
+        checker.isArrayType(type) ||
+        checker.isTupleType(type)
+    );
+  }
+
   if (typeKind === 'HTMLElement') {
     const elementType = getConstructedType(checker, typeExpression);
     return elementType
