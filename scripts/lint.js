@@ -842,7 +842,7 @@ function formatReport(
     findings.invalidUsedByReferences.length > 0 ||
     findings.invalidUseStateMaps.length > 0 ||
     findings.invalidValuesConfigurations.length > 0 ||
-    findings.missingFormAssociatedProperty.length > 0 ||
+    findings.missingRequiredMembers.length > 0 ||
     findings.missingTypeProperties.length > 0 ||
     findings.reservedProperties.length > 0 ||
     findings.typeErrors.length > 0 ||
@@ -985,9 +985,9 @@ function formatReport(
     );
   }
 
-  if (findings.missingFormAssociatedProperty.length > 0) {
-    lines.push('missing formAssociated property:');
-    findings.missingFormAssociatedProperty.forEach(message =>
+  if (findings.missingRequiredMembers.length > 0) {
+    lines.push('missing required members:');
+    findings.missingRequiredMembers.forEach(message =>
       lines.push(`  ${message}`)
     );
   }
@@ -1287,6 +1287,16 @@ function getTypeSyntaxText(sourceFile, expression) {
   return undefined;
 }
 
+// Returns whether a component class defines its own static html property.
+function hasStaticHtmlDefinition(classNode) {
+  for (const member of classNode.members) {
+    if (!hasStaticModifier(member)) continue;
+    if (!ts.isPropertyDeclaration(member)) continue;
+    if (getMemberName(member) === 'html') return true;
+  }
+  return false;
+}
+
 // Returns whether a token kind is one of the supported arithmetic operators.
 function isArithmeticOperator(kind) {
   return (
@@ -1326,6 +1336,27 @@ function isImportLikeDeclaration(node) {
     ts.isImportEqualsDeclaration(node) ||
     ts.isImportSpecifier(node) ||
     ts.isNamespaceImport(node)
+  );
+}
+
+// Returns whether a type represents an object-like value other than an array.
+function isNonArrayObjectLikeType(checker, type) {
+  if (type.isUnion()) {
+    return type.types.every(member =>
+      isNonArrayObjectLikeType(checker, member)
+    );
+  }
+
+  if (type.isIntersection()) {
+    return type.types.every(member =>
+      isNonArrayObjectLikeType(checker, member)
+    );
+  }
+
+  return (
+    Boolean(type.flags & (ts.TypeFlags.Object | ts.TypeFlags.NonPrimitive)) &&
+    !checker.isArrayType(type) &&
+    !checker.isTupleType(type)
   );
 }
 
@@ -1420,7 +1451,7 @@ export function lintSource(filePath, sourceText, options = {}) {
     invalidUsedByReferences: [],
     invalidUseStateMaps: [],
     invalidValuesConfigurations: [],
-    missingFormAssociatedProperty: [],
+    missingRequiredMembers: [],
     missingTypeProperties: [],
     reservedProperties,
     typeErrors: [],
@@ -1445,8 +1476,13 @@ export function lintSource(filePath, sourceText, options = {}) {
   }));
 
   if (allMethods.has('formAssociatedCallback') && !formAssociated) {
-    findings.missingFormAssociatedProperty.push(
+    findings.missingRequiredMembers.push(
       'formAssociatedCallback is defined, but static formAssociated is not true'
+    );
+  }
+  if (!hasStaticHtmlDefinition(classNode)) {
+    findings.missingRequiredMembers.push(
+      'static html property must be defined'
     );
   }
 
@@ -1528,7 +1564,7 @@ export function lintSource(filePath, sourceText, options = {}) {
   findings.invalidUsedByReferences.sort();
   findings.invalidUseStateMaps.sort();
   findings.invalidValuesConfigurations.sort();
-  findings.missingFormAssociatedProperty.sort();
+  findings.missingRequiredMembers.sort();
   findings.missingTypeProperties.sort();
   findings.reservedProperties.sort();
   findings.typeErrors.sort((a, b) => a.expression.localeCompare(b.expression));
@@ -1600,23 +1636,6 @@ function requiresContextFunction(symbol, sourceFile) {
     if (isImportLikeDeclaration(declaration)) return true;
     return declaration.getSourceFile() === sourceFile;
   });
-}
-
-// Returns whether a type represents an object-like value other than an array.
-function isNonArrayObjectLikeType(checker, type) {
-  if (type.isUnion()) {
-    return type.types.every(member => isNonArrayObjectLikeType(checker, member));
-  }
-
-  if (type.isIntersection()) {
-    return type.types.every(member => isNonArrayObjectLikeType(checker, member));
-  }
-
-  return (
-    Boolean(type.flags & (ts.TypeFlags.Object | ts.TypeFlags.NonPrimitive)) &&
-    !checker.isArrayType(type) &&
-    !checker.isTupleType(type)
-  );
 }
 
 // Resolves a relative import path to an existing source file.
@@ -1971,7 +1990,13 @@ function validatePropertyConfigs(
           'Boolean, Number, String, Object, or Array'
       );
     } else if (declaredTypeNode) {
-      if (!typeExpressionMatchesDeclaredType(checker, typeExpression, declaredTypeNode)) {
+      if (
+        !typeExpressionMatchesDeclaredType(
+          checker,
+          typeExpression,
+          declaredTypeNode
+        )
+      ) {
         findings.incompatibleDeclareTypes.push(
           `property "${propName}" declare type ` +
             `"${getPropertyTypeTextFromNode(sourceFile, declaredTypeNode)}" ` +

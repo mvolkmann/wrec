@@ -72,6 +72,11 @@ class HelloWorld extends Wrec {
 HelloWorld.define('hello-world');
 ```
 
+Note the raw JavaScript expression inside the `span` element.
+That is automatically replaced by the expression value
+every time the value changes
+using an efficient, targeted DOM update.
+
 Then edit `index.html` and add a `name` attribute
 to the `hello-world` element as follows:
 

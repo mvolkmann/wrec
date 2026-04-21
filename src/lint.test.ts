@@ -491,10 +491,21 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('missing formAssociated property:');
+    expect(output).toContain('missing required members:');
     expect(output).toContain(
       '  formAssociatedCallback is defined, but static formAssociated is not true'
     );
+  });
+
+  test('reports missing static html property', () => {
+    const output = runLint(`
+      import {Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {}
+    `);
+
+    expect(output).toContain('missing required members:');
+    expect(output).toContain('  static html property must be defined');
   });
 
   test('reports missing type properties in property configurations', () => {
@@ -619,6 +630,8 @@ describe('lint.js', () => {
         static properties = {
           count: {type: Number, value: 1}
         };
+
+        static html = '';
 
         increment() {
           this.count = helper(this.count);
