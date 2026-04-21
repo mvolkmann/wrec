@@ -12,11 +12,16 @@ The file will define the class `TagName`.
 To check a source file that defines a wrec component for errors,
 enter `npx wrec-lint {file-path}`.
 
+A TypeScript `declare` statement specifies the type of a property
+that is defined somewhere else.
+In a wrec component, properties described in `static properties`
+are that somewhere else.
+Adding `declare` statements is not required, but providing them
+enables TypeScript-aware editors to provide type checking.
+
 To automatically add `declare` statements in a given TypeScript source file
 for each property described in the `static properties` object,
 enter `npx wrec-declare {file-path}`.
-The `declare` statements allow TypeScript-aware code editors
-to provide type checking.
 
 To add/update `usedBy` properties in the property configuration objects
 found in the `static properties =` object,
