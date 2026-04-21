@@ -82,6 +82,24 @@ This code can be found in the "form-controls" directory.
   FormControls.define('form-controls');
   ```
 
+  Note the JavaScript expressions that are just property references in:
+  - the CSS for `p` elements,
+  - the `textarea` element content
+  - the `input` element `value` attribute
+  - the `select` element `value` attribute
+
+  When the user changes the value of one of the form controls,
+  the referenced property is updated.
+  For example, changing the `input` value changes the `size` property,
+  which is used in the `font-size` CSS property of `p` elements.
+
+  Wrec remembers the location of each of these expressions,
+  and the properties they use.
+  When the value of a property used by an expression changes,
+  the expression is recomputed and all affected locations are updated.
+  These targeted DOM updates are far more efficient than
+  complete re-renders or strategies like a virtual DOM.
+
   By default, wrec updates the property specified in
   an `input` element `value` attribute when it receives a change event.
   Those are dispatched when the value is committed,
@@ -89,20 +107,7 @@ This code can be found in the "form-controls" directory.
   when the user presses the return key.
   To instead have wrec update the property on every value change,
   such as dragging the slider in an `input` with `type="range"`,
-  add ":input" after the "value" attribute name.
-
-  Note the raw JavaScript expressions in:
-  - the CSS for `p` elements,
-  - the `textarea` element content
-  - the `input` element `value` attribute
-  - the `select` element `value` attribute
-
-Wrec remembers the location of each of these expressions,
-the properties they use.
-When the value of a property used by an expression changes,
-the expression is recomputed and all affected locations are updated.
-These targeted DOM updates are far more efficient than
-complete re-renders or strategies like a virtual DOM.
+  we added ":input" after the "value" attribute name.
 
 - Create an `index.html` file containing the following:
 
@@ -132,6 +137,7 @@ the `checked` attribute can be set to a reference to a Boolean property.
 That creates a two-way binding where
 clicking the checkbox updates the property and
 changing the property updates the checkbox.
+You will see an example of this in the "Parent-Child Bindings" video.
 
 For `input` elements with `type="radio"`,
 the `checked` attribute can be set to a reference to a String property.

@@ -1,7 +1,7 @@
 # Computed Properties
 
 Component properties can be configured to be computed.
-We saw a example of this in the `color-picker` component.
+You saw an example of this in the `color-picker` component.
 
 Let's look at another example and review some options.
 This code can be found in the "rectangle-area" directory.
@@ -71,7 +71,7 @@ To use a computed property:
 
 - After "Area:", change the `span` element content to `this.area`.
 
-We can add a method to computed the area.
+You can add a method to computed the area.
 There's little reason to do it in this example,
 but you can imagine a more complicated calculation
 where this may be desired.
