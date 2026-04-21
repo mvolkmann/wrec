@@ -1714,7 +1714,7 @@ function typeExpressionMatchesDeclaredType(
   if (typeKind === 'HTMLElement') {
     const elementType = getConstructedType(checker, typeExpression);
     return elementType
-      ? checker.isTypeAssignableTo(elementType, declaredType)
+      ? checker.isTypeAssignableTo(declaredType, elementType)
       : false;
   }
 
