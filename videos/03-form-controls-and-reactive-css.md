@@ -2,7 +2,7 @@
 
 Wrec can create 2-way bindings between
 form control values and component properties.
-Form controls with values include
+Form controls that have values include
 `input`, `textarea`, and `select` elements.
 
 Let's create a component that demonstrates this.
@@ -83,8 +83,9 @@ Let's create a component that demonstrates this.
 
   By default, wrec updates the property specified in
   an `input` element `value` attribute when it receives a change event.
-  Those are dispatched when the value is committed, which happens when
-  focus leaves the `input` or when the user presses the return key.
+  Those are dispatched when the value is committed,
+  which happens when focus leaves the `input` or
+  when the user presses the return key.
   To instead have wrec update the property on every value change,
   such as dragging the slider in an `input` with `type="range"`,
   add ":input" after the "value" attribute name.
@@ -115,6 +116,8 @@ complete re-renders or strategies like a virtual DOM.
     </body>
   </html>
   ```
+
+  This just loads the component definition and renders an instance.
 
 - Install Vite by entering `npm i -D vite`.
 - Edit `package.json` and add the script `"dev": "vite"`.
