@@ -94,12 +94,11 @@ Let's create a component that demonstrates this.
   - the `select` element `value` attribute
 
 Wrec remembers the location of each of these expressions,
-the properties the use.
+the properties they use.
 When the value of a property used by an expression changes,
-the expression is recomputed.
-If it results a new value
-k
-all DOM locations affected by the
+the expression is recomputed and all affected locations are updated.
+These targeted DOM updates are far more efficient than
+complete re-renders or strategies like a virtual DOM.
 
 - Create an `index.html` file containing the following:
 
