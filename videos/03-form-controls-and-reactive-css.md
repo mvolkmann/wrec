@@ -1,7 +1,7 @@
 # Form Controls and Reactive CSS
 
-Wrec can create 2-way bindings between form control values
-and component properties.
+Wrec can create 2-way bindings between
+form control values and component properties.
 Form controls with values include
 `input`, `textarea`, and `select` elements.
 
@@ -25,6 +25,7 @@ Let's create a component that demonstrates this.
 
     static css = css`
       :host {
+        /* styles the custom element */
         display: flex;
         flex-direction: column;
         gap: 1rem;
@@ -39,6 +40,7 @@ Let's create a component that demonstrates this.
       }
       p {
         color: this.color;
+        /* reactive CSS */
         font-size: this.size + 'px';
         margin: 0;
       }

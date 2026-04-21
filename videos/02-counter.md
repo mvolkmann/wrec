@@ -51,6 +51,12 @@ Let's create a counter component.
   or a `computed` configuration object property.
   This component only uses JavaScript expressions in the first two places.
 
+  Note the event handling using `onClick`.
+  Any event can be handled by adding `on{event-name}` attributes.
+
+  The `disabled` attribute is only present on the minus button
+  when its JavaScript expression evaluates to `true`.
+
 - Create an `index.html` file containing the following:
 
   ```html

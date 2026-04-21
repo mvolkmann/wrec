@@ -83,7 +83,8 @@ where this may be desired.
   }
   ```
 
-- Either remove the `area` property and change the `span` content to `this.getArea()`
+- Either remove the `area` property and
+  change the `span` content to `this.getArea()`
   OR
   change the `computed` property in the `area` property configuration
   to `this.getArea()`.
