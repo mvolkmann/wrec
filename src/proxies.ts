@@ -60,10 +60,10 @@ export function createDeepProxy(
 
 // This converts a deep proxy to a plain object.
 export function proxyToPlainObject(obj: LooseObject): LooseObject {
-  const clone: LooseObject = {};
+  const clone = (Array.isArray(obj) ? [] : {}) as Record<string, unknown>;
   for (const [key, value] of Object.entries(obj)) {
     const isObject = typeof value === 'object' && value !== null;
     clone[key] = isObject ? proxyToPlainObject(value as LooseObject) : value;
   }
-  return clone;
+  return clone as LooseObject;
 }
