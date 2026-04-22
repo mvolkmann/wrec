@@ -29,6 +29,7 @@
 // - missing required members like `static html` and `formAssociated`
 // - invalid `form-assoc` values
 // - invalid `useState` map entries
+// - invalid native form-control value bindings
 // - unsupported HTML attributes in templates
 // - invalid HTML element nesting in templates
 // - invalid ref attribute targets
@@ -47,10 +48,33 @@ import {
   hasStaticModifier
 } from './ast-utils.js';
 
+// Regular expressions
 const CSS_PROPERTY_RE = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g;
 const IDENTIFIER_RE = /^[A-Za-z_$][\w$]*$/;
 const PROPERTY_REF_RE = /^this\.([A-Za-z_$][\w$]*)$/;
 const REFS_TEST_RE = /this\.[a-zA-Z_$][\w$]*(\.[a-zA-Z_$][\w$]*)*/;
+const THIS_CALL_RE = /this\.([A-Za-z_$][\w$]*)\s*\(/g;
+const THIS_REF_RE = /this\.([A-Za-z_$][\w$]*)(\.[A-Za-z_$][\w$]*)*/g;
+
+const GETTER_PREFIX = 'get ';
+const HTML_ALLOWED_CHILDREN = new Map([
+  ['select', new Set(['option'])],
+  ['table', new Set(['tbody', 'thead', 'tr'])],
+  ['tbody', new Set(['tr'])],
+  ['thead', new Set(['tr'])],
+  ['tr', new Set(['td', 'th'])],
+  ['ul', new Set(['li'])]
+]);
+const HTML_ALLOWED_PARENTS = new Map([
+  ['legend', new Set(['fieldset'])],
+  ['li', new Set(['ol', 'ul'])],
+  ['option', new Set(['select'])],
+  ['tbody', new Set(['table'])],
+  ['td', new Set(['tr'])],
+  ['th', new Set(['tr'])],
+  ['thead', new Set(['table'])],
+  ['tr', new Set(['table', 'tbody', 'thead'])]
+]);
 const HTML_GLOBAL_ATTRIBUTES = new Set([
   'aria-label',
   'class',
@@ -100,37 +124,9 @@ const HTML_TAG_ATTRIBUTES = new Map([
   ['tr', new Set([])],
   ['ul', new Set([])]
 ]);
-const HTML_ALLOWED_PARENTS = new Map([
-  ['legend', new Set(['fieldset'])],
-  ['li', new Set(['ol', 'ul'])],
-  ['option', new Set(['select'])],
-  ['tbody', new Set(['table'])],
-  ['td', new Set(['tr'])],
-  ['th', new Set(['tr'])],
-  ['thead', new Set(['table'])],
-  ['tr', new Set(['table', 'tbody', 'thead'])]
-]);
-const HTML_ALLOWED_CHILDREN = new Map([
-  ['select', new Set(['option'])],
-  ['table', new Set(['tbody', 'thead', 'tr'])],
-  ['tbody', new Set(['tr'])],
-  ['thead', new Set(['tr'])],
-  ['tr', new Set(['td', 'th'])],
-  ['ul', new Set(['li'])]
-]);
-const THIS_CALL_RE = /this\.([A-Za-z_$][\w$]*)\s*\(/g;
-const THIS_REF_RE = /this\.([A-Za-z_$][\w$]*)(\.[A-Za-z_$][\w$]*)*/g;
+const NATIVE_FORM_CONTROL_TAGS = new Set(['input', 'select', 'textarea']);
 const PLACEHOLDER_PREFIX = '__WREC_PLACEHOLDER__';
 const RESERVED_PROPERTY_NAMES = new Set(['class', 'style']);
-const SUPPORTED_PROPERTY_TYPE_NAMES = new Set([
-  'Array',
-  'Boolean',
-  'HTMLElement',
-  'Number',
-  'Object',
-  'String'
-]);
-const GETTER_PREFIX = 'get ';
 const SUPPORTED_EVENT_NAMES = new Set([
   'blur',
   'change',
@@ -152,7 +148,16 @@ const SUPPORTED_EVENT_NAMES = new Set([
   'mouseup',
   'paste'
 ]);
+const SUPPORTED_PROPERTY_TYPE_NAMES = new Set([
+  'Array',
+  'Boolean',
+  'HTMLElement',
+  'Number',
+  'Object',
+  'String'
+]);
 const WREC_REF_NAME = '__wrec';
+
 const componentPropertyCache = new Map();
 
 // Analyzes code for invalid property access,
@@ -859,6 +864,7 @@ function formatReport(
     findings.invalidTypeProperties.length > 0 ||
     findings.invalidUsedByReferences.length > 0 ||
     findings.invalidUseStateMaps.length > 0 ||
+    findings.invalidValueBindings.length > 0 ||
     findings.invalidValuesConfigurations.length > 0 ||
     findings.missingRequiredMembers.length > 0 ||
     findings.missingTypeProperties.length > 0 ||
@@ -994,6 +1000,13 @@ function formatReport(
   if (findings.invalidUseStateMaps.length > 0) {
     lines.push('invalid useState map entries:');
     findings.invalidUseStateMaps.forEach(message => lines.push(`  ${message}`));
+  }
+
+  if (findings.invalidValueBindings.length > 0) {
+    lines.push('invalid value bindings:');
+    findings.invalidValueBindings.forEach(message =>
+      lines.push(`  ${message}`)
+    );
   }
 
   if (findings.invalidValuesConfigurations.length > 0) {
@@ -1245,6 +1258,35 @@ function getStringArrayLiteral(property) {
   return values;
 }
 
+// Returns an invalid values configuration message when one is found.
+function getValuesConfigurationError(property) {
+  if (!property || !ts.isPropertyAssignment(property)) return undefined;
+
+  const {initializer} = property;
+  if (!ts.isArrayLiteralExpression(initializer)) {
+    return 'values must be a literal array of strings';
+  }
+
+  if (initializer.elements.length === 0) {
+    return 'values must not be empty';
+  }
+
+  const seenValues = new Set();
+  for (const element of initializer.elements) {
+    if (
+      !ts.isStringLiteral(element) &&
+      !ts.isNoSubstitutionTemplateLiteral(element)
+    ) {
+      return 'values must contain only string literals';
+    }
+
+    if (seenValues.has(element.text)) {
+      return `values contains duplicate entry "${element.text}"`;
+    }
+    seenValues.add(element.text);
+  }
+}
+
 // Returns either a single string value or a string array value as an array.
 function getStringOrStringArrayLiteral(property) {
   if (!property || !ts.isPropertyAssignment(property)) return undefined;
@@ -1372,6 +1414,11 @@ function isImportLikeDeclaration(node) {
   );
 }
 
+// Returns whether an HTML node is a native form control with a value property.
+function isNativeFormControl(node) {
+  return NATIVE_FORM_CONTROL_TAGS.has(getHtmlTagName(node));
+}
+
 // Returns whether a type represents an object-like value other than an array.
 function isNonArrayObjectLikeType(checker, type) {
   if (type.isUnion()) {
@@ -1483,6 +1530,7 @@ export function lintSource(filePath, sourceText, options = {}) {
     invalidTypeProperties: [],
     invalidUsedByReferences: [],
     invalidUseStateMaps: [],
+    invalidValueBindings: [],
     invalidValuesConfigurations: [],
     missingRequiredMembers: [],
     missingTypeProperties: [],
@@ -1596,6 +1644,7 @@ export function lintSource(filePath, sourceText, options = {}) {
   findings.invalidTypeProperties.sort();
   findings.invalidUsedByReferences.sort();
   findings.invalidUseStateMaps.sort();
+  findings.invalidValueBindings.sort();
   findings.invalidValuesConfigurations.sort();
   findings.missingRequiredMembers.sort();
   findings.missingTypeProperties.sort();
@@ -1815,6 +1864,34 @@ function validateCheckedBinding(
   findings.invalidCheckedBindings.push(
     `input type="${inputType}" attribute "${attrName}" refers to ` +
       `property "${propName}" whose type is not ${expectedTypeName}`
+  );
+}
+
+// Validates value bindings on native form controls.
+function validateValueBinding(
+  node,
+  attrName,
+  attrValue,
+  findings,
+  supportedProps
+) {
+  const [baseAttrName] = attrName.split(':');
+  if (baseAttrName !== 'value') return;
+  if (!isNativeFormControl(node)) return;
+
+  const propName = getPropertyNameInAttribute(attrValue);
+  if (!propName) return;
+
+  const propInfo = supportedProps.get(propName);
+  if (!propInfo) return;
+
+  if (propInfo.typeText === 'number' || propInfo.typeText === 'string') {
+    return;
+  }
+
+  findings.invalidValueBindings.push(
+    `${getHtmlTagName(node)} attribute "${attrName}" refers to property ` +
+      `"${propName}" whose type is not String or Number`
   );
 }
 
@@ -2104,6 +2181,7 @@ function validatePropertyConfigs(
     const usedByProp = getObjectProperty(config, 'usedBy');
     const valueProp = getObjectProperty(config, 'value');
     const valuesProp = getObjectProperty(config, 'values');
+    const valuesConfigError = getValuesConfigurationError(valuesProp);
 
     const typeExpression =
       typeProp && ts.isPropertyAssignment(typeProp)
@@ -2192,6 +2270,12 @@ function validatePropertyConfigs(
         supportedProps,
         classMethods,
         findings
+      );
+    }
+
+    if (valuesConfigError) {
+      findings.invalidValuesConfigurations.push(
+        `property "${propName}" ${valuesConfigError}`
       );
     }
 
@@ -2318,6 +2402,7 @@ function walkHtmlNode(
         supportedProps
       );
       validateHtmlAttribute(node, attrName, findings);
+      validateValueBinding(node, attrName, attrValue, findings, supportedProps);
       validateValueBindingEvent(node, attrName, findings);
       if (attrName === 'ref') {
         validateRefAttribute(attrValue, supportedProps, findings, seenRefProps);

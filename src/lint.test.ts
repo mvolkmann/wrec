@@ -552,6 +552,49 @@ describe('lint.js', () => {
     );
   });
 
+  test('reports malformed values configurations', () => {
+    const output = runLint(`
+      import {Wrec} from '${wrecImportPath}';
+
+      const choices = ['small', 'medium'];
+
+      class Fixture extends Wrec {
+        static properties = {
+          duplicateValues: {
+            type: String,
+            values: ['small', 'small']
+          },
+          dynamicValues: {
+            type: String,
+            values: choices
+          },
+          emptyValues: {
+            type: String,
+            values: []
+          },
+          nonStringValues: {
+            type: String,
+            values: ['small', 7]
+          }
+        };
+      }
+    `);
+
+    expect(output).toContain('invalid values configurations:');
+    expect(output).toContain(
+      '  property "duplicateValues" values contains duplicate entry "small"'
+    );
+    expect(output).toContain(
+      '  property "dynamicValues" values must be a literal array of strings'
+    );
+    expect(output).toContain(
+      '  property "emptyValues" values must not be empty'
+    );
+    expect(output).toContain(
+      '  property "nonStringValues" values must contain only string literals'
+    );
+  });
+
   test('reports missing formAssociated property when formAssociatedCallback is defined', () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
@@ -751,6 +794,34 @@ describe('lint.js', () => {
     expect(output).toContain('unsupported event names:');
     expect(output).toContain(
       '  input attribute "value:monkey" refers to an unsupported event name "monkey"'
+    );
+  });
+
+  test('reports invalid value bindings for native form controls', () => {
+    const output = runLint(`
+      import {html, Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          data: {type: Object, value: {name: 'x'}},
+          enabled: {type: Boolean, value: true}
+        };
+
+        static html = html\`
+          <input value:input="this.enabled" />
+          <select value="this.data">
+            <option value="a">A</option>
+          </select>
+        \`;
+      }
+    `);
+
+    expect(output).toContain('invalid value bindings:');
+    expect(output).toContain(
+      '  input attribute "value:input" refers to property "enabled" whose type is not String or Number'
+    );
+    expect(output).toContain(
+      '  select attribute "value" refers to property "data" whose type is not String or Number'
     );
   });
 
