@@ -2,7 +2,7 @@
 
 The class `WrecState` maps state properties to wrec component properties.
 Changing either updates the other to keep them in sync.
-The state can optionally be persisted to `localStorage`
+The state can optionally be persisted to `sessionStorage`
 so page refreshes don't lose the data.
 
 One use of `WrecState` is to remove the need for "prop drilling"
@@ -98,9 +98,9 @@ button.addEventListener('click', () => {
 ```
 
 This code creates a `WrecState` object, gives it the name "demo",
-opts out of persisting to `localStorage`, and initializes its data.
-TODO: Should the localStorage parameter be last and default to false?
-Then it finds the `labeled-input` and `hello-world` elements in the DOM
+and initializes its data. Because the second constructor argument
+is not a Boolean value, the data is not persisted to `sessionStorage`.
+Next, it finds the `labeled-input` and `hello-world` elements in the DOM
 and tells them to use the state object.
 The second argument to the `useState` method describes the mapping
 from state properties to component properties.
@@ -117,8 +117,8 @@ the state `name` property is reset to "World".
 Since the `labeled-input` component also uses the same state property,
 that is also updated.
 
-Note how the wrec components did not need to be modified
-to use state. All the wiring happens outside of those components.
+Note how the wrec components didn't required modifications to use state.
+All the wiring occurs outside of the component code.
 
 You can modify state from the browser DevTools console as well.
 Doing so triggers updates to the mapped component properties.
@@ -137,5 +137,4 @@ The types of `WrecState` properties and wrec component properties
 can be primitive values or objects.
 When they are objects, nested properties can be set directly.
 The changes are properly synced and the DOM properly updates.
-For an example of this, see the project at
-web-component-book-code/ch09/state-objects.
+For an example of this, see the "state-objects" directory.
