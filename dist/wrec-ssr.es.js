@@ -1,6 +1,6 @@
 import { a as e, i as t, n, r, t as i } from "./wrec-0J9-ZQRj.js";
 //#region \0rolldown/runtime.js
-var a = Object.defineProperty, o = Object.getOwnPropertyDescriptor, s = Object.getOwnPropertyNames, c = Object.prototype.hasOwnProperty, l = (e, t) => () => (e && (t = e(e = 0)), t), u = (e, t) => () => (t || e((t = { exports: {} }).exports, t), t.exports), d = (e, t) => {
+var a = Object.defineProperty, o = Object.getOwnPropertyDescriptor, s = Object.getOwnPropertyNames, c = Object.prototype.hasOwnProperty, l = (e, t) => () => (e && (t = e(e = 0)), t), u = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t.exports), d = (e, t) => {
 	let n = {};
 	for (var r in e) a(n, r, {
 		get: e[r],
@@ -8466,7 +8466,8 @@ var G, K, ve, q, J, ye = l((() => {
 			return this.childNodes = this.childNodes.filter((t) => t !== e), this;
 		}
 		exchangeChild(e, t) {
-			return this.childNodes = this.childNodes.map((n) => n === e ? t : n), this;
+			let n = this.childNodes;
+			return this.childNodes = n.map((n) => n === e ? t : n), this;
 		}
 		get tagName() {
 			return this.rawTagName ? this.rawTagName.toUpperCase() : this.rawTagName;
@@ -8493,7 +8494,8 @@ var G, K, ve, q, J, ye = l((() => {
 			return d(this.rawText);
 		}
 		set textContent(e) {
-			this.childNodes = [new l.default(e, this)];
+			let t = [new l.default(e, this)];
+			this.childNodes = t;
 		}
 		get text() {
 			return d(this.rawText);
@@ -8578,16 +8580,18 @@ var G, K, ve, q, J, ye = l((() => {
 		}
 		removeWhitespace() {
 			let e = 0;
-			return this.childNodes.forEach((t) => {
+			this.childNodes.forEach((t) => {
 				if (t.nodeType === u.default.TEXT_NODE) {
 					if (t.isWhitespace) return;
 					t.rawText = t.trimmedRawText;
 				} else t.nodeType === u.default.ELEMENT_NODE && t.removeWhitespace();
 				this.childNodes[e++] = t;
-			}), this.childNodes.length = e, this.rawAttrs = Object.keys(this.rawAttributes).map((e) => {
+			}), this.childNodes.length = e;
+			let t = Object.keys(this.rawAttributes).map((e) => {
 				let t = this.rawAttributes[e];
 				return `${e}=${JSON.stringify(t)}`;
-			}).join(" "), delete this._rawAttrs, this;
+			}).join(" ");
+			return this.rawAttrs = t, delete this._rawAttrs, this;
 		}
 		querySelectorAll(e) {
 			return (0, n.selectAll)(e, this, {

@@ -2,7 +2,7 @@
   "name": "wrec",
   "description": "a library that greatly simplifies building web components",
   "author": "R. Mark Volkmann",
-  "version": "0.38.0",
+  "version": "0.39.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -58,6 +58,7 @@
     "@playwright/test": "^1.59.1",
     "@types/node": "^25.5.2",
     "get-port": "^7.2.0",
+    "jsdom": "^29.0.2",
     "oxlint": "^1.58.0",
     "vite": "^8.0.3",
     "vite-plugin-dts": "^4.5.4"
