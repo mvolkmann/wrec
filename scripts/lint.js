@@ -167,7 +167,12 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
     if (!metadata.classMethods.has(codeNode.text)) {
       uniquePush(
         findings.invalidEventHandlers,
-        `"${codeNode.text}" is not a defined instance method`
+        metadata.location
+          ? {
+            location: metadata.location,
+            message: `"${codeNode.text}" is not a defined instance method`
+          }
+          : `"${codeNode.text}" is not a defined instance method`
       );
     }
   }
@@ -180,9 +185,15 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
       if (!symbol) {
         const name = node.name.text;
         if (isCallCallee(node)) {
-          uniquePush(findings.undefinedMethods, name);
+          uniquePush(
+            findings.undefinedMethods,
+            metadata.location ? {location: metadata.location, message: name} : name
+          );
         } else {
-          uniquePush(findings.undefinedProperties, name);
+          uniquePush(
+            findings.undefinedProperties,
+            metadata.location ? {location: metadata.location, message: name} : name
+          );
         }
       }
     }
@@ -193,7 +204,12 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
         if (!metadata.contextKeys.has(callee.text)) {
           const symbol = checker.getSymbolAtLocation(callee);
           if (!symbol || requiresContextFunction(symbol, metadata.sourceFile)) {
-            uniquePush(findings.undefinedContextFunctions, callee.text);
+            uniquePush(
+              findings.undefinedContextFunctions,
+              metadata.location
+                ? {location: metadata.location, message: callee.text}
+                : callee.text
+            );
           }
         }
       } else if (
@@ -202,7 +218,14 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
       ) {
         const ownerType = checker.getTypeAtLocation(callee.expression);
         const symbol = ownerType.getProperty(callee.name.text);
-        if (!symbol) uniquePush(findings.undefinedMethods, callee.name.text);
+        if (!symbol) {
+          uniquePush(
+            findings.undefinedMethods,
+            metadata.location
+              ? {location: metadata.location, message: callee.name.text}
+              : callee.name.text
+          );
+        }
       }
 
       const signature =
@@ -229,6 +252,7 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
             findings.extraArguments.push({
               argument: toUserFacingExpression(argument.getText()),
               argumentIndex: parameters.length + index + 1,
+              location: metadata.location ?? null,
               methodName: toUserFacingExpression(callee.getText()),
               parameterCount: parameters.length
             });
@@ -257,6 +281,7 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
             findings.incompatibleArguments.push({
               argument: toUserFacingExpression(argument.getText()),
               argumentType: checker.typeToString(argumentType),
+              location: metadata.location ?? null,
               methodName: toUserFacingExpression(callee.getText()),
               parameterName: parameterSymbol.getName(),
               parameterType: checker.typeToString(parameterType)
@@ -276,6 +301,7 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
       if (!isNumericLikeType(leftType)) {
         findings.typeErrors.push({
           expression: toUserFacingExpression(node.getText()),
+          location: metadata.location ?? null,
           message:
             `left operand "${toUserFacingExpression(node.left.getText())}" ` +
             `has type ${checker.typeToString(leftType)}, ` +
@@ -286,6 +312,7 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
       if (!isNumericLikeType(rightType)) {
         findings.typeErrors.push({
           expression: toUserFacingExpression(node.getText()),
+          location: metadata.location ?? null,
           message:
             `right operand "${toUserFacingExpression(node.right.getText())}" ` +
             `has type ${checker.typeToString(rightType)}, ` +
@@ -515,8 +542,14 @@ function collectUseStateMapErrors(classNode, supportedProps, findings) {
           const componentProp = property.initializer.text;
           if (!supportedProps.has(componentProp)) {
             findings.invalidUseStateMaps.push(
-              `useState maps state property "${statePath}" to ` +
-                `missing component property "${componentProp}"`
+              {
+                location: node
+                  .getSourceFile()
+                  .getLineAndCharacterOfPosition(property.getStart()),
+                message:
+                  `useState maps state property "${statePath}" to ` +
+                  `missing component property "${componentProp}"`
+              }
             );
           }
         }
@@ -644,13 +677,20 @@ function extractProperties(sourceFile, checker, classNode) {
       }
       if (
         RESERVED_PROPERTY_NAMES.has(propName) &&
-        !reservedProperties.includes(propName)
+        !reservedProperties.some(
+          finding => getLocatedFindingMessage(finding) === propName
+        )
       ) {
-        reservedProperties.push(propName);
+        reservedProperties.push({
+          location: sourceFile.getLineAndCharacterOfPosition(
+            property.name.getStart(sourceFile)
+          ),
+          message: propName
+        });
       }
 
       const config = property.initializer;
-      propertyEntries.push({config, propName});
+      propertyEntries.push({config, propName, property});
       const typeProp = getObjectProperty(config, 'type');
       const computedProp = getObjectProperty(config, 'computed');
 
@@ -832,6 +872,22 @@ function formatLocation(location) {
   return `:${location.line + 1}:${location.character + 1}`;
 }
 
+// Formats a lint finding that may optionally include a source location.
+function formatMaybeLocatedFinding(finding) {
+  if (typeof finding === 'string') return finding;
+  return `${formatLocation(finding.location)} ${finding.message}`.trim();
+}
+
+// Gets the message text from a lint finding that may include a location.
+function getLocatedFindingMessage(finding) {
+  return typeof finding === 'string' ? finding : finding.message;
+}
+
+// Compares lint findings that may optionally include source locations.
+function compareLocatedFindings(a, b) {
+  return getLocatedFindingMessage(a).localeCompare(getLocatedFindingMessage(b));
+}
+
 // Formats the collected lint findings into the command-line report output.
 function formatReport(
   filePath,
@@ -910,8 +966,11 @@ function formatReport(
   if (findings.extraArguments.length > 0) {
     lines.push('extra arguments:');
     findings.extraArguments.forEach(finding => {
+      const locationPrefix = finding.location
+        ? `${formatLocation(finding.location)} `
+        : '';
       lines.push(
-        `  ${finding.methodName}: argument ${finding.argumentIndex} ` +
+        `  ${locationPrefix}${finding.methodName}: argument ${finding.argumentIndex} ` +
           `"${finding.argument}" exceeds the ` +
           `${finding.parameterCount}-parameter signature`
       );
@@ -921,8 +980,11 @@ function formatReport(
   if (findings.incompatibleArguments.length > 0) {
     lines.push('incompatible arguments:');
     findings.incompatibleArguments.forEach(finding => {
+      const locationPrefix = finding.location
+        ? `${formatLocation(finding.location)} `
+        : '';
       lines.push(
-        `  ${finding.methodName}: argument "${finding.argument}" ` +
+        `  ${locationPrefix}${finding.methodName}: argument "${finding.argument}" ` +
           `has type ${finding.argumentType}, but parameter ` +
           `"${finding.parameterName}" expects ${finding.parameterType}`
       );
@@ -931,8 +993,8 @@ function formatReport(
 
   if (findings.incompatibleDeclareTypes.length > 0) {
     lines.push('incompatible declare types:');
-    findings.incompatibleDeclareTypes.forEach(message =>
-      lines.push(`  ${message}`)
+    findings.incompatibleDeclareTypes.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
     );
   }
 
@@ -945,15 +1007,15 @@ function formatReport(
 
   if (findings.invalidComputedProperties.length > 0) {
     lines.push('invalid computed properties:');
-    findings.invalidComputedProperties.forEach(message =>
-      lines.push(`  ${message}`)
+    findings.invalidComputedProperties.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
     );
   }
 
   if (findings.invalidDefaultValues.length > 0) {
     lines.push('invalid default values:');
-    findings.invalidDefaultValues.forEach(message =>
-      lines.push(`  ${message}`)
+    findings.invalidDefaultValues.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
     );
   }
 
@@ -985,21 +1047,23 @@ function formatReport(
 
   if (findings.invalidTypeProperties.length > 0) {
     lines.push('invalid type properties:');
-    findings.invalidTypeProperties.forEach(message =>
-      lines.push(`  ${message}`)
+    findings.invalidTypeProperties.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
     );
   }
 
   if (findings.invalidUsedByReferences.length > 0) {
     lines.push('invalid usedBy references:');
-    findings.invalidUsedByReferences.forEach(message =>
-      lines.push(`  ${message}`)
+    findings.invalidUsedByReferences.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
     );
   }
 
   if (findings.invalidUseStateMaps.length > 0) {
     lines.push('invalid useState map entries:');
-    findings.invalidUseStateMaps.forEach(message => lines.push(`  ${message}`));
+    findings.invalidUseStateMaps.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    );
   }
 
   if (findings.invalidValueBindings.length > 0) {
@@ -1011,50 +1075,61 @@ function formatReport(
 
   if (findings.invalidValuesConfigurations.length > 0) {
     lines.push('invalid values configurations:');
-    findings.invalidValuesConfigurations.forEach(message =>
-      lines.push(`  ${message}`)
+    findings.invalidValuesConfigurations.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
     );
   }
 
   if (findings.missingRequiredMembers.length > 0) {
     lines.push('missing required members:');
-    findings.missingRequiredMembers.forEach(message =>
-      lines.push(`  ${message}`)
+    findings.missingRequiredMembers.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
     );
   }
 
   if (findings.missingTypeProperties.length > 0) {
     lines.push('missing type properties:');
-    findings.missingTypeProperties.forEach(message =>
-      lines.push(`  ${message}`)
+    findings.missingTypeProperties.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
     );
   }
 
   if (findings.reservedProperties.length > 0) {
     lines.push('reserved property names:');
-    findings.reservedProperties.forEach(name => lines.push(`  ${name}`));
+    findings.reservedProperties.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    );
   }
 
   if (findings.typeErrors.length > 0) {
     lines.push('type errors:');
     findings.typeErrors.forEach(finding => {
-      lines.push(`  ${finding.expression}: ${finding.message}`);
+      const locationPrefix = finding.location
+        ? `${formatLocation(finding.location)} `
+        : '';
+      lines.push(`  ${locationPrefix}${finding.expression}: ${finding.message}`);
     });
   }
 
   if (findings.undefinedContextFunctions.length > 0) {
     lines.push('undefined context functions:');
-    findings.undefinedContextFunctions.forEach(name => lines.push(`  ${name}`));
+    findings.undefinedContextFunctions.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    );
   }
 
   if (findings.undefinedMethods.length > 0) {
     lines.push('undefined methods:');
-    findings.undefinedMethods.forEach(name => lines.push(`  ${name}`));
+    findings.undefinedMethods.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    );
   }
 
   if (findings.undefinedProperties.length > 0) {
     lines.push('undefined properties:');
-    findings.undefinedProperties.forEach(name => lines.push(`  ${name}`));
+    findings.undefinedProperties.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    );
   }
 
   if (findings.unsupportedEventNames.length > 0) {
@@ -1557,14 +1632,32 @@ export function lintSource(filePath, sourceText, options = {}) {
   }));
 
   if (allMethods.has('formAssociatedCallback') && !formAssociated) {
+    const callbackMember = classNode.members.find(
+      member =>
+        ts.isMethodDeclaration(member) &&
+        getMemberName(member) === 'formAssociatedCallback'
+    );
     findings.missingRequiredMembers.push(
-      'formAssociatedCallback is defined, but static formAssociated is not true'
+      {
+        location: callbackMember
+          ? callbackMember
+            .getSourceFile()
+            .getLineAndCharacterOfPosition(
+              callbackMember.name.getStart(callbackMember.getSourceFile())
+            )
+          : null,
+        message:
+          'formAssociatedCallback is defined, but static formAssociated is not true'
+      }
     );
   }
   if (!hasStaticHtmlDefinition(classNode)) {
-    findings.missingRequiredMembers.push(
-      'static html property must be defined'
-    );
+    findings.missingRequiredMembers.push({
+      location: sourceFile.getLineAndCharacterOfPosition(
+        classNode.name?.getStart(sourceFile) ?? classNode.getStart(sourceFile)
+      ),
+      message: 'static html property must be defined'
+    });
   }
 
   const augmentedSource = buildAugmentedSource(
@@ -1618,6 +1711,7 @@ export function lintSource(filePath, sourceText, options = {}) {
       contextKeys: new Set(contextKeys),
       checkContextCalls: allCodeItems[index]?.checkContextCalls ?? true,
       eventHandler: allCodeItems[index]?.eventHandler ?? false,
+      location: allCodeItems[index]?.location ?? null,
       sourceFile: augmentedSourceFile
     });
   });
@@ -1633,26 +1727,26 @@ export function lintSource(filePath, sourceText, options = {}) {
       a.methodName.localeCompare(b.methodName) ||
       a.parameterName.localeCompare(b.parameterName)
   );
-  findings.incompatibleDeclareTypes.sort();
+  findings.incompatibleDeclareTypes.sort(compareLocatedFindings);
   findings.invalidCheckedBindings.sort();
-  findings.invalidComputedProperties.sort();
-  findings.invalidDefaultValues.sort();
+  findings.invalidComputedProperties.sort(compareLocatedFindings);
+  findings.invalidDefaultValues.sort(compareLocatedFindings);
   findings.invalidEventHandlers.sort();
   findings.invalidFormAssocValues.sort();
   findings.invalidHtmlNesting.sort();
   findings.invalidRefAttributes.sort();
-  findings.invalidTypeProperties.sort();
-  findings.invalidUsedByReferences.sort();
-  findings.invalidUseStateMaps.sort();
+  findings.invalidTypeProperties.sort(compareLocatedFindings);
+  findings.invalidUsedByReferences.sort(compareLocatedFindings);
+  findings.invalidUseStateMaps.sort(compareLocatedFindings);
   findings.invalidValueBindings.sort();
-  findings.invalidValuesConfigurations.sort();
-  findings.missingRequiredMembers.sort();
-  findings.missingTypeProperties.sort();
-  findings.reservedProperties.sort();
+  findings.invalidValuesConfigurations.sort(compareLocatedFindings);
+  findings.missingRequiredMembers.sort(compareLocatedFindings);
+  findings.missingTypeProperties.sort(compareLocatedFindings);
+  findings.reservedProperties.sort(compareLocatedFindings);
   findings.typeErrors.sort((a, b) => a.expression.localeCompare(b.expression));
-  findings.undefinedContextFunctions.sort();
-  findings.undefinedMethods.sort();
-  findings.undefinedProperties.sort();
+  findings.undefinedContextFunctions.sort(compareLocatedFindings);
+  findings.undefinedMethods.sort(compareLocatedFindings);
+  findings.undefinedProperties.sort(compareLocatedFindings);
   findings.unsupportedEventNames.sort();
   findings.unsupportedHtmlAttributes.sort();
 
@@ -1831,7 +1925,12 @@ function typeNodeFromConstructorExpression(expression) {
 
 // Pushes a value into an array only if it is not already present.
 function uniquePush(array, value) {
-  if (!array.includes(value)) array.push(value);
+  const valueText = getLocatedFindingMessage(value);
+  if (
+    !array.some(existing => getLocatedFindingMessage(existing) === valueText)
+  ) {
+    array.push(value);
+  }
 }
 
 // Validates checked bindings for checkbox and radio input elements.
@@ -1901,7 +2000,8 @@ function validateComputedProperty(
   computedText,
   supportedProps,
   classMethods,
-  findings
+  findings,
+  location
 ) {
   for (const match of computedText.matchAll(THIS_REF_RE)) {
     const referencedName = match[1];
@@ -1910,8 +2010,12 @@ function validateComputedProperty(
       !classMethods.has(referencedName)
     ) {
       findings.invalidComputedProperties.push(
-        `property "${propName}" computed references ` +
-          `missing property "${referencedName}"`
+        {
+          location,
+          message:
+            `property "${propName}" computed references ` +
+            `missing property "${referencedName}"`
+        }
       );
     }
   }
@@ -1920,15 +2024,23 @@ function validateComputedProperty(
     const methodName = match[1];
     if (!classMethods.has(methodName)) {
       findings.invalidComputedProperties.push(
-        `property "${propName}" computed calls ` +
-          `non-method instance member "${methodName}"`
+        {
+          location,
+          message:
+            `property "${propName}" computed calls ` +
+            `non-method instance member "${methodName}"`
+        }
       );
     }
   }
 }
 
 // Validates that computed properties do not form dependency cycles.
-function validateComputedPropertyCycles(computedDependencies, findings) {
+function validateComputedPropertyCycles(
+  computedDependencies,
+  computedLocations,
+  findings
+) {
   const computedNames = [...computedDependencies.keys()].sort();
   const dependencyCountMap = new Map();
   const dependentsMap = new Map();
@@ -1967,8 +2079,17 @@ function validateComputedPropertyCycles(computedDependencies, findings) {
   const cycleNames = computedNames.filter(
     computedName => dependencyCountMap.get(computedName) > 0
   );
+  const cycleLocation = cycleNames
+    .map(name => computedLocations.get(name))
+    .filter(Boolean)
+    .sort(
+      (a, b) => a.line - b.line || a.character - b.character
+    )[0];
   findings.invalidComputedProperties.push(
-    `computed properties form a cycle: ${cycleNames.join(', ')}`
+    {
+      location: cycleLocation ?? null,
+      message: `computed properties form a cycle: ${cycleNames.join(', ')}`
+    }
   );
 }
 
@@ -2160,6 +2281,7 @@ function validatePropertyConfigs(
   findings
 ) {
   const computedDependencies = new Map();
+  const computedLocations = new Map();
   const computedPropNames = new Set();
 
   for (const {config, propName} of propertyEntries) {
@@ -2170,11 +2292,17 @@ function validatePropertyConfigs(
       (ts.isStringLiteral(computedProp.initializer) ||
         ts.isNoSubstitutionTemplateLiteral(computedProp.initializer))
     ) {
+      computedLocations.set(
+        propName,
+        sourceFile.getLineAndCharacterOfPosition(
+          computedProp.initializer.getStart(sourceFile)
+        )
+      );
       computedPropNames.add(propName);
     }
   }
 
-  for (const {config, propName} of propertyEntries) {
+  for (const {config, propName, property} of propertyEntries) {
     const computedProp = getObjectProperty(config, 'computed');
     const declaredTypeNode = declaredPropertyTypes.get(propName);
     const typeProp = getObjectProperty(config, 'type');
@@ -2182,6 +2310,9 @@ function validatePropertyConfigs(
     const valueProp = getObjectProperty(config, 'value');
     const valuesProp = getObjectProperty(config, 'values');
     const valuesConfigError = getValuesConfigurationError(valuesProp);
+    const propertyLocation = sourceFile.getLineAndCharacterOfPosition(
+      property.name.getStart(sourceFile)
+    );
 
     const typeExpression =
       typeProp && ts.isPropertyAssignment(typeProp)
@@ -2190,7 +2321,10 @@ function validatePropertyConfigs(
 
     if (!typeExpression) {
       findings.missingTypeProperties.push(
-        `property "${propName}" does not specify a type`
+        {
+          location: propertyLocation,
+          message: `property "${propName}" does not specify a type`
+        }
       );
     } else if (
       SUPPORTED_PROPERTY_TYPE_NAMES.has(
@@ -2198,16 +2332,24 @@ function validatePropertyConfigs(
       )
     ) {
       findings.invalidTypeProperties.push(
-        `property "${propName}" type cannot use generic syntax like ` +
-          `"${typeExpression.getText(sourceFile).trim()}"; use ` +
-          `"${getPropertyTypeGenericBaseName(sourceFile, typeExpression)}" instead`
+        {
+          location: propertyLocation,
+          message:
+            `property "${propName}" type cannot use generic syntax like ` +
+            `"${typeExpression.getText(sourceFile).trim()}"; use ` +
+            `"${getPropertyTypeGenericBaseName(sourceFile, typeExpression)}" instead`
+        }
       );
     } else if (
       !SUPPORTED_PROPERTY_TYPE_NAMES.has(typeExpressionKind(typeExpression))
     ) {
       findings.invalidTypeProperties.push(
-        `property "${propName}" type must be one of ` +
-          'Boolean, Number, String, Object, Array, or HTMLElement'
+        {
+          location: propertyLocation,
+          message:
+            `property "${propName}" type must be one of ` +
+            'Boolean, Number, String, Object, Array, or HTMLElement'
+        }
       );
     } else if (declaredTypeNode) {
       if (
@@ -2218,10 +2360,14 @@ function validatePropertyConfigs(
         )
       ) {
         findings.incompatibleDeclareTypes.push(
-          `property "${propName}" declare type ` +
-            `"${getPropertyTypeTextFromNode(sourceFile, declaredTypeNode)}" ` +
-            `is not compatible with static properties type ` +
-            `"${getPropertyConfigTypeName(typeExpressionKind(typeExpression))}"`
+          {
+            location: propertyLocation,
+            message:
+              `property "${propName}" declare type ` +
+              `"${getPropertyTypeTextFromNode(sourceFile, declaredTypeNode)}" ` +
+              `is not compatible with static properties type ` +
+              `"${getPropertyConfigTypeName(typeExpressionKind(typeExpression))}"`
+          }
         );
       }
     }
@@ -2235,16 +2381,24 @@ function validatePropertyConfigs(
             const getterName = getGetterName(methodName);
             if (getterNames.has(getterName)) continue;
             findings.invalidUsedByReferences.push(
-              `property "${propName}" usedBy references ` +
-                `missing getter "${getterName}"`
+              {
+                location: propertyLocation,
+                message:
+                  `property "${propName}" usedBy references ` +
+                  `missing getter "${getterName}"`
+              }
             );
             continue;
           }
 
           if (!classMethods.has(methodName)) {
             findings.invalidUsedByReferences.push(
-              `property "${propName}" usedBy references ` +
-                `missing method "${methodName}"`
+              {
+                location: propertyLocation,
+                message:
+                  `property "${propName}" usedBy references ` +
+                  `missing method "${methodName}"`
+              }
             );
           }
         }
@@ -2269,13 +2423,17 @@ function validatePropertyConfigs(
         computedProp.initializer.text,
         supportedProps,
         classMethods,
-        findings
+        findings,
+        computedLocations.get(propName) ?? propertyLocation
       );
     }
 
     if (valuesConfigError) {
       findings.invalidValuesConfigurations.push(
-        `property "${propName}" ${valuesConfigError}`
+        {
+          location: propertyLocation,
+          message: `property "${propName}" ${valuesConfigError}`
+        }
       );
     }
 
@@ -2283,7 +2441,10 @@ function validatePropertyConfigs(
     if (values) {
       if (typeExpressionKind(typeExpression) !== 'String') {
         findings.invalidValuesConfigurations.push(
-          `property "${propName}" uses values, but its type is not String`
+          {
+            location: propertyLocation,
+            message: `property "${propName}" uses values, but its type is not String`
+          }
         );
       }
 
@@ -2295,8 +2456,12 @@ function validatePropertyConfigs(
         !values.includes(valueProp.initializer.text)
       ) {
         findings.invalidDefaultValues.push(
-          `property "${propName}" default value ` +
-            `"${valueProp.initializer.text}" is not in values`
+          {
+            location: propertyLocation,
+            message:
+              `property "${propName}" default value ` +
+              `"${valueProp.initializer.text}" is not in values`
+          }
         );
       }
     }
@@ -2309,15 +2474,23 @@ function validatePropertyConfigs(
       );
       if (mismatch) {
         findings.invalidDefaultValues.push(
-          `property "${propName}" default value ` +
-            `has type ${mismatch.valueTypeName}, ` +
-            `but declared type is ${mismatch.typeName}`
+          {
+            location: propertyLocation,
+            message:
+              `property "${propName}" default value ` +
+              `has type ${mismatch.valueTypeName}, ` +
+              `but declared type is ${mismatch.typeName}`
+          }
         );
       }
     }
   }
 
-  validateComputedPropertyCycles(computedDependencies, findings);
+  validateComputedPropertyCycles(
+    computedDependencies,
+    computedLocations,
+    findings
+  );
 }
 
 // Validates that a ref attribute targets a unique HTMLElement property.

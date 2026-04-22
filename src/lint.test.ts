@@ -83,7 +83,7 @@ describe('lint.js', () => {
 
     expect(output).toContain('type errors:');
     expect(output).toContain(
-      'this.count * this.label: right operand "this.label" has type string, but arithmetic operators require number'
+      '  this.count * this.label: right operand "this.label" has type string, but arithmetic operators require number'
     );
   });
 
@@ -179,8 +179,8 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('invalid type properties:');
-    expect(output).toContain(
-      'property "items" type cannot use generic syntax like "Array<string>"; use "Array" instead'
+    expect(output).toMatch(
+      /  :\d+:\d+ property "items" type cannot use generic syntax like "Array<string>"; use "Array" instead/
     );
   });
 
@@ -200,7 +200,7 @@ describe('lint.js', () => {
     expect(output).toContain('duplicate properties:');
     expect(output).toContain('  name');
     expect(output).toContain('reserved property names:');
-    expect(output).toContain('  class');
+    expect(output).toMatch(/  :\d+:\d+ class/);
   });
 
   test('reports duplicate ref attributes that target the same property', () => {
@@ -293,8 +293,8 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('invalid usedBy references:');
-    expect(output).toContain(
-      '  property "badArray" usedBy references missing method "missingMethod"'
+    expect(output).toMatch(
+      /  :\d+:\d+ property "badArray" usedBy references missing method "missingMethod"/
     );
     expect(output).not.toContain(
       'property "goodSingle" usedBy references missing method'
@@ -320,8 +320,8 @@ describe('lint.js', () => {
       }
     `);
     expect(output).toContain('invalid usedBy references:');
-    expect(output).toContain(
-      '  property "badGetter" usedBy references missing getter "missingSummary"'
+    expect(output).toMatch(
+      /  :\d+:\d+ property "badGetter" usedBy references missing getter "missingSummary"/
     );
     expect(output).not.toContain(
       'property "goodGetter" usedBy references missing'
@@ -343,11 +343,11 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('invalid computed properties:');
-    expect(output).toContain(
-      '  property "badRef" computed references missing property "missingProp"'
+    expect(output).toMatch(
+      /  :\d+:\d+ property "badRef" computed references missing property "missingProp"/
     );
-    expect(output).toContain(
-      '  property "badCall" computed calls non-method instance member "label"'
+    expect(output).toMatch(
+      /  :\d+:\d+ property "badCall" computed calls non-method instance member "label"/
     );
   });
 
@@ -365,8 +365,8 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('invalid computed properties:');
-    expect(output).toContain(
-      '  computed properties form a cycle: first, second'
+    expect(output).toMatch(
+      /  :\d+:\d+ computed properties form a cycle: first, second/
     );
   });
 
@@ -383,7 +383,7 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('invalid computed properties:');
-    expect(output).toContain('  computed properties form a cycle: doubled');
+    expect(output).toMatch(/  :\d+:\d+ computed properties form a cycle: doubled/);
   });
 
   test('reports invalid event handler references', () => {
@@ -449,8 +449,8 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('incompatible declare types:');
-    expect(output).toContain(
-      '  property "count" declare type "string" is not compatible with static properties type "Number"'
+    expect(output).toMatch(
+      /  :\d+:\d+ property "count" declare type "string" is not compatible with static properties type "Number"/
     );
     expect(output).not.toContain(
       'property "label" declare type "unknown" is not compatible'
@@ -509,8 +509,8 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('invalid usedBy references:');
-    expect(output).toContain(
-      '  property "count" usedBy references missing method "missingMethod"'
+    expect(output).toMatch(
+      /  :\d+:\d+ property "count" usedBy references missing method "missingMethod"/
     );
   });
 
@@ -538,8 +538,8 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('invalid values configurations:');
-    expect(output).toContain(
-      '  property "wrongValuesType" uses values, but its type is not String'
+    expect(output).toMatch(
+      /  :\d+:\d+ property "wrongValuesType" uses values, but its type is not String/
     );
 
     expect(output).toContain('invalid default values:');
@@ -547,8 +547,8 @@ describe('lint.js', () => {
       'property "wrongDefaultType" default value has type'
     );
     expect(output).toContain('but declared type is Number');
-    expect(output).toContain(
-      '  property "wrongDefaultValue" default value "large" is not in values'
+    expect(output).toMatch(
+      /  :\d+:\d+ property "wrongDefaultValue" default value "large" is not in values/
     );
   });
 
@@ -581,17 +581,17 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('invalid values configurations:');
-    expect(output).toContain(
-      '  property "duplicateValues" values contains duplicate entry "small"'
+    expect(output).toMatch(
+      /  :\d+:\d+ property "duplicateValues" values contains duplicate entry "small"/
     );
-    expect(output).toContain(
-      '  property "dynamicValues" values must be a literal array of strings'
+    expect(output).toMatch(
+      /  :\d+:\d+ property "dynamicValues" values must be a literal array of strings/
     );
-    expect(output).toContain(
-      '  property "emptyValues" values must not be empty'
+    expect(output).toMatch(
+      /  :\d+:\d+ property "emptyValues" values must not be empty/
     );
-    expect(output).toContain(
-      '  property "nonStringValues" values must contain only string literals'
+    expect(output).toMatch(
+      /  :\d+:\d+ property "nonStringValues" values must contain only string literals/
     );
   });
 
@@ -605,8 +605,8 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('missing required members:');
-    expect(output).toContain(
-      '  formAssociatedCallback is defined, but static formAssociated is not true'
+    expect(output).toMatch(
+      /  :\d+:\d+ formAssociatedCallback is defined, but static formAssociated is not true/
     );
   });
 
@@ -618,7 +618,7 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('missing required members:');
-    expect(output).toContain('  static html property must be defined');
+    expect(output).toMatch(/  :\d+:\d+ static html property must be defined/);
   });
 
   test('reports missing type properties in property configurations', () => {
@@ -633,7 +633,9 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('missing type properties:');
-    expect(output).toContain('  property "count" does not specify a type');
+    expect(output).toMatch(
+      /  :\d+:\d+ property "count" does not specify a type/
+    );
   });
 
   test('reports multiple undefined methods in one section without numbering', () => {
@@ -649,8 +651,8 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('undefined methods:');
-    expect(output).toContain('  firstMissing');
-    expect(output).toContain('  secondMissing');
+    expect(output).toMatch(/  :\d+:\d+ firstMissing/);
+    expect(output).toMatch(/  :\d+:\d+ secondMissing/);
     expect(output).not.toContain('1. firstMissing');
     expect(output).not.toContain('2. secondMissing');
   });
@@ -704,10 +706,10 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('undefined context functions:');
-    expect(output).toContain('  missingContextFn');
+    expect(output).toMatch(/  :\d+:\d+ missingContextFn/);
     expect(output).toContain('incompatible arguments:');
-    expect(output).toContain(
-      'helper: argument "this.label" has type string, but parameter "count" expects number'
+    expect(output).toMatch(
+      /  :\d+:\d+ helper: argument "this.label" has type string, but parameter "count" expects number/
     );
   });
 
@@ -728,7 +730,7 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('undefined properties:');
-    expect(output).toContain('  missingProp');
+    expect(output).toMatch(/  :\d+:\d+ missingProp/);
   });
 
   test('does not treat normal helper calls inside methods as missing context functions', () => {
@@ -775,7 +777,7 @@ describe('lint.js', () => {
     expect(output).toContain('undefined properties:');
     expect(output).toContain('  missingProp');
     expect(output).toContain('undefined methods:');
-    expect(output).toContain('  missingMethod');
+    expect(output).toMatch(/  :\d+:\d+ missingMethod/);
   });
 
   test('reports unsupported event names in value bindings', () => {
@@ -855,8 +857,8 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('invalid useState map entries:');
-    expect(output).toContain(
-      '  useState maps state property "total" to missing component property "missingProp"'
+    expect(output).toMatch(
+      /  :\d+:\d+ useState maps state property "total" to missing component property "missingProp"/
     );
   });
 
@@ -874,6 +876,6 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('undefined methods:');
-    expect(output).toContain('  missingMethod');
+    expect(output).toMatch(/  :\d+:\d+ missingMethod/);
   });
 });
