@@ -82,8 +82,8 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('type errors:');
-    expect(output).toContain(
-      '  this.count * this.label: right operand "this.label" has type string, but arithmetic operators require number'
+    expect(output).toMatch(
+      /  :\d+:\d+ this.count \* this.label: right operand "this.label" has type string, but arithmetic operators require number/
     );
   });
 
@@ -198,7 +198,9 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('duplicate properties:');
-    expect(output).toContain('  name');
+    expect(output).toMatch(
+      /  :\d+:\d+ "name" first declared at :\d+:\d+, duplicated at :\d+:\d+/
+    );
     expect(output).toContain('reserved property names:');
     expect(output).toMatch(/  :\d+:\d+ class/);
   });
@@ -220,8 +222,8 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('invalid ref attributes:');
-    expect(output).toContain(
-      '  ref="inputRef" is a duplicate reference to the property "inputRef"'
+    expect(output).toMatch(
+      /  :\d+:\d+ ref="inputRef" is a duplicate reference to the property "inputRef"/
     );
   });
 
@@ -243,11 +245,11 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('invalid checked bindings:');
-    expect(output).toContain(
-      '  input type="checkbox" attribute "checked" refers to property "checkedFlag" whose type is not Boolean'
+    expect(output).toMatch(
+      /  :\d+:\d+ input type="checkbox" attribute "checked" refers to property "checkedFlag" whose type is not Boolean/
     );
-    expect(output).toContain(
-      '  input type="radio" attribute "checked" refers to property "selectedValue" whose type is not String'
+    expect(output).toMatch(
+      /  :\d+:\d+ input type="radio" attribute "checked" refers to property "selectedValue" whose type is not String/
     );
   });
 
@@ -271,8 +273,8 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('invalid form-assoc values:');
-    expect(output).toContain(
-      '  form-assoc="missing:value" refers to missing component property "missing"'
+    expect(output).toMatch(
+      /  :\d+:\d+ form-assoc="missing:value" refers to missing component property "missing"/
     );
   });
 
@@ -396,8 +398,8 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('invalid event handler references:');
-    expect(output).toContain(
-      '  "missingHandler" is not a defined instance method'
+    expect(output).toMatch(
+      /  :\d+:\d+ "missingHandler" is not a defined instance method/
     );
   });
 
@@ -415,8 +417,8 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('invalid form-assoc values:');
-    expect(output).toContain(
-      '  form-assoc="value" is invalid; expected "property:field" or a comma-separated list of them'
+    expect(output).toMatch(
+      /  :\d+:\d+ form-assoc="value" is invalid; expected "property:field" or a comma-separated list of them/
     );
   });
 
@@ -430,7 +432,7 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('invalid html nesting:');
-    expect(output).toContain('  <div> is not allowed directly inside <tr>');
+    expect(output).toMatch(/  :\d+:\d+ <div> is not allowed directly inside <tr>/);
   });
 
   test('reports declare statements with incompatible property types', () => {
@@ -491,8 +493,8 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('invalid ref attributes:');
-    expect(output).toContain(
-      '  ref="inputRef" refers to property "inputRef" whose type is not HTMLElement'
+    expect(output).toMatch(
+      /  :\d+:\d+ ref="inputRef" refers to property "inputRef" whose type is not HTMLElement/
     );
     expect(output).not.toContain('unsupported html attributes:');
   });
@@ -775,7 +777,7 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('undefined properties:');
-    expect(output).toContain('  missingProp');
+    expect(output).toMatch(/  :\d+:\d+ missingProp/);
     expect(output).toContain('undefined methods:');
     expect(output).toMatch(/  :\d+:\d+ missingMethod/);
   });
@@ -794,8 +796,8 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('unsupported event names:');
-    expect(output).toContain(
-      '  input attribute "value:monkey" refers to an unsupported event name "monkey"'
+    expect(output).toMatch(
+      /  :\d+:\d+ input attribute "value:monkey" refers to an unsupported event name "monkey"/
     );
   });
 
@@ -819,11 +821,11 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('invalid value bindings:');
-    expect(output).toContain(
-      '  input attribute "value:input" refers to property "enabled" whose type is not String or Number'
+    expect(output).toMatch(
+      /  :\d+:\d+ input attribute "value:input" refers to property "enabled" whose type is not String or Number/
     );
-    expect(output).toContain(
-      '  select attribute "value" refers to property "data" whose type is not String or Number'
+    expect(output).toMatch(
+      /  :\d+:\d+ select attribute "value" refers to property "data" whose type is not String or Number/
     );
   });
 
@@ -837,7 +839,7 @@ describe('lint.js', () => {
     `);
 
     expect(output).toContain('unsupported html attributes:');
-    expect(output).toContain('  div attribute "bogus" is not supported');
+    expect(output).toMatch(/  :\d+:\d+ div attribute "bogus" is not supported/);
   });
 
   test('reports useState maps to missing component properties', () => {

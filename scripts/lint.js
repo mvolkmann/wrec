@@ -624,6 +624,7 @@ function createProgram(filePath, sourceText) {
 function extractProperties(sourceFile, checker, classNode) {
   const duplicateProperties = [];
   let formAssociated = false;
+  const propertyLocations = new Map();
   const propertyEntries = [];
   const reservedProperties = [];
   const supportedProps = new Map();
@@ -668,12 +669,23 @@ function extractProperties(sourceFile, checker, classNode) {
       if (!propName || !ts.isObjectLiteralExpression(property.initializer)) {
         continue;
       }
+      const propertyLocation = sourceFile.getLineAndCharacterOfPosition(
+        property.name.getStart(sourceFile)
+      );
 
       if (
         supportedProps.has(propName) &&
-        !duplicateProperties.includes(propName)
+        !duplicateProperties.some(
+          finding => getLocatedFindingMessage(finding).startsWith(`"${propName}" `)
+        )
       ) {
-        duplicateProperties.push(propName);
+        duplicateProperties.push({
+          location: propertyLocation,
+          message:
+            `"${propName}" first declared at ` +
+            `${formatLocation(propertyLocations.get(propName))}, ` +
+            `duplicated at ${formatLocation(propertyLocation)}`
+        });
       }
       if (
         RESERVED_PROPERTY_NAMES.has(propName) &&
@@ -682,11 +694,12 @@ function extractProperties(sourceFile, checker, classNode) {
         )
       ) {
         reservedProperties.push({
-          location: sourceFile.getLineAndCharacterOfPosition(
-            property.name.getStart(sourceFile)
-          ),
+          location: propertyLocation,
           message: propName
         });
+      }
+      if (!propertyLocations.has(propName)) {
+        propertyLocations.set(propName, propertyLocation);
       }
 
       const config = property.initializer;
@@ -778,6 +791,10 @@ function extractTemplateExpressions(
     }
 
     const rendered = getTemplateLiteralText(template);
+    const resolveLocation = createTemplateLocationResolver(
+      member.getSourceFile(),
+      template
+    );
 
     if (tag === 'css') {
       CSS_PROPERTY_RE.lastIndex = 0;
@@ -805,7 +822,8 @@ function extractTemplateExpressions(
       findings,
       componentPropertyMaps,
       supportedProps,
-      new Set()
+      new Set(),
+      resolveLocation
     );
   }
 
@@ -866,10 +884,73 @@ function findWrecFiles(rootDir, onMatch) {
   walk(rootDir);
 }
 
+// Converts an offset within rendered template text to a source location.
+function createTemplateLocationResolver(sourceFile, template) {
+  const segments = [];
+
+  if (ts.isNoSubstitutionTemplateLiteral(template)) {
+    segments.push({
+      renderedEnd: template.text.length,
+      renderedStart: 0,
+      sourceStart: template.getStart(sourceFile) + 1
+    });
+  } else {
+    let renderedStart = 0;
+    const headText = template.head.text;
+    segments.push({
+      renderedEnd: headText.length,
+      renderedStart,
+      sourceStart: template.head.getStart(sourceFile) + 1
+    });
+    renderedStart += headText.length;
+
+    template.templateSpans.forEach((span, index) => {
+      renderedStart += `${PLACEHOLDER_PREFIX}${index}`.length;
+      segments.push({
+        renderedEnd: renderedStart + span.literal.text.length,
+        renderedStart,
+        sourceStart: span.literal.getStart(sourceFile) + 1
+      });
+      renderedStart += span.literal.text.length;
+    });
+  }
+
+  return offset => {
+    const segment =
+      segments.find(
+        candidate =>
+          offset >= candidate.renderedStart && offset <= candidate.renderedEnd
+      ) ?? segments[segments.length - 1];
+    if (!segment) return null;
+
+    const sourceOffset =
+      segment.sourceStart + Math.max(0, offset - segment.renderedStart);
+    return sourceFile.getLineAndCharacterOfPosition(sourceOffset);
+  };
+}
+
 // Formats an optional source location as line and column text.
 function formatLocation(location) {
   if (!location) return '';
   return `:${location.line + 1}:${location.character + 1}`;
+}
+
+// Gets the source location for the start of a parsed HTML node.
+function getHtmlNodeLocation(node, resolveLocation) {
+  const [start] = node.range ?? [];
+  return Number.isInteger(start) && start >= 0 ? resolveLocation(start) : null;
+}
+
+// Gets the source location for a specific HTML attribute within a parsed node.
+function getHtmlAttributeLocation(node, attrName, resolveLocation) {
+  const [start] = node.range ?? [];
+  const tagName = getHtmlTagName(node);
+  if (!Number.isInteger(start) || start < 0 || !tagName) return null;
+
+  const attrsOffset = node.rawAttrs.indexOf(attrName);
+  if (attrsOffset < 0) return getHtmlNodeLocation(node, resolveLocation);
+
+  return resolveLocation(start + 1 + tagName.length + 1 + attrsOffset);
 }
 
 // Formats a lint finding that may optionally include a source location.
@@ -960,7 +1041,9 @@ function formatReport(
 
   if (findings.duplicateProperties.length > 0) {
     lines.push('duplicate properties:');
-    findings.duplicateProperties.forEach(name => lines.push(`  ${name}`));
+    findings.duplicateProperties.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    );
   }
 
   if (findings.extraArguments.length > 0) {
@@ -1000,8 +1083,8 @@ function formatReport(
 
   if (findings.invalidCheckedBindings.length > 0) {
     lines.push('invalid checked bindings:');
-    findings.invalidCheckedBindings.forEach(message =>
-      lines.push(`  ${message}`)
+    findings.invalidCheckedBindings.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
     );
   }
 
@@ -1021,27 +1104,29 @@ function formatReport(
 
   if (findings.invalidEventHandlers.length > 0) {
     lines.push('invalid event handler references:');
-    findings.invalidEventHandlers.forEach(message =>
-      lines.push(`  ${message}`)
+    findings.invalidEventHandlers.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
     );
   }
 
   if (findings.invalidFormAssocValues.length > 0) {
     lines.push('invalid form-assoc values:');
-    findings.invalidFormAssocValues.forEach(message =>
-      lines.push(`  ${message}`)
+    findings.invalidFormAssocValues.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
     );
   }
 
   if (findings.invalidHtmlNesting.length > 0) {
     lines.push('invalid html nesting:');
-    findings.invalidHtmlNesting.forEach(message => lines.push(`  ${message}`));
+    findings.invalidHtmlNesting.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    );
   }
 
   if (findings.invalidRefAttributes.length > 0) {
     lines.push('invalid ref attributes:');
-    findings.invalidRefAttributes.forEach(message =>
-      lines.push(`  ${message}`)
+    findings.invalidRefAttributes.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
     );
   }
 
@@ -1068,8 +1153,8 @@ function formatReport(
 
   if (findings.invalidValueBindings.length > 0) {
     lines.push('invalid value bindings:');
-    findings.invalidValueBindings.forEach(message =>
-      lines.push(`  ${message}`)
+    findings.invalidValueBindings.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
     );
   }
 
@@ -1134,15 +1219,15 @@ function formatReport(
 
   if (findings.unsupportedEventNames.length > 0) {
     lines.push('unsupported event names:');
-    findings.unsupportedEventNames.forEach(message =>
-      lines.push(`  ${message}`)
+    findings.unsupportedEventNames.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
     );
   }
 
   if (findings.unsupportedHtmlAttributes.length > 0) {
     lines.push('unsupported html attributes:');
-    findings.unsupportedHtmlAttributes.forEach(message =>
-      lines.push(`  ${message}`)
+    findings.unsupportedHtmlAttributes.forEach(finding =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
     );
   }
 
@@ -1699,7 +1784,12 @@ export function lintSource(filePath, sourceText, options = {}) {
     ) {
       uniquePush(
         findings.invalidEventHandlers,
-        `"${expr.text}" is not a defined instance method`
+        expr.location
+          ? {
+            location: expr.location,
+            message: `"${expr.text}" is not a defined instance method`
+          }
+          : `"${expr.text}" is not a defined instance method`
       );
     }
   });
@@ -1716,7 +1806,7 @@ export function lintSource(filePath, sourceText, options = {}) {
     });
   });
 
-  findings.duplicateProperties.sort();
+  findings.duplicateProperties.sort(compareLocatedFindings);
   findings.extraArguments.sort(
     (a, b) =>
       a.methodName.localeCompare(b.methodName) ||
@@ -1728,17 +1818,17 @@ export function lintSource(filePath, sourceText, options = {}) {
       a.parameterName.localeCompare(b.parameterName)
   );
   findings.incompatibleDeclareTypes.sort(compareLocatedFindings);
-  findings.invalidCheckedBindings.sort();
+  findings.invalidCheckedBindings.sort(compareLocatedFindings);
   findings.invalidComputedProperties.sort(compareLocatedFindings);
   findings.invalidDefaultValues.sort(compareLocatedFindings);
-  findings.invalidEventHandlers.sort();
-  findings.invalidFormAssocValues.sort();
-  findings.invalidHtmlNesting.sort();
-  findings.invalidRefAttributes.sort();
+  findings.invalidEventHandlers.sort(compareLocatedFindings);
+  findings.invalidFormAssocValues.sort(compareLocatedFindings);
+  findings.invalidHtmlNesting.sort(compareLocatedFindings);
+  findings.invalidRefAttributes.sort(compareLocatedFindings);
   findings.invalidTypeProperties.sort(compareLocatedFindings);
   findings.invalidUsedByReferences.sort(compareLocatedFindings);
   findings.invalidUseStateMaps.sort(compareLocatedFindings);
-  findings.invalidValueBindings.sort();
+  findings.invalidValueBindings.sort(compareLocatedFindings);
   findings.invalidValuesConfigurations.sort(compareLocatedFindings);
   findings.missingRequiredMembers.sort(compareLocatedFindings);
   findings.missingTypeProperties.sort(compareLocatedFindings);
@@ -1747,8 +1837,8 @@ export function lintSource(filePath, sourceText, options = {}) {
   findings.undefinedContextFunctions.sort(compareLocatedFindings);
   findings.undefinedMethods.sort(compareLocatedFindings);
   findings.undefinedProperties.sort(compareLocatedFindings);
-  findings.unsupportedEventNames.sort();
-  findings.unsupportedHtmlAttributes.sort();
+  findings.unsupportedEventNames.sort(compareLocatedFindings);
+  findings.unsupportedHtmlAttributes.sort(compareLocatedFindings);
 
   return formatReport(
     filePath,
@@ -1939,7 +2029,8 @@ function validateCheckedBinding(
   attrName,
   attrValue,
   findings,
-  supportedProps
+  supportedProps,
+  resolveLocation
 ) {
   if (getHtmlTagName(node) !== 'input') return;
 
@@ -1961,8 +2052,12 @@ function validateCheckedBinding(
   const expectedTypeName = getPropertyConfigTypeName(expectedType);
 
   findings.invalidCheckedBindings.push(
-    `input type="${inputType}" attribute "${attrName}" refers to ` +
-      `property "${propName}" whose type is not ${expectedTypeName}`
+    {
+      location: getHtmlAttributeLocation(node, attrName, resolveLocation),
+      message:
+        `input type="${inputType}" attribute "${attrName}" refers to ` +
+        `property "${propName}" whose type is not ${expectedTypeName}`
+    }
   );
 }
 
@@ -1972,7 +2067,8 @@ function validateValueBinding(
   attrName,
   attrValue,
   findings,
-  supportedProps
+  supportedProps,
+  resolveLocation
 ) {
   const [baseAttrName] = attrName.split(':');
   if (baseAttrName !== 'value') return;
@@ -1989,8 +2085,12 @@ function validateValueBinding(
   }
 
   findings.invalidValueBindings.push(
-    `${getHtmlTagName(node)} attribute "${attrName}" refers to property ` +
-      `"${propName}" whose type is not String or Number`
+    {
+      location: getHtmlAttributeLocation(node, attrName, resolveLocation),
+      message:
+        `${getHtmlTagName(node)} attribute "${attrName}" refers to property ` +
+        `"${propName}" whose type is not String or Number`
+    }
   );
 }
 
@@ -2165,7 +2265,13 @@ function validateFilePath(filePath) {
 }
 
 // Validates the syntax of a form-assoc attribute value.
-function validateFormAssocAttribute(attrName, attrValue, findings) {
+function validateFormAssocAttribute(
+  node,
+  attrName,
+  attrValue,
+  findings,
+  resolveLocation
+) {
   if (attrName !== 'form-assoc') return;
 
   const pairs = attrValue.split(',');
@@ -2176,8 +2282,12 @@ function validateFormAssocAttribute(attrName, attrValue, findings) {
       .map(part => part.trim());
     if (!trimmed || rest.length > 0 || !propName || !fieldName) {
       findings.invalidFormAssocValues.push(
-        `form-assoc="${attrValue}" is invalid; expected ` +
-          '"property:field" or a comma-separated list of them'
+        {
+          location: getHtmlAttributeLocation(node, attrName, resolveLocation),
+          message:
+            `form-assoc="${attrValue}" is invalid; expected ` +
+            '"property:field" or a comma-separated list of them'
+        }
       );
       return;
     }
@@ -2190,7 +2300,8 @@ function validateFormAssocPropertyMappings(
   attrName,
   attrValue,
   findings,
-  componentPropertyMaps
+  componentPropertyMaps,
+  resolveLocation
 ) {
   if (attrName !== 'form-assoc') return;
   const tagName = (node.rawTagName || node.tagName || '').toLowerCase();
@@ -2203,15 +2314,19 @@ function validateFormAssocPropertyMappings(
     if (!propName) continue;
     if (!supportedProps.has(propName)) {
       findings.invalidFormAssocValues.push(
-        `form-assoc="${attrValue}" refers to ` +
-          `missing component property "${propName}"`
+        {
+          location: getHtmlAttributeLocation(node, attrName, resolveLocation),
+          message:
+            `form-assoc="${attrValue}" refers to ` +
+            `missing component property "${propName}"`
+        }
       );
     }
   }
 }
 
 // Validates that an HTML attribute is supported for the current element.
-function validateHtmlAttribute(node, attrName, findings) {
+function validateHtmlAttribute(node, attrName, findings, resolveLocation) {
   if (attrName.startsWith('aria-') || attrName.startsWith('data-')) return;
   if (attrName.startsWith('on')) return;
   if (attrName === 'form-assoc') return;
@@ -2228,12 +2343,15 @@ function validateHtmlAttribute(node, attrName, findings) {
   if (supported.has(baseAttrName)) return;
 
   findings.unsupportedHtmlAttributes.push(
-    `${tagName} attribute "${attrName}" is not supported`
+    {
+      location: getHtmlAttributeLocation(node, attrName, resolveLocation),
+      message: `${tagName} attribute "${attrName}" is not supported`
+    }
   );
 }
 
 // Validates required parent-child relationships for supported HTML tags.
-function validateHtmlNesting(node, findings) {
+function validateHtmlNesting(node, findings, resolveLocation) {
   const tagName = getHtmlTagName(node);
   if (!tagName || tagName.includes('-')) return;
 
@@ -2248,9 +2366,13 @@ function validateHtmlNesting(node, findings) {
       ? `<${parentTagName}>`
       : 'the document root';
     findings.invalidHtmlNesting.push(
-      `<${tagName}> must be nested inside ${[...allowedParents]
-        .map(name => `<${name}>`)
-        .join(' or ')}, but parent is ${parentDescription}`
+      {
+        location: getHtmlNodeLocation(node, resolveLocation),
+        message:
+          `<${tagName}> must be nested inside ${[...allowedParents]
+            .map(name => `<${name}>`)
+            .join(' or ')}, but parent is ${parentDescription}`
+      }
     );
   }
 
@@ -2264,7 +2386,10 @@ function validateHtmlNesting(node, findings) {
     if (allowedChildren.has(childTagName)) continue;
 
     findings.invalidHtmlNesting.push(
-      `<${childTagName}> is not allowed directly inside <${tagName}>`
+      {
+        location: getHtmlNodeLocation(child, resolveLocation),
+        message: `<${childTagName}> is not allowed directly inside <${tagName}>`
+      }
     );
   }
 }
@@ -2498,7 +2623,8 @@ function validateRefAttribute(
   attrValue,
   supportedProps,
   findings,
-  seenRefProps
+  seenRefProps,
+  location
 ) {
   if (!attrValue) return;
 
@@ -2508,23 +2634,34 @@ function validateRefAttribute(
   const propInfo = supportedProps.get(propName);
   if (!propInfo) {
     findings.invalidRefAttributes.push(
-      `ref="${attrValue}" refers to missing property "${propName}"`
+      {
+        location,
+        message: `ref="${attrValue}" refers to missing property "${propName}"`
+      }
     );
     return;
   }
 
   if (propInfo.typeText !== 'HTMLElement') {
     findings.invalidRefAttributes.push(
-      `ref="${attrValue}" refers to property "${propName}" ` +
-        'whose type is not HTMLElement'
+      {
+        location,
+        message:
+          `ref="${attrValue}" refers to property "${propName}" ` +
+          'whose type is not HTMLElement'
+      }
     );
     return;
   }
 
   if (seenRefProps.has(propName)) {
     findings.invalidRefAttributes.push(
-      `ref="${attrValue}" is a duplicate reference ` +
-        `to the property "${propName}"`
+      {
+        location,
+        message:
+          `ref="${attrValue}" is a duplicate reference ` +
+          `to the property "${propName}"`
+      }
     );
     return;
   }
@@ -2533,15 +2670,19 @@ function validateRefAttribute(
 }
 
 // Validates event names used in value-binding attributes.
-function validateValueBindingEvent(node, attrName, findings) {
+function validateValueBindingEvent(node, attrName, findings, resolveLocation) {
   const [realAttrName, eventName] = attrName.split(':');
   if (realAttrName !== 'value' || !eventName) return;
   if (SUPPORTED_EVENT_NAMES.has(eventName)) return;
 
   const tagName = node.rawTagName || node.tagName || 'element';
   findings.unsupportedEventNames.push(
-    `${tagName} attribute "${attrName}" refers to ` +
-      `an unsupported event name "${eventName}"`
+    {
+      location: getHtmlAttributeLocation(node, attrName, resolveLocation),
+      message:
+        `${tagName} attribute "${attrName}" refers to ` +
+        `an unsupported event name "${eventName}"`
+    }
   );
 }
 
@@ -2552,33 +2693,55 @@ function walkHtmlNode(
   findings,
   componentPropertyMaps,
   supportedProps,
-  seenRefProps
+  seenRefProps,
+  resolveLocation
 ) {
   if (node.nodeType === 1) {
-    validateHtmlNesting(node, findings);
+    validateHtmlNesting(node, findings, resolveLocation);
 
     for (const [attrName, attrValue] of Object.entries(node.attributes)) {
       if (!attrValue) continue;
-      validateFormAssocAttribute(attrName, attrValue, findings);
+      validateFormAssocAttribute(
+        node,
+        attrName,
+        attrValue,
+        findings,
+        resolveLocation
+      );
       validateFormAssocPropertyMappings(
         node,
         attrName,
         attrValue,
         findings,
-        componentPropertyMaps
+        componentPropertyMaps,
+        resolveLocation
       );
       validateCheckedBinding(
         node,
         attrName,
         attrValue,
         findings,
-        supportedProps
+        supportedProps,
+        resolveLocation
       );
-      validateHtmlAttribute(node, attrName, findings);
-      validateValueBinding(node, attrName, attrValue, findings, supportedProps);
-      validateValueBindingEvent(node, attrName, findings);
+      validateHtmlAttribute(node, attrName, findings, resolveLocation);
+      validateValueBinding(
+        node,
+        attrName,
+        attrValue,
+        findings,
+        supportedProps,
+        resolveLocation
+      );
+      validateValueBindingEvent(node, attrName, findings, resolveLocation);
       if (attrName === 'ref') {
-        validateRefAttribute(attrValue, supportedProps, findings, seenRefProps);
+        validateRefAttribute(
+          attrValue,
+          supportedProps,
+          findings,
+          seenRefProps,
+          getHtmlAttributeLocation(node, attrName, resolveLocation)
+        );
       }
       if (
         REFS_TEST_RE.test(attrValue) ||
@@ -2589,7 +2752,7 @@ function walkHtmlNode(
           eventHandler: attrName.startsWith('on'),
           kind: 'html',
           text: attrValue.trim(),
-          location: null
+          location: getHtmlAttributeLocation(node, attrName, resolveLocation)
         });
       }
     }
@@ -2606,7 +2769,7 @@ function walkHtmlNode(
         eventHandler: false,
         kind: 'html',
         text,
-        location: null
+        location: getHtmlNodeLocation(node, resolveLocation)
       });
     }
   }
@@ -2618,7 +2781,8 @@ function walkHtmlNode(
       findings,
       componentPropertyMaps,
       supportedProps,
-      seenRefProps
+      seenRefProps,
+      resolveLocation
     );
   }
 }
