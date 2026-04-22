@@ -12,8 +12,12 @@ multiple levels of a component hierarchy.
 Let's look at an example.
 This code can be found in the "state" directory.
 
-Here's the file `labeled-input.ts` which defines a wrec component
-that renders `label` and `input` elements.
+- Create a new directory named "state".
+- cd to it.
+- Create a `package.json` file by entering `npm init -y`.
+- Install the wrec library by entering `npm i wrec`.
+- Copy `hello-world.ts` from the `hello-world` project.
+- Create a `labeled-input.ts` file containing the following:
 
 ```ts
 import {css, html, Wrec} from 'wrec';
@@ -45,8 +49,9 @@ class LabeledInput extends Wrec {
 LabeledInput.define('labeled-input');
 ```
 
-Here's the file `index.html` which renders instances of the
-`labeled-input` and `hello-world` (seen earlier) components.
+This renders `label` and `input` elements.
+
+Create the `index.html` file containing the following:
 
 ```html
 <!doctype html>
@@ -68,6 +73,8 @@ Here's the file `index.html` which renders instances of the
   </body>
 </html>
 ```
+
+This renders instances of the `labeled-input` and `hello-world` components.
 
 As it stands, we haven't yet imported the code for the two wrec components
 and there is no use of `WrecState`.
@@ -92,6 +99,7 @@ button.addEventListener('click', () => {
 
 This code creates a `WrecState` object, gives it the name "demo",
 opts out of persisting to `localStorage`, and initializes its data.
+TODO: Should the localStorage parameter be last and default to false?
 Then it finds the `labeled-input` and `hello-world` elements in the DOM
 and tells them to use the state object.
 The second argument to the `useState` method describes the mapping

@@ -78,7 +78,6 @@ class HelloWorld extends Wrec {
   static css = css`
     p {
       color: blue;
-      font-family: fantasy;
     }
   `;
   static html = html`<p>Hello, <span>this.name</span>!</p>`;
