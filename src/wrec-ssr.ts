@@ -4,15 +4,16 @@ import {
   NodeType as NHPNodeType,
   TextNode as NHPTextNode
 } from 'node-html-parser';
+import {
+  REF_RE,
+  REFS_TEST_RE,
+  evaluateInScope,
+  getExpressionPropName,
+  initializeEvaluationScope
+} from './evaluation';
 import {Wrec, WrecState, createElement, css, html} from './wrec';
 
 export {Wrec, WrecState, createElement, css, html};
-
-const FIRST_CHAR = 'a-zA-Z_$';
-const OTHER_CHAR = FIRST_CHAR + '0-9';
-const IDENTIFIER = `[${FIRST_CHAR}][${OTHER_CHAR}]*`;
-const REFS_TEST_RE = new RegExp(`this\\.${IDENTIFIER}(\\.${IDENTIFIER})*`);
-const SKIP = 'this.'.length;
 
 // Escapes an SSR attribute value so it remains valid HTML when serialized.
 function escapeAttributeValue(value: unknown) {
@@ -23,31 +24,22 @@ function escapeAttributeValue(value: unknown) {
     .replaceAll('>', '&gt;');
 }
 
-// Takes a string like "this.foo.bar" and returns "foo".
-const getPropName = (str: string) => str.substring(SKIP).split('.')[0];
-
 // Evaluates a Wrec component template in Node and serializes declarative shadow DOM.
 Wrec.ssr = function ssr(properties: Record<string, any> = {}): string {
+  const ctor = this as typeof Wrec;
+  const scope = initializeEvaluationScope(ctor, properties);
   let attributes = '';
   const keys = Object.keys(properties);
   keys.sort();
   for (const property of keys) {
-    const attrName = (this as any).getAttrName(property);
+    const attrName = (ctor as any).getAttrName(property);
     const attrValue = escapeAttributeValue(properties[property]);
     attributes += ` ${attrName}="${attrValue}"`;
   }
 
-  const staticProperties = (this as any).properties;
-  for (const [propName, descriptor] of Object.entries(staticProperties)) {
-    if (properties[propName] === undefined) {
-      const {value} = descriptor as {value?: unknown};
-      if (value !== undefined) properties[propName] = value;
-    }
-  }
-
   // Evaluates a single template expression against the supplied properties.
   function evaluate(expr: string) {
-    return new Function('return ' + expr).call(properties);
+    return evaluateInScope(expr, scope, ctor.context);
   }
 
   // Walks a parsed template tree and resolves dynamic attributes and text.
@@ -56,13 +48,15 @@ Wrec.ssr = function ssr(properties: Record<string, any> = {}): string {
     for (const [attrName, value] of Object.entries(attributes)) {
       if (REFS_TEST_RE.test(value)) {
         const newValue = evaluate(value);
-        const propName = getPropName(attrName);
-        const defaultValue = staticProperties[propName]?.value ?? '';
-        if (newValue === defaultValue) {
-          element.removeAttribute(attrName);
-        } else {
-          element.setAttribute(attrName, escapeAttributeValue(newValue));
+        if (REF_RE.test(value)) {
+          const propName = getExpressionPropName(value);
+          const defaultValue = ctor.properties?.[propName]?.value;
+          if (defaultValue === '' && newValue === defaultValue) {
+            element.removeAttribute(attrName);
+            continue;
+          }
         }
+        element.setAttribute(attrName, escapeAttributeValue(newValue));
       }
     }
 
@@ -82,12 +76,12 @@ Wrec.ssr = function ssr(properties: Record<string, any> = {}): string {
     });
   }
 
-  const htmlString = (this as any).buildHTML();
+  const htmlString = (ctor as any).buildHTML();
   const root = parse(htmlString, {comment: true});
   const {children} = root;
   children.forEach(process);
   const result = children.map(element => element.outerHTML).join('\n');
-  const elementName = (this as any).elementName;
+  const elementName = (ctor as any).elementName;
 
   return `
       <${elementName}${attributes}>

@@ -114,3 +114,47 @@ test('uses default property values when SSR input omits them', () => {
   expect(output).toContain('<span>World</span>');
   expect(output).toContain('<default-ssr-fixture>');
 });
+
+test('evaluates computed properties in SSR output', () => {
+  class ComputedSsrFixture extends Wrec {
+    static properties = {
+      area: {type: Number, computed: 'this.width * this.height'},
+      height: {type: Number, value: 4},
+      width: {type: Number, value: 3}
+    };
+
+    static html = html`<p>this.area</p>`;
+
+    declare area: number;
+    declare height: number;
+    declare width: number;
+  }
+
+  ComputedSsrFixture.define('computed-ssr-fixture');
+
+  const output = ComputedSsrFixture.ssr({height: 6, width: 5});
+
+  expect(output).toContain('<p>30</p>');
+});
+
+test('evaluates static context helpers in SSR output', () => {
+  const greet = (name: string) => `Hello, ${name}!`;
+
+  class ContextSsrFixture extends Wrec {
+    static context = {greet};
+
+    static properties = {
+      name: {type: String, value: 'World'}
+    };
+
+    static html = html`<p>greet(this.name)</p>`;
+
+    declare name: string;
+  }
+
+  ContextSsrFixture.define('context-ssr-fixture');
+
+  const output = ContextSsrFixture.ssr({name: 'Mark'});
+
+  expect(output).toContain('<p>Hello, Mark!</p>');
+});

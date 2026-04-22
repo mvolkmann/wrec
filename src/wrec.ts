@@ -1,6 +1,15 @@
 import {createDeepProxy} from './proxies.js';
 import {WrecState} from './wrec-state';
 import {getPathValue, setPathValue} from './paths';
+import {
+  CALL_RE,
+  HTML_COMMENT_TEXT_RE,
+  REF_RE,
+  REFS_RE,
+  REFS_TEST_RE,
+  evaluateInScope,
+  getExpressionPropName
+} from './evaluation';
 import sanitize from './sanitize-xss';
 
 // When this package is bundled by Vite,
@@ -76,16 +85,7 @@ type Ref =
 class WrecError extends Error {}
 
 const CSS_PROPERTY_RE = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g;
-const FIRST_CHAR = 'a-zA-Z_$';
-const OTHER_CHAR = FIRST_CHAR + '0-9';
-const IDENTIFIER = `[${FIRST_CHAR}][${OTHER_CHAR}]*`;
-const CALL_RE = new RegExp(`this\\.(${IDENTIFIER})\\s*\\(`, 'g');
-const HTML_COMMENT_TEXT_RE = /<!--\s*(.*?)\s*-->/;
 const HTML_ELEMENT_TEXT_RE = /<(\w+)(?:\s[^>]*)?>((?:[^<]|<(?!\w))*?)<\/\1>/g;
-const REF_RE = new RegExp(`^this\\.${IDENTIFIER}$`);
-const REFS_RE = new RegExp(`this\\.${IDENTIFIER}(\\.${IDENTIFIER})*`, 'g');
-const REFS_TEST_RE = new RegExp(`this\\.${IDENTIFIER}(\\.${IDENTIFIER})*`);
-const SKIP = 'this.'.length;
 
 function canDisable(element: Element) {
   return (
@@ -167,9 +167,6 @@ function getPropertyDescriptor(
   }
   return undefined;
 }
-
-// Takes a string like "this.foo.bar" and returns "foo".
-const getPropName = (str: string) => str.substring(SKIP).split('.')[0];
 
 // Converts a getter method name to a property name.
 function getterToProperty(target: string) {
@@ -880,15 +877,9 @@ export abstract class Wrec extends HTMLElementBase {
     }
   }
 
+  // Evaluates an expression against the current component instance and context.
   #evaluateInContext(expression: string) {
-    // This approach is safer than using the eval function.
-    //return new Function('return ' + expr).call(this);
-    const {context} = this.#ctor;
-    const fn = new Function(
-      'context',
-      `const {${Object.keys(context).join(',')}} = context; return ${expression};`
-    );
-    return fn.call(this, context);
+    return evaluateInScope(expression, this as StringToAny, this.#ctor.context);
   }
 
   #evaluateText(element: HTMLElement) {
@@ -1219,7 +1210,7 @@ export abstract class Wrec extends HTMLElementBase {
       eventName = 'change';
     }
 
-    const propName = getPropName(match);
+    const propName = getExpressionPropName(match);
     element.addEventListener(eventName, (event: Event) => {
       const {target} = event;
       if (!target) return;
@@ -1319,7 +1310,7 @@ export abstract class Wrec extends HTMLElementBase {
 
   #propRefName(element: HTMLElement, text: string | null) {
     if (!text || !REF_RE.test(text)) return;
-    const propName = getPropName(text);
+    const propName = getExpressionPropName(text);
     if (this.#getDynamic(propName) === undefined) {
       this.#throwInvalidRef(element, '', propName);
     }
@@ -1373,7 +1364,7 @@ export abstract class Wrec extends HTMLElementBase {
 
     // Iterate over the properties referenced in the expression.
     for (const match of expr.matchAll(REFS_RE)) {
-      const referencedProp = getPropName(match[0]);
+      const referencedProp = getExpressionPropName(match[0]);
       if (this.#getDynamic(referencedProp) === undefined) {
         this.#throwInvalidRef(null, computedPropName, referencedProp);
       }
@@ -1452,7 +1443,7 @@ export abstract class Wrec extends HTMLElementBase {
 
     const ctor = this.#ctor;
     matches.forEach(capture => {
-      const propName = getPropName(capture);
+      const propName = getExpressionPropName(capture);
       if (typeof this.#getDynamic(propName) === 'function') return;
 
       const map = ctor.propToExprsMap;
@@ -1700,7 +1691,7 @@ export abstract class Wrec extends HTMLElementBase {
           addExpr(map, match[1], expr);
         }
         for (const match of expr.matchAll(REFS_RE)) {
-          const propName = getPropName(match[0]);
+          const propName = getExpressionPropName(match[0]);
           addExpr(map, propertyToGetter(propName), expr);
         }
       }
@@ -1831,7 +1822,7 @@ export abstract class Wrec extends HTMLElementBase {
     if (!matches) return;
 
     matches.forEach(capture => {
-      const propName = getPropName(capture);
+      const propName = getExpressionPropName(capture);
       if (this.#getDynamic(propName) === undefined) {
         this.#throwInvalidRef(element, attrName, propName);
       }
