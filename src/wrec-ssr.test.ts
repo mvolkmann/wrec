@@ -35,6 +35,60 @@ test('renders evaluated attribute and text expressions in SSR output', () => {
   expect(output).toContain('<span>MARK</span>');
 });
 
+test('escapes outer and evaluated attribute values in SSR output', () => {
+  class EscapingSsrFixture extends Wrec {
+    static properties = {
+      name: {type: String, value: 'World'},
+      title: {type: String, value: 'Greeting'}
+    };
+
+    static html = html`
+      <p title="this.title">
+        <span>this.name</span>
+      </p>
+    `;
+
+    declare name: string;
+    declare title: string;
+  }
+
+  EscapingSsrFixture.define('escaping-ssr-fixture');
+
+  const output = EscapingSsrFixture.ssr({
+    name: 'Mark & Co <team>',
+    title: 'Say "hi" <now> & later'
+  });
+
+  expect(output).toContain(
+    '<escaping-ssr-fixture name="Mark &amp; Co &lt;team&gt;" title="Say &quot;hi&quot; &lt;now&gt; &amp; later">'
+  );
+  expect(output).toContain(
+    '<p title="Say &quot;hi&quot; &lt;now&gt; &amp; later">'
+  );
+});
+
+test('preserves raw HTML emitted by SSR text expressions', () => {
+  class RawHtmlSsrFixture extends Wrec {
+    static properties = {
+      content: {type: String, value: '<strong>bold</strong>'}
+    };
+
+    static html = html`<div class="content">this.content</div>`;
+
+    declare content: string;
+  }
+
+  RawHtmlSsrFixture.define('raw-html-ssr-fixture');
+
+  const output = RawHtmlSsrFixture.ssr({
+    content: '<strong>bold</strong><em>more</em>'
+  });
+
+  expect(output).toContain(
+    '<div class="content"><strong>bold</strong><em>more</em></div>'
+  );
+});
+
 test('uses default property values when SSR input omits them', () => {
   class DefaultSsrFixture extends Wrec {
     static properties = {

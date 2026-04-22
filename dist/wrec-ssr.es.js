@@ -9158,13 +9158,17 @@ var G, K, ve, q, J, ye = l((() => {
 		return (0, s.default)(e, t);
 	}
 	e.parse = l, l.parse = s.default, l.HTMLElement = r.default, l.CommentNode = n.default, l.valid = c.default, l.Node = i.default, l.TextNode = a.default, l.NodeType = o.default;
-})))(), Re = "a-zA-Z_$", ze = `[${Re}][${Re + "0-9"}]*`, Be = RegExp(`this\\.${ze}(\\.${ze})*`), Ve = 5, He = (e) => e.substring(Ve).split(".")[0];
+})))(), Re = "a-zA-Z_$", ze = `[${Re}][${Re + "0-9"}]*`, Be = RegExp(`this\\.${ze}(\\.${ze})*`), Ve = 5;
+function He(e) {
+	return String(e).replaceAll("&", "&amp;").replaceAll("\"", "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+var Ue = (e) => e.substring(Ve).split(".")[0];
 i.ssr = function(e = {}) {
 	let t = "", n = Object.keys(e);
 	n.sort();
 	for (let r of n) {
-		let n = this.getAttrName(r);
-		t += ` ${n}="${e[r]}"`;
+		let n = this.getAttrName(r), i = He(e[r]);
+		t += ` ${n}="${i}"`;
 	}
 	let r = this.properties;
 	for (let [t, n] of Object.entries(r)) if (e[t] === void 0) {
@@ -9178,7 +9182,7 @@ i.ssr = function(e = {}) {
 		let { attributes: t } = e;
 		for (let [n, a] of Object.entries(t)) if (Be.test(a)) {
 			let t = i(a);
-			t === (r[He(n)]?.value ?? "") ? e.removeAttribute(n) : e.setAttribute(n, String(t));
+			t === (r[Ue(n)]?.value ?? "") ? e.removeAttribute(n) : e.setAttribute(n, He(t));
 		}
 		let { childNodes: n } = e;
 		n.forEach((e, t) => {
