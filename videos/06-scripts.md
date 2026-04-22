@@ -4,9 +4,9 @@ Wrec provides four scripts that aid in web component development.
 After installing the wrec package in a project,
 the scripts can be run using `npx`.
 
-To generate a `.ts` file containing starter code for a new web component,
+To generate a `.ts` file containing starter code for a new wrec component,
 enter `npx wrec-scaffold {tag-name}`.
-This will generate the file `{tag-name}.ts` in the current directory.
+This will generate the file `tag-name.ts` in the current directory.
 The file will define the class `TagName`.
 
 To check a source file that defines a wrec component for errors,

@@ -13,17 +13,19 @@
 // - extra arguments passed to methods and context functions
 // - incompatible method arguments in expressions
 // - incompatible context function arguments in expressions
-// - arithmetic type errors in expressions
-// - invalid computed property references and calls to non-method members
+// - incompatible declare property types
+// - arithmetic and other type errors in expressions
+// - invalid computed property references
 // - invalid event handler references
 // - unsupported event names
 // - duplicate property names
 // - reserved property names
 // - missing `type` in property configurations
+// - invalid `type` values in property configurations
 // - invalid default values
 // - invalid `values` configurations
 // - invalid `usedBy` references
-// - missing `formAssociated` when `formAssociatedCallback` is defined
+// - missing required members like `static html` and `formAssociated`
 // - invalid `form-assoc` values
 // - invalid `useState` map entries
 // - unsupported HTML attributes in templates
