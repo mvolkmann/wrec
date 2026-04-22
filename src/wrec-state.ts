@@ -64,7 +64,21 @@ export class WrecState {
   // This tells TypeScript that it's okay to access properties by string keys.
   [key: string]: unknown;
 
-  constructor(name: string, persist: boolean, initial?: LooseObject) {
+  // Creates a state object with optional persistence and initial values.
+  constructor(name: string, initial?: LooseObject);
+  // Creates a state object with explicit persistence and optional initial values.
+  constructor(name: string, persist: boolean, initial?: LooseObject);
+  // Creates a state object with optional persistence and initial values.
+  constructor(
+    name: string,
+    persistOrInitial?: boolean | LooseObject,
+    initial?: LooseObject
+  ) {
+    const persist =
+      typeof persistOrInitial === 'boolean' ? persistOrInitial : false;
+    initial =
+      typeof persistOrInitial === 'boolean' ? initial : persistOrInitial;
+
     if (!name) throw new WrecError('name cannot be empty');
     if (WrecState.#stateMap.has(name)) {
       throw new WrecError(`WrecState with name "${name}" already exists`);

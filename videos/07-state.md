@@ -85,7 +85,7 @@ import {WrecState} from 'wrec';
 import './hello-world.js';
 import './labeled-input.js';
 
-const state = new WrecState('demo', false, {name: 'World'});
+const state = new WrecState('demo', {name: 'World'});
 const li = document.querySelector('labeled-input');
 li.useState(state, {name: 'value'});
 const hw = document.querySelector('hello-world');

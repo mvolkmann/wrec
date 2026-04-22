@@ -19,6 +19,18 @@ const myState = new WrecState('vault', false, {
   notUsed: 'not used'
 }) as TestState;
 
+test('constructor defaults persist to false when initial state is 2nd argument', () => {
+  const state = new WrecState('vault-default-persist', {
+    color: oldColor,
+    team: {leader: {name: oldName}},
+    notUsed: 'not used'
+  }) as TestState;
+
+  expect(state.color).toBe(oldColor);
+  expect(state.team.leader.name).toBe(oldName);
+  expect(state.notUsed).toBe('not used');
+});
+
 test('listen top-level', () => {
   const newColor = 'blue';
   const unsubscribe = myState.subscribe(

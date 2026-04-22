@@ -85,6 +85,7 @@ export declare class WrecState {
     #private;
     static get(name: string): WrecState | undefined;
     [key: string]: unknown;
+    constructor(name: string, initial?: LooseObject);
     constructor(name: string, persist: boolean, initial?: LooseObject);
     subscribe(callback: ChangeCallback, paths?: string[]): () => void;
     addProperty(propName: string, initialValue: unknown): void;

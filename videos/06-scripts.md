@@ -26,6 +26,9 @@ To automatically add `declare` statements in a given TypeScript source file
 for each property described in the `static properties` object,
 enter `npx wrec-declare {file-path}`.
 
+When the `type` of a property is `Object` or `Array`, you should
+further customize the `declare` statement type to make it more specific.
+
 The configure objects in the `static properties` object
 can contain `usedBy` properties.
 Those are necessary when reactive JavaScript expressions
