@@ -24,6 +24,11 @@ More examples of wrec components can be found at
 https://github.com/mvolkmann/wrec/tree/main/src/examples and
 https://github.com/mvolkmann/web-component-book-code/tree/main/ch09.
 
+## LLMs
+
+LLMs can generate wrec component code.
+They can also generate web applications that use wrec components.
+
 ## Tests
 
 The wrec library is well-tested.
