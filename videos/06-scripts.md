@@ -12,41 +12,45 @@ The file will define the class `TagName`.
 To check a source file that defines a wrec component for errors,
 enter `npx wrec-lint {file-path}`.
 For a list of the issues this script can detect,
-see comment at the top of
+see the comment at the top of
 https://github.com/mvolkmann/wrec/blob/main/scripts/lint.js.
 
 A TypeScript `declare` statement specifies the type of a property
-that is defined somewhere else.
-In a wrec component, properties described in `static properties`
-are that somewhere else.
-Adding `declare` statements is not required, but providing them
-enables TypeScript-aware editors to provide type checking.
+that is defined somewhere else, not in the normal way.
+The properties of a wrec component are described in `static properties`,
+which is that "somewhere else".
+Adding `declare` statements is not required, but they
+enable type checking in TypeScript-aware editors.
 
 To automatically add `declare` statements in a given TypeScript source file
 for each property described in the `static properties` object,
 enter `npx wrec-declare {file-path}`.
 
-To add/update `usedBy` properties in the property configuration objects
-found in the `static properties =` object,
+The configure objects in the `static properties` object
+can contain `usedBy` properties.
+Those are necessary when reactive JavaScript expressions
+contain method calls that use component properties
+without explicitly passing them.
+In that case, wrec relies on `usedBy` properties,
+to determine when to reevaluate the expressions.
+
+To add/update `usedBy` properties in the property configuration objects,
 enter `npx wrec-usedby [file-path]`.
 If no file-path is specified, the script runs on
 all .js and .ts files in and below the current directory.
 
-The `usedBy` properties are necessary when reactive JavaScript expressions
-contain method calls that do not explicitly pass every property they use.
-In that case, wrec relies on `usedBy` properties,
-to determine when to reevaluate the expressions.
-
 ## "wrec" VS Code Extension
 
 The "wrec" VS Code extension provides commands in the Command Palette
-that run the three scripts described above.
+that run the scripts described above.
 It is available in the Visual Studio Marketplace at
 https://marketplace.visualstudio.com/items?itemName=RMarkVolkmann.wrec.
 
-To use this extension, the `package.json` file for the project
-that is opened in VS Code must have a dependency on the wrec package and
-it must be installed to use these commands.
+To use the provided commands
+the `package.json` file for the project that is opened in VS Code
+must have a dependency on the wrec package and it must be installed.
+
+The commands are:
 
 - wrec: Scaffold New Component
 
@@ -55,14 +59,14 @@ it must be installed to use these commands.
 - wrec: Lint Current File
 
   This runs the `lint` script on the currently open and focused source file.
-  While this is running, "Wrec lint" will be displayed in the status bar.
-  When it completes, the status bar will display
-  either "Wrec ok" or "Wrec {issue-count"}".
+  While this is running, "Wrec lint" is displayed in the status bar.
+  When it completes, the status bar displays
+  either "Wrec ok" or "Wrec {issue-count}".
   Lines where issues are found are marked with yellow squigglies
-  and hovering over those displays an error message.
+  and hovering over them displays an error message.
   The issues are also appended to the "OUTPUT" panel,
   which you can open manually by selecting View ... Output (cmd-shift-u)
-  to review them there.
+  to review them.
 
 - wrec: Add declare Statements in Current File
 
