@@ -67,6 +67,25 @@ describe('lint.js', () => {
     expect(result.stderr).toContain('unknown option: --bogus');
   });
 
+  test('reports css-based undefined properties with line numbers', () => {
+    const output = runLint(`
+      import {css, Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static css = css\`
+          div {
+            color: this.missingColor;
+          }
+        \`;
+
+        static html = '';
+      }
+    `);
+
+    expect(output).toContain('undefined properties:');
+    expect(output).toMatch(/  :\d+:\d+ missingColor/);
+  });
+
   test('reports arithmetic type errors', () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';

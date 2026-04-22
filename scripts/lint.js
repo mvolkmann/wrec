@@ -801,14 +801,20 @@ function extractTemplateExpressions(
       while (true) {
         const match = CSS_PROPERTY_RE.exec(rendered);
         if (!match) break;
-        const value = match[2]?.trim();
+        const rawValue = match[2] ?? '';
+        const value = rawValue.trim();
         if (value && REFS_TEST_RE.test(value)) {
+          const valueOffsetInMatch = match[0].lastIndexOf(rawValue);
+          const leadingWhitespace = rawValue.length - rawValue.trimStart().length;
+          const valueLocation = resolveLocation(
+            match.index + valueOffsetInMatch + leadingWhitespace
+          );
           expressions.push({
             context: 'instance',
             eventHandler: false,
             kind: 'css',
             text: value,
-            location: null
+            location: valueLocation
           });
         }
       }
