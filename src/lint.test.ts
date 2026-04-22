@@ -351,6 +351,41 @@ describe('lint.js', () => {
     );
   });
 
+  test('reports computed property cycles', () => {
+    const output = runLint(`
+      import {Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          base: {type: Number, value: 1},
+          first: {type: Number, computed: 'this.base + this.second'},
+          second: {type: Number, computed: 'this.first + 1'}
+        };
+      }
+    `);
+
+    expect(output).toContain('invalid computed properties:');
+    expect(output).toContain(
+      '  computed properties form a cycle: first, second'
+    );
+  });
+
+  test('reports self-referential computed property cycles', () => {
+    const output = runLint(`
+      import {Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          count: {type: Number, value: 1},
+          doubled: {type: Number, computed: 'this.doubled + this.count'}
+        };
+      }
+    `);
+
+    expect(output).toContain('invalid computed properties:');
+    expect(output).toContain('  computed properties form a cycle: doubled');
+  });
+
   test('reports invalid event handler references', () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';

@@ -16,6 +16,7 @@
 // - incompatible declare property types
 // - arithmetic and other type errors in expressions
 // - invalid computed property references
+// - computed property cycles
 // - invalid event handler references
 // - unsupported event names
 // - duplicate property names
@@ -368,6 +369,20 @@ function collectGetterNames(classNode) {
     if (name) getters.add(name);
   }
   return getters;
+}
+
+// Collects computed-property dependencies on other computed properties.
+function collectComputedDependencies(computedText, computedPropNames) {
+  const dependencies = new Set();
+
+  for (const match of computedText.matchAll(THIS_REF_RE)) {
+    const referencedName = match[1];
+    if (computedPropNames.has(referencedName)) {
+      dependencies.add(referencedName);
+    }
+  }
+
+  return [...dependencies].sort();
 }
 
 // Finds the synthetic `__wrec_expr_*` helper functions that were added by
@@ -1835,6 +1850,51 @@ function validateComputedProperty(
   }
 }
 
+// Validates that computed properties do not form dependency cycles.
+function validateComputedPropertyCycles(computedDependencies, findings) {
+  const computedNames = [...computedDependencies.keys()].sort();
+  const dependencyCountMap = new Map();
+  const dependentsMap = new Map();
+  const queue = [];
+
+  for (const computedName of computedNames) {
+    const dependencies = computedDependencies.get(computedName) ?? [];
+    dependencyCountMap.set(computedName, dependencies.length);
+    if (dependencies.length === 0) queue.push(computedName);
+
+    for (const dependencyName of dependencies) {
+      let dependents = dependentsMap.get(dependencyName);
+      if (!dependents) {
+        dependents = [];
+        dependentsMap.set(dependencyName, dependents);
+      }
+      dependents.push(computedName);
+    }
+  }
+
+  const orderedNames = [];
+  for (let index = 0; index < queue.length; index++) {
+    const computedName = queue[index];
+    orderedNames.push(computedName);
+
+    const dependents = (dependentsMap.get(computedName) ?? []).sort();
+    for (const dependentName of dependents) {
+      const nextCount = dependencyCountMap.get(dependentName) - 1;
+      dependencyCountMap.set(dependentName, nextCount);
+      if (nextCount === 0) queue.push(dependentName);
+    }
+  }
+
+  if (orderedNames.length === computedNames.length) return;
+
+  const cycleNames = computedNames.filter(
+    computedName => dependencyCountMap.get(computedName) > 0
+  );
+  findings.invalidComputedProperties.push(
+    `computed properties form a cycle: ${cycleNames.join(', ')}`
+  );
+}
+
 // Validates that a default value matches the declared property type.
 function validateDefaultValue(checker, typeExpression, valueExpression) {
   if (!typeExpression || !valueExpression) return undefined;
@@ -2022,6 +2082,21 @@ function validatePropertyConfigs(
   classMethods,
   findings
 ) {
+  const computedDependencies = new Map();
+  const computedPropNames = new Set();
+
+  for (const {config, propName} of propertyEntries) {
+    const computedProp = getObjectProperty(config, 'computed');
+    if (
+      computedProp &&
+      ts.isPropertyAssignment(computedProp) &&
+      (ts.isStringLiteral(computedProp.initializer) ||
+        ts.isNoSubstitutionTemplateLiteral(computedProp.initializer))
+    ) {
+      computedPropNames.add(propName);
+    }
+  }
+
   for (const {config, propName} of propertyEntries) {
     const computedProp = getObjectProperty(config, 'computed');
     const declaredTypeNode = declaredPropertyTypes.get(propName);
@@ -2104,6 +2179,13 @@ function validatePropertyConfigs(
       (ts.isStringLiteral(computedProp.initializer) ||
         ts.isNoSubstitutionTemplateLiteral(computedProp.initializer))
     ) {
+      computedDependencies.set(
+        propName,
+        collectComputedDependencies(
+          computedProp.initializer.text,
+          computedPropNames
+        )
+      );
       validateComputedProperty(
         propName,
         computedProp.initializer.text,
@@ -2150,6 +2232,8 @@ function validatePropertyConfigs(
       }
     }
   }
+
+  validateComputedPropertyCycles(computedDependencies, findings);
 }
 
 // Validates that a ref attribute targets a unique HTMLElement property.
