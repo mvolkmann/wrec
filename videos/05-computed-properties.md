@@ -39,6 +39,10 @@ This code can be found in the "rectangle-area" directory.
   RectangleArea.define('rectangle-area');
   ```
 
+  The `span` element inside the `div` element
+  displays the result of multiplying the `width` and `height` properties.
+  It is updated automatically whenever either property value changes.
+
 - Create an `index.html` file containing the following:
 
   ```html
@@ -52,6 +56,8 @@ This code can be found in the "rectangle-area" directory.
     </body>
   </html>
   ```
+
+  This just loads the component definition and renders an instance.
 
 - Install Vite by entering `npm i -D vite`.
 - Edit `package.json` and add the script `"dev": "vite"`.
@@ -71,7 +77,9 @@ To use a computed property:
 
 - After "Area:", change the `span` element content to `this.area`.
 
-You can add a method to computed the area.
+The component works the same as before.
+
+You can also add a method to computed the area.
 There's little reason to do it in this example,
 but you can imagine a more complicated calculation
 where this may be desired.
@@ -103,5 +111,5 @@ To do this, change `static properties` to the following:
   };
 ```
 
-We'll see next that wrec provides a way to
-fill in the `usedBy` properties for you!
+You'll see in the "Scripts" video that wrec provides
+a way to fill in the `usedBy` properties for you.
