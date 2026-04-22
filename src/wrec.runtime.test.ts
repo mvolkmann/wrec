@@ -1,5 +1,5 @@
 import {JSDOM} from 'jsdom';
-import {afterAll, beforeAll, expect, test, vi} from 'vitest';
+import {afterAll, afterEach, beforeAll, expect, test, vi} from 'vitest';
 
 let dom: JSDOM;
 let elementIndex = 0;
@@ -43,6 +43,10 @@ beforeAll(async () => {
 afterAll(() => {
   restoreDomGlobals();
   vi.resetModules();
+});
+
+afterEach(() => {
+  document.body.replaceChildren();
 });
 
 // Assigns jsdom globals before importing the Wrec runtime.
@@ -160,6 +164,38 @@ test('syncs component state from WrecState subscriptions', async () => {
 
   expect(element.name).toBe('Alice');
   expect(name?.textContent).toBe('Alice');
+});
+
+test('disconnects cleanly and unsubscribes from WrecState updates', async () => {
+  class DisconnectFixture extends Wrec {
+    static properties = {
+      name: {type: String, value: 'unknown'}
+    };
+    static html = html`<p id="name">this.name</p>`;
+    declare name: string;
+  }
+
+  const elementName = getElementName('disconnect-fixture');
+  DisconnectFixture.define(elementName);
+
+  const stateName = `runtime-state-${elementName}`;
+  const state = new WrecState(stateName, {name: 'World'}) as WrecState & {
+    name: string;
+  };
+  const element = document.createElement(elementName) as DisconnectFixture;
+
+  element.useState(state);
+  document.body.appendChild(element);
+  await waitForUpdates();
+
+  expect(() => {
+    document.body.removeChild(element);
+  }).not.toThrow();
+
+  state.name = 'Alice';
+  await waitForUpdates();
+
+  expect(element.name).toBe('World');
 });
 
 test('updates computed content when a property changes', async () => {

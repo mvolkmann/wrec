@@ -410,7 +410,7 @@ var X = class e extends m {
 	}
 	disconnectedCallback() {
 		for (let { unsubscribe: e } of this.#f.values()) e();
-		this.#r.clear(), this.#o.clear(), this.#c.clear(), this.#l.clear(), this.#f.clear();
+		this.#r.clear(), this.#o = {}, this.#c.clear(), this.#l.clear(), this.#f.clear();
 	}
 	dispatch(e, t) {
 		this.dispatchEvent(new CustomEvent(e, {

@@ -722,6 +722,8 @@ export abstract class Wrec extends HTMLElementBase {
     }
   }
 
+  // On disconnect, this cleans up state subscriptions
+  // and per-instance reactive bookkeeping.
   disconnectedCallback() {
     // Unsubscribe from all state updates.
     for (const {unsubscribe} of this.#stateSubscriptionMap.values()) {
@@ -729,7 +731,7 @@ export abstract class Wrec extends HTMLElementBase {
     }
 
     this.#exprToRefsMap.clear();
-    this.#initialValuesMap.clear();
+    this.#initialValuesMap = {};
     this.#propToParentPropMap.clear();
     this.#propToStateMap.clear();
     this.#stateSubscriptionMap.clear();
@@ -1502,7 +1504,8 @@ export abstract class Wrec extends HTMLElementBase {
     const propName = text?.trim() ?? '';
     const config = this.#ctor.properties[propName];
     if (!config) this.#throwInvalidRef(element, 'ref', propName);
-    if ((config.type as unknown as typeof HTMLElementBase) !== HTMLElementBase) {
+    const configType = config.type as unknown as typeof HTMLElementBase;
+    if (configType !== HTMLElementBase) {
       this.#throw(
         element,
         'ref',
