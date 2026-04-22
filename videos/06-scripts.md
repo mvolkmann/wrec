@@ -11,6 +11,9 @@ The file will define the class `TagName`.
 
 To check a source file that defines a wrec component for errors,
 enter `npx wrec-lint {file-path}`.
+For a list of the issues this script can detect,
+see comment at the top of
+https://github.com/mvolkmann/wrec/blob/main/scripts/lint.js.
 
 A TypeScript `declare` statement specifies the type of a property
 that is defined somewhere else.
