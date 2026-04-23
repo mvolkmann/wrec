@@ -101,9 +101,11 @@ Other supported configuration properties include:
 - `dispatch`: When set to `true`, a `change` event
   is dispatched every time the property value changes.
   Code outside the component can listen for those events.
-  The `detail` property in the event objects contains the properties
+  The event objects will contain a `detail` property
+  whose value is an object that contains the properties
   `tagName`, `property`, `oldValue`, and `value`.
-  This is demonstrated in the "Counter" video.
+  This is demonstrated in the "Counter" video,
+  which is the next in the series.
 
 - `required`: When set to `true`, a `WrecError`
   is thrown when a custom element for the component
@@ -111,13 +113,14 @@ Other supported configuration properties include:
 
 - `usedBy`: This is an array of strings that
   lists the methods that use the property.
-  Its use is explained in the "Scripts" video.
+  Its use is explained later in the "Scripts" video.
 
 - `values`: This is a string containing
   a comma-separated list of allowed values.
   It can only be specified for properties with `type: String`,
   and makes it similar to an enumerated type.
-  For example, "red,green,blue".
+  For example, specifying "red,green,blue" requires
+  the property to have one of those values.
 
 The `static css` property value is a
 template literal that uses the `css` tag function.
