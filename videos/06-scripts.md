@@ -67,8 +67,8 @@ The commands are:
   either "Wrec ok" or "Wrec {issue-count}".
   Lines where issues are found are marked with yellow squigglies
   and hovering over them displays an error message.
-  The issues are also appended to the "OUTPUT" panel,
-  which you can open manually by selecting View ... Output (cmd-shift-u)
+  The issues are also displayed in the "PROBLEMS" panel,
+  which you can open manually by selecting View ... Problems (cmd-shift-m)
   to review them.
 
 - wrec: Add declare Statements in Current File
