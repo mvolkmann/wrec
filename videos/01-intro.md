@@ -1,6 +1,7 @@
 # Introduction
 
-wrec is a library that simplifies creating web components.
+Welcome to my video series on the wrec library
+that simplifies creating web components.
 It's an alternative to libraries like Lit, Stencil, and FAST.
 wrec emphasizes simplicity and reactivity with targeted DOM updates.
 
@@ -8,10 +9,9 @@ With each example shown in this video series,
 I challenge you to find a web UI library
 that can recreate it with less code.
 
-All the example code from the videos in this series
-can be found in the "ch09" directory in the
+All the example code from the videos can be found in the
+"ch09" directory inside the GitHub repository linked in the comments.
 [web-component-book-code](https://github.com/mvolkmann/web-component-book-code)
-GitHub repository.
 
 ## Basic Hello World
 
@@ -34,8 +34,8 @@ This code can be found in the "hello-world" directory.
   HelloWorld.define('hello-world');
   ```
 
-  Wrec components are defined by a class that extends `Wrec`
-  and defines the `static html` property whose value is
+  Wrec components are defined by a class that extends `Wrec`.
+  The class must define a `static html` property whose value is
   a template literal that uses the `html` tag function.
 
   The call to `HelloWorld.define` associates
@@ -55,7 +55,7 @@ This code can be found in the "hello-world" directory.
   </html>
   ```
 
-  This just loads the component definition and renders an instance.
+  This just loads the component definition and renders an instance of it.
 
 - Install Vite by entering `npm i -D vite`.
 - Edit `package.json` and add the script `"dev": "vite"`.

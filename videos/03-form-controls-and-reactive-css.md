@@ -123,7 +123,7 @@ This code can be found in the "form-controls" directory.
   </html>
   ```
 
-  This just loads the component definition and renders an instance.
+  This just loads the component definition and renders an instance of it.
 
 - Install Vite by entering `npm i -D vite`.
 - Edit `package.json` and add the script `"dev": "vite"`.
