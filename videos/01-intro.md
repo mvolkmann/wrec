@@ -159,3 +159,6 @@ Let's demonstrate wrec's support for two-way bindings.
    and notice that the DOM is updated.
 1. Switch to the Elements tab and
    notice that the `name` attribute is also updated.
+
+Wrec automatically keeps attribute and property values in sync,
+and updates the DOM whenever a property that affects it is modified.
