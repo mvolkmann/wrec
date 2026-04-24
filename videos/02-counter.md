@@ -3,11 +3,13 @@
 Let's create a counter component.
 This code can be found in the "basic-counter" directory.
 
+To create this project from scratch ...
+
 - Create a new directory named "my-counter".
 - cd to it.
 - Create a `package.json` file by entering `npm init -y`.
-- Install the wrec library by entering `npm i wrec`.
-- Create a `my-counter.ts` file containing the following:
+- Install the wrec library by entering `npm install wrec`.
+- Create the `my-counter.ts` file shown here:
 
   ```ts
   import {css, html, Wrec} from 'wrec';
@@ -45,7 +47,7 @@ This code can be found in the "basic-counter" directory.
   tells wrec to dispatch a "change" event
   every time the value of that property changes.
 
-  Raw JavaScript expressions can appear in
+  Raw JavaScript expressions can appear in four places:
   the text content of an element,
   an attribute value,
   a CSS property value,
@@ -62,7 +64,7 @@ This code can be found in the "basic-counter" directory.
   That attribute will only be present in the DOM
   when the expression evaluates to `true`.
 
-- Create an `index.html` file containing the following:
+- Create the `index.html` file shown here:
 
   ```html
   <!doctype html>
@@ -85,8 +87,8 @@ This code can be found in the "basic-counter" directory.
   This loads the `my-counter` component and renders an instance of it.
   The `script` listens for "change" events and outputs information from them.
 
-- Install Vite by entering `npm i -D vite`.
-- Edit `package.json` and add the script `"dev": "vite"`.
+- Install Vite by entering `npm install -D vite`.
+- Edit `package.json` and add the script "dev" that runs the command `vite`.
 - Start a local server by entering `npm run dev`.
 - Browse localhost:5173.
 - Click the buttons and note the changes to the displayed value,
