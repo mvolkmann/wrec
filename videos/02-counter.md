@@ -1,7 +1,7 @@
 # Counter component
 
 Let's create a counter component.
-This code can be found in the "basic-counter" directory.
+This code can be found in the "my-counter" directory.
 
 To create this project from scratch ...
 
