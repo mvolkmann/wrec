@@ -64,7 +64,7 @@ To create this project from scratch ...
   That attribute will only be present in the DOM
   when the expression evaluates to `true`.
 
-- Create the `index.html` file shown here:
+- Next, create the `index.html` file shown here:
 
   ```html
   <!doctype html>

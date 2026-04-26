@@ -9,8 +9,9 @@ With each example shown in this video series,
 I challenge you to find a web UI library
 that can recreate it with less code.
 
-All the example code from the videos can be found in the
-"ch09" directory inside the GitHub repository linked in the comments.
+All the example code from the videos
+can be found in the chapter 9 directory
+inside the GitHub repository whose URL is shown here.
 
 [web-component-book-code](https://github.com/mvolkmann/web-component-book-code)
 
@@ -24,7 +25,8 @@ To create this project from scratch ...
 - cd to it.
 - Create a `package.json` file by entering `npm init -y`.
 - Install the wrec library by entering `npm install wrec`.
-- Create the `hello-world.js` file shown here:
+- Create the `hello-world.ts` file shown here.
+  You can also define wrec components in `.js` files.
 
   ```js
   import {html, Wrec} from 'wrec';
@@ -61,6 +63,7 @@ To create this project from scratch ...
 
 - Install Vite as a dev dependency by entering `npm install -D vite`.
 - Edit `package.json` and add the script "dev" that runs the command `vite`.
+- Here is that file with all the unessential properties removed.
 - Start a local server by entering `npm run dev`.
 - Browse localhost:5173 to see what is shown here.
 
@@ -68,8 +71,8 @@ To create this project from scratch ...
 
 Our `hello-world` component is boring.
 It has no styling and always renders the same thing.
-Let's fix that by modifying `hello-world.js`
-to contain the code shown here:
+Let's fix that by modifying `hello-world.ts`
+to contain the code shown in `hello-world2.ts`.
 
 ```js
 import {css, html, Wrec} from 'wrec';
@@ -120,8 +123,8 @@ Other supported configuration properties include the following:
 
 - The `values` property is a string containing
   a comma-separated list of allowed values.
-  It can only be specified for properties where
-  the `type` property is set to `String`.
+  It can only be specified for properties
+  whose `type` property is set to `String`.
   This makes the property similar to an enumerated type.
   For example, specifying the string "red,green,blue"
   requires the property to have one of those values.
@@ -135,26 +138,27 @@ That is automatically replaced by the expression value
 every time its value changes,
 using an efficient, targeted DOM update.
 
-Edit `index.html` and add another instance of the `hello-world` custom element
-that includes a `name` attribute as follows:
+Edit `index.html` to contain the code shown in `index2.html`.
+This adds another instance of the `hello-world` custom element
+that includes a `name` attribute.
 
 ```html
 <hello-world name="Earth"></hello-world>
 ```
 
 This will of course render "Hello, Earth!" instead of "Hello, World!".
-The existing `hello-world` custom element
+The existing `hello-world` custom element with no `name` attribute
 will continue to use "World" for the name.
 
 Let's demonstrate wrec's support for two-way bindings.
 
-1. Inspect the `hello-world` element.
+1. Inspect the second `hello-world` element.
 1. Change its `name` attribute value to "Moon"
    and notice that the DOM is updated.
 1. Switch to the Console tab.
 1. Enter `$0.name` to see the current value of
-   the `hello-world` component `name` property
-   which is automatically kept in sync with the attribute value.
+   the `hello-world` component `name` property which is now "Moon".
+   The property is automatically kept in sync with the attribute value.
 1. Change the `name` property by entering `$0.name = "Jupiter"`
    and notice that the DOM is updated.
 1. Switch to the Elements tab and
@@ -162,3 +166,31 @@ Let's demonstrate wrec's support for two-way bindings.
 
 Wrec automatically keeps attribute and property values in sync,
 and updates the DOM whenever a property that affects it is modified.
+
+## VS Code Extensions
+
+Perhaps you aren't fond of libraries that require
+placing CSS and HTML inside JavaScript template literals.
+A likely reason is that code editors do not, by default, provide
+code formatting, syntax highlighting, or IntelliSense code completions
+for CSS and HTML inside template literals.
+That's no way to live!
+
+In VS Code, you can add extensions such as
+"Prettier - Code Formatter" and "Inline HTML" provides those features.
+
+Prettier supports many syntaxes including
+HTML, CSS, JavaScript, and TypeScript.
+"Inline HTML" provides syntax highlighting and IntelliSense support
+for template literals that contain HTML and CSS.
+Press ctrl-space to get suggested completions.
+
+These VS Code extensions are activated in template literals
+that use the `css` or `html` tag functions,
+and the wrec library provides those.
+
+## Summary
+
+You've seen how simple it is to define and use wrec-based web components.
+In the next video, we explore how wrec supports
+event handling and Boolean attributes.
