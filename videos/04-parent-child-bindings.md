@@ -15,7 +15,7 @@ To create this project from scratch ...
 - Create a new directory named "color-demo".
 - cd to it.
 - Create a `package.json` file by entering `npm init -y`.
-- Install the wrec library by entering `npm i wrec`.
+- Install the wrec library by entering `npm install wrec`.
 
 - Create a `number-slider.ts` file shown here.
 
@@ -257,7 +257,7 @@ To create this project from scratch ...
 
   This just loads the component definition and renders an instance of it.
 
-- Install Vite by entering `npm i -D vite`.
+- Install Vite by entering `npm install -D vite`.
 - Edit `package.json` and add the script "dev" that runs the command `vite`.
 - Start a local server by entering `npm run dev`.
 - Browse localhost:5173.

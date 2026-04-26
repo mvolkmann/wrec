@@ -6,10 +6,12 @@ You saw an example of this in the `color-picker` component.
 Let's look at another example and review some options.
 This code can be found in the "rectangle-area" directory.
 
+To create this project from scratch ...
+
 - Create a new directory named "rectangle-area".
 - cd to it.
 - Create a `package.json` file by entering `npm init -y`.
-- Install the wrec library by entering `npm i wrec`.
+- Install the wrec library by entering `npm install wrec`.
 - Copy `number-slider.ts` from the `color-demo` project.
 - Create a `rectangle-area.ts` file containing the following:
 
@@ -59,7 +61,7 @@ This code can be found in the "rectangle-area" directory.
 
   This just loads the component definition and renders an instance of it.
 
-- Install Vite by entering `npm i -D vite`.
+- Install Vite by entering `npm install -D vite`.
 - Edit `package.json` and add the script `"dev": "vite"`.
 - Start a local server by entering `npm run dev`.
 - Browse localhost:5173.

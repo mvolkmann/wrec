@@ -15,7 +15,7 @@ This code can be found in the "state" directory.
 - Create a new directory named "state".
 - cd to it.
 - Create a `package.json` file by entering `npm init -y`.
-- Install the wrec library by entering `npm i wrec`.
+- Install the wrec library by entering `npm install wrec`.
 - Copy `hello-world.ts` from the `hello-world` project.
 - Create a `labeled-input.ts` file containing the following:
 
@@ -106,6 +106,13 @@ The second argument to the `useState` method describes the mapping
 from state properties to component properties.
 If this isn't supplied, like in the second call,
 the mapping defaults to identically named properties.
+
+To run this ...
+
+- Install Vite by entering `npm install -D vite`.
+- Edit `package.json` and add the script "dev" that runs the command `vite`.
+- Start a local server by entering `npm run dev`.
+- Browse localhost:5173.
 
 If the user modifies the value in the `labeled-input`,
 the new value is set in the state.
