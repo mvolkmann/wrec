@@ -8,11 +8,13 @@ Form controls that have values include
 Let's create a component that demonstrates this.
 This code can be found in the "form-controls" directory.
 
+To create this project from scratch ...
+
 - Create a new directory named "form-controls".
 - cd to it.
 - Create a `package.json` file by entering `npm init -y`.
 - Install the wrec library by entering `npm i wrec`.
-- Create a `form-controls.ts` file containing the following:
+- Create a `form-controls.ts` file shown here:
 
   ```ts
   import {css, html, Wrec} from 'wrec';
@@ -109,7 +111,7 @@ This code can be found in the "form-controls" directory.
   such as dragging the slider in an `input` with `type="range"`,
   we added ":input" after the "value" attribute name.
 
-- Create an `index.html` file containing the following:
+- Next, create the `index.html` file shown here:
 
   ```html
   <!doctype html>
@@ -126,7 +128,7 @@ This code can be found in the "form-controls" directory.
   This just loads the component definition and renders an instance of it.
 
 - Install Vite by entering `npm i -D vite`.
-- Edit `package.json` and add the script `"dev": "vite"`.
+- Edit `package.json` and add the script "dev" that runs the command `vite`.
 - Start a local server by entering `npm run dev`.
 - Browse localhost:5173.
 - Change the Story text, the Size slider, and the Color dropdown.
@@ -137,7 +139,7 @@ the `checked` attribute can be set to a reference to a Boolean property.
 That creates a two-way binding where
 clicking the checkbox updates the property and
 changing the property updates the checkbox.
-You will see an example of this in the "Parent-Child Bindings" video.
+You'll see an example of this in the "Parent-Child Bindings" video.
 
 For `input` elements with `type="radio"`,
 the `checked` attribute can be set to a reference to a String property.
@@ -145,3 +147,11 @@ That creates a two-way binding where clicking the radio button
 sets the property to the value of the `value` attribute and
 changing the property updates the `checked` value based on
 whether the property value matches the value of the `value` attribute.
+
+## Summary
+
+You've seen how wrec greatly simplifies creating web components
+that render form controls and use their values
+by removing the need to write event handling code.
+In the next video, we explore how wrec supports
+two-way bindings between parent and child components.

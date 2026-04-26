@@ -95,3 +95,10 @@ To create this project from scratch ...
   which is prevented from becoming a negative number.
 - When the value is greater than or equal to 10,
   the text at the end changes from "single-digit" to "multi-digit".
+
+## Summary
+
+You've seen how to use events and Boolean attributes in wrec component.
+In the next video, we explore how wrec supports
+2-way bindings between form control values and component properties.
+We'll also see an example of reactive CSS.
