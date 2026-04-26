@@ -153,12 +153,6 @@ To create this project from scratch ...
   of the individual color properties.
 
 - Create a `color-demo.js` file shown here.
-  This defines a web component that renders a `form` containing
-  a `color-picker` to select a color,
-  a `number-slider` to select a font size,
-  a `p` element that displays sample text, and
-  buttons to submit or reset the form.
-  The sample text is styled with the selected color and font size.
 
   ```ts
   import {css, html, Wrec} from 'wrec';
@@ -217,6 +211,14 @@ To create this project from scratch ...
   ```
 
   This begins by importing the definitions of other components that it uses.
+
+  Then it defines a web component that renders a `form` containing
+  a `color-picker` to select a color,
+  a `number-slider` to select a font size,
+  a `p` element that displays sample text, and
+  buttons to submit or reset the form.
+  The sample text is styled with the selected color and font size.
+  The "Lock in color" checkbox is explained later.
 
   The endpoint https://httpbin.org/post is useful for testing POST requests.
   After changing the color and size,
