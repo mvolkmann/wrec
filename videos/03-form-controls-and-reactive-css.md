@@ -84,6 +84,17 @@ To create this project from scratch ...
   FormControls.define('form-controls');
   ```
 
+  The component has the properties `color`, `size`, and `story`.
+  Their configuration objects specify their runtime type and initial value.
+
+  The `static css` property produces the layout and styling
+  shown in the browser window.
+
+  The `static html` property specifies the HTML elements to render,
+  including `textarea`, `input`, and `select` elements.
+  The `input` element has a `type` attribute set to "range",
+  which causes it to render a slider.
+
   Note the JavaScript expressions that are just property references in:
   - the CSS for `p` elements,
   - the `textarea` element content
