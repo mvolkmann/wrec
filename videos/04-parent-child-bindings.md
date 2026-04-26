@@ -10,18 +10,20 @@ the corresponding parent property is updated.
 Let's look at an example that utilizes this.
 This code can be found in the "color-demo" directory.
 
+To create this project from scratch ...
+
 - Create a new directory named "color-demo".
 - cd to it.
 - Create a `package.json` file by entering `npm init -y`.
 - Install the wrec library by entering `npm i wrec`.
 
-- Create a `number-slider.js` file containing the following.
+- Create a `number-slider.js` file shown here.
   This defines a web component the renders a `label`,
   an `input` with `type="range"`, and
   a `span` that displays the current value.
 
-  This component is `formAssociated` so it can
-  contribute values to form submissions.
+  This component is `formAssociated`
+  so it can contribute values to form submissions.
 
   ```ts
   import {css, html, Wrec} from 'wrec';
@@ -68,13 +70,20 @@ This code can be found in the "color-demo" directory.
   NumberSlider.define('number-slider');
   ```
 
-- Create a `color-picker.js` file containing the following.
+  The `label` property specifies the text to display
+  to the left of the slider.
+  The `labelWidth` property supports stacking multiple instances vertically
+  where their sliders all begin at the same horizontal location.
+  The `min` and `max` properties constrain the allowed values of the slider,
+  and the `value` property specifies its starting value.
+
+- Create a `color-picker.js` file shown here.
   This defines a web component the renders a color swatch
   and three `number-slider` elements for selecting
   red, green, and blue values between 0 and 255.
 
-  This component is `formAssociated` so it can
-  contribute values to form submissions.
+  This component is also `formAssociated`
+  so it can contribute values to form submissions.
 
   ```ts
   import {css, html, Wrec} from 'wrec';
@@ -143,8 +152,8 @@ This code can be found in the "color-demo" directory.
   Dragging the sliders changes the values
   of the individual color properties.
 
-- Create a `color-demo.js` file containing the following.
-  This defines a web component that renders a `form` that contains
+- Create a `color-demo.js` file shown here.
+  This defines a web component that renders a `form` containing
   a `color-picker` to select a color,
   a `number-slider` to select a font size,
   a `p` element that displays sample text, and
@@ -159,6 +168,7 @@ This code can be found in the "color-demo" directory.
   class ColorDemo extends Wrec {
     static properties = {
       color: {type: String},
+      disablePicker: {type: Boolean},
       size: {type: Number, value: 18}
     };
 
@@ -182,8 +192,13 @@ This code can be found in the "color-demo" directory.
       <form method="post" action="https://httpbin.org/post">
         <color-picker
           color="this.color"
+          disabled="this.disablePicker"
           form-assoc="red: r, green: g, blue: b"
         ></color-picker>
+        <div>
+          <label>Lock in color</label>
+          <input type="checkbox" checked="this.disablePicker" />
+        </div>
         <number-slider
           label="Size"
           max="48"
@@ -206,17 +221,21 @@ This code can be found in the "color-demo" directory.
   The endpoint https://httpbin.org/post is useful for testing POST requests.
   After changing the color and size,
   click the "Submit" button to see the data that is submitted.
+  We'll demo this soon.
 
   Note the use of the `form-assoc` attribute on the `color-picker` element
   to specify a mapping from property names to form keys.
   This is necessary for a wrec component to contribute multiple values.
-  It is not needed when a wrec component such as `number-slider`
+  It maps the properties `red`, `green`, and `blue`
+  to the form keys `r`, `g`, and `b`.
+  The `form-assoc` attribute is not needed when
+  a wrec component such as `number-slider`
   has a property named "value" and
   only wants to contribute that single value.
   In that case, the form key is the value of its "name" attribute,
   just like in HTML form controls.
 
-- Create an `index.html` file containing the following:
+- Create the `index.html` file shown here:
 
   ```html
   <!doctype html>
@@ -233,7 +252,7 @@ This code can be found in the "color-demo" directory.
   This just loads the component definition and renders an instance of it.
 
 - Install Vite by entering `npm i -D vite`.
-- Edit `package.json` and add the script `"dev": "vite"`.
+- Edit `package.json` and add the script "dev" that runs the command `vite`.
 - Start a local server by entering `npm run dev`.
 - Browse localhost:5173.
 - Modify the color sliders and note that the swatch and text colors update.
@@ -246,33 +265,16 @@ This code can be found in the "color-demo" directory.
 If the `disabled` attribute is added a custom element for a wrec component,
 wrec adds that to every descendant element that can be disabled.
 
-For example, you can add a checkbox in the `color-demo` component
-that causes all the sliders in the `color-picker` component
-to be disabled when checked.
-
-To do this, edit `color-demo.js` and ...
-
-- Add the following property definition in `static properties`:
-
-  ```ts
-  disablePicker: { type: Boolean },
-  ```
-
-- Add the following in the `html` template literal:
-
-  ```ts
-  <div>
-    <label>Lock in color</label>
-    <input type="checkbox" checked="this.disablePicker" />
-  </div>
-  ```
-
-- Add the following attribute to the `color-picker` element
-  in the `html` template literal:
-
-  ```html
-  disabled="this.disablePicker"
-  ```
+The component defined in `color-demo.ts`
+renders a checkbox labeled "Lock in color".
+Checking that causes the `disablePicker` property to be set to `true`.
+That property is used to set the `disabled` attribute
+on the instance of the `color-picker` component.
+When that is `true`, all the sliders in the `color-picker` component
+are disabled.
+The `color-picker.ts` doesn't contain any code
+to handle the `disabled` attribute.
+Wrec handles this automatically.
 
 - Start a local server by entering `npm run dev`.
 - Browse localhost:5173.
@@ -283,3 +285,12 @@ To do this, edit `color-demo.js` and ...
 - Uncheck the "Lock in color" checkbox.
 - Note that all the color sliders are enabled,
   so the color can be changed.
+
+## Summary
+
+You've seen an example of utilizing two-way bindings
+between parent and child components.
+Think about how much additional code would be required to
+implement the same functionality in any other web framework or library.
+In the next video, we explore how wrec supports computed properties
+and the role played by the `usedBy` property configuration property.
