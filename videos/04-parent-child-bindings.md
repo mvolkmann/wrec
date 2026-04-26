@@ -1,6 +1,6 @@
 # Parent-Child 2-way Bindings
 
-Parent elements can pass their properties to child elements.
+In wrec, parent elements can pass their properties to child elements.
 This automatically creates 2-way bindings.
 If the parent changes its property value,
 the corresponding child property is updated.
@@ -17,13 +17,7 @@ To create this project from scratch ...
 - Create a `package.json` file by entering `npm init -y`.
 - Install the wrec library by entering `npm i wrec`.
 
-- Create a `number-slider.js` file shown here.
-  This defines a web component the renders a `label`,
-  an `input` with `type="range"`, and
-  a `span` that displays the current value.
-
-  This component is `formAssociated`
-  so it can contribute values to form submissions.
+- Create a `number-slider.ts` file shown here.
 
   ```ts
   import {css, html, Wrec} from 'wrec';
@@ -70,6 +64,13 @@ To create this project from scratch ...
   NumberSlider.define('number-slider');
   ```
 
+  This defines a web component the renders a `label`,
+  an `input` with `type="range"`, and
+  a `span` that displays the current value.
+
+  This component is `formAssociated`
+  so it can contribute values to form submissions.
+
   The `label` property specifies the text to display
   to the left of the slider.
   The `labelWidth` property supports stacking multiple instances vertically
@@ -77,13 +78,7 @@ To create this project from scratch ...
   The `min` and `max` properties constrain the allowed values of the slider,
   and the `value` property specifies its starting value.
 
-- Create a `color-picker.js` file shown here.
-  This defines a web component the renders a color swatch
-  and three `number-slider` elements for selecting
-  red, green, and blue values between 0 and 255.
-
-  This component is also `formAssociated`
-  so it can contribute values to form submissions.
+- Create a `color-picker.ts` file shown here.
 
   ```ts
   import {css, html, Wrec} from 'wrec';
@@ -145,6 +140,13 @@ To create this project from scratch ...
   ColorPicker.define('color-picker');
   ```
 
+  This defines a web component that renders a color swatch
+  and three `number-slider` elements for selecting
+  red, green, and blue values between 0 and 255.
+
+  This component is also `formAssociated`
+  so it can contribute values to form submissions.
+
   The background color of the swatch is
   determined by the `color` property value,
   which is computed based the values of
@@ -152,7 +154,7 @@ To create this project from scratch ...
   Dragging the sliders changes the values
   of the individual color properties.
 
-- Create a `color-demo.js` file shown here.
+- Create a `color-demo.ts` file shown here.
 
   ```ts
   import {css, html, Wrec} from 'wrec';
@@ -217,7 +219,9 @@ To create this project from scratch ...
   a `number-slider` to select a font size,
   a `p` element that displays sample text, and
   buttons to submit or reset the form.
+
   The sample text is styled with the selected color and font size.
+
   The "Lock in color" checkbox is explained later.
 
   The endpoint https://httpbin.org/post is useful for testing POST requests.
@@ -274,7 +278,7 @@ That property is used to set the `disabled` attribute
 on the instance of the `color-picker` component.
 When that is `true`, all the sliders in the `color-picker` component
 are disabled.
-The `color-picker.ts` doesn't contain any code
+The `color-picker.ts` file doesn't contain any code
 to handle the `disabled` attribute.
 Wrec handles this automatically.
 
