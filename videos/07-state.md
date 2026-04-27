@@ -12,12 +12,14 @@ multiple levels of a component hierarchy.
 Let's look at an example.
 This code can be found in the "state" directory.
 
+To create this project from scratch ...
+
 - Create a new directory named "state".
 - cd to it.
 - Create a `package.json` file by entering `npm init -y`.
 - Install the wrec library by entering `npm install wrec`.
 - Copy `hello-world.ts` from the `hello-world` project.
-- Create a `labeled-input.ts` file containing the following:
+- Create a `labeled-input.ts` file shown here:
 
 ```ts
 import {css, html, Wrec} from 'wrec';
@@ -51,7 +53,7 @@ LabeledInput.define('labeled-input');
 
 This renders `label` and `input` elements.
 
-Create the `index.html` file containing the following:
+Create the `index.html` file shown here:
 
 ```html
 <!doctype html>
@@ -116,6 +118,7 @@ To run this ...
 
 If the user modifies the value in the `labeled-input`,
 the new value is set in the state.
+Change "World" to "Moon".
 Since the `hello-world` component also uses the same state property,
 that is also updated.
 
@@ -129,10 +132,12 @@ All the wiring occurs outside of the component code.
 
 You can modify state from the browser DevTools console as well.
 Doing so triggers updates to the mapped component properties.
-For example, entering the following updates both components.
+For example, enter the following to view the current state
+and update it, which updates both components.
 
 ```js
 state = WrecState.get('demo');
+JSON.stringify(state);
 state.name = 'Earth';
 ```
 
@@ -145,3 +150,11 @@ can be primitive values or objects.
 When they are objects, nested properties can be set directly.
 The changes are properly synced and the DOM properly updates.
 For an example of this, see the "state-objects" directory.
+
+## Summary
+
+You've seen how the `WrecState` class can be used
+to share reactively state between wrec components.
+In the next video, we describe additional wrec features,
+where to find more examples, how to run the wrec tests,
+and where to find resources for learning more.
