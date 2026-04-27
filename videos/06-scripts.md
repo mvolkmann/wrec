@@ -42,14 +42,14 @@ The properties of a wrec component are described in an object
 that is the value of the `static properties` property,
 which is that "somewhere else".
 Adding `declare` statements is not required, but they
-enable type checking in TypeScript-aware editors.
+enable type checking in TypeScript-aware editors, like VS Code.
 
 To automatically add `declare` statements in a given TypeScript source file
 for each property described in the `static properties` object,
 enter `npx wrec-declare {file-path}`.
 The `declare` statements are added
 immediately after the `static properties` property.
-When the `type` of a property is `Object` or `Array`, you should
+When the runtime `type` of a property is `Object` or `Array`, you should
 further customize the `declare` statement to make the type more specific.
 
 Let's see this in action.
@@ -92,7 +92,7 @@ Let's see this in action.
 ## "wrec" VS Code Extension
 
 The "wrec" VS Code extension provides Command Palette commands
-that run the scripts described above.
+that run the scripts we just saw.
 It is available in the Visual Studio Marketplace at this URL:
 https://marketplace.visualstudio.com/items?itemName=RMarkVolkmann.wrec.
 
