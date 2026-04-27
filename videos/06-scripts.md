@@ -45,11 +45,15 @@ further customize the `declare` statement to make the type more specific.
 
 Let's see this in action.
 
+- Open the file `rectangle-area.ts` in the rectangle-area project.
+- Hover over `this.width` inside the `getArea` method
+  and note that VS Code says "Property 'width' does not exist".
 - `cd` to the ch09/rectangle-area directory.
 - Enter `npx wrec-declare rectangle-area.ts`
-- View the file in VS Code.
 - Explain the `declare` statements that were added.
-- Hover over a reference to `this.width` to see its type.
+- Hover over `this.width` inside the `getArea` method again
+  and note that it now knows that the property exists
+  and its type is "number".
 
 The configuration objects in the `static properties` object
 can contain `usedBy` properties.
