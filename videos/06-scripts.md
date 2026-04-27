@@ -86,7 +86,12 @@ To use the provided commands
 the `package.json` file for the project that is opened in VS Code
 must have a dependency on the wrec package and it must be installed.
 
+Let's open the VS Code command palette and
+filter to the commands that begin with "wrec:".
+
 The following VS Code commands are provided:
+
+Open
 
 - The "wrec: Scaffold New Component" command prompts for a tag name
   and runs the `scaffold` script described above.
