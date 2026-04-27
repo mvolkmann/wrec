@@ -153,7 +153,7 @@ For an example of this, see the "state-objects" directory.
 ## Summary
 
 You've seen how the `WrecState` class can be used
-to share reactively state between wrec components.
+to share reactive state between wrec components.
 In the next video, we describe additional wrec features,
 where to find more examples, how to run the wrec tests,
 and where to find resources for learning more about wrec.
