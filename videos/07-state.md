@@ -65,7 +65,20 @@ Create the `index.html` file shown here:
       }
     </style>
     <script type="module">
-      // See below.
+      import {WrecState} from 'wrec';
+      import './hello-world.js';
+      import './labeled-input.js';
+
+      const state = new WrecState('demo', {name: 'World'});
+      const li = document.querySelector('labeled-input');
+      li.useState(state, {name: 'value'});
+      const hw = document.querySelector('hello-world');
+      hw.useState(state);
+
+      const button = document.querySelector('button');
+      button.addEventListener('click', () => {
+        state.name = 'World';
+      });
     </script>
   </head>
   <body>
@@ -77,37 +90,23 @@ Create the `index.html` file shown here:
 ```
 
 This renders instances of the `labeled-input` and `hello-world` components.
+It also renders a `button` element with the text "Reset".
 
-As it stands, we haven't yet imported the code for the two wrec components
-and there is no use of `WrecState`.
-Add the following in the `script` element:
+The `script` imports the code for the two wrec components
+Then it creates a `WrecState` object,
+giving it the name "demo", and some initial data.
+Because the second constructor argument is not a Boolean value,
+the data is not persisted to `sessionStorage`.
 
-```js
-import {WrecState} from 'wrec';
-import './hello-world.js';
-import './labeled-input.js';
-
-const state = new WrecState('demo', {name: 'World'});
-const li = document.querySelector('labeled-input');
-li.useState(state, {name: 'value'});
-const hw = document.querySelector('hello-world');
-hw.useState(state);
-
-const button = document.querySelector('button');
-button.addEventListener('click', () => {
-  state.name = 'World';
-});
-```
-
-This code creates a `WrecState` object, gives it the name "demo",
-and initializes its data. Because the second constructor argument
-is not a Boolean value, the data is not persisted to `sessionStorage`.
-Next, it finds the `labeled-input` and `hello-world` elements in the DOM
-and tells them to use the state object.
+Next, the script finds the `labeled-input` and `hello-world` elements
+in the DOM and tells them to use the state object.
 The second argument to the `useState` method describes the mapping
 from state properties to component properties.
 If this isn't supplied, like in the second call,
 the mapping defaults to identically named properties.
+
+Finally, the script finds the "Reset" button and
+adds an event listener that resets the state `name` property.
 
 To run this ...
 
@@ -145,7 +144,7 @@ The same code can be used anywhere in an application
 to get a reference to a `WrecState` object,
 get the properties it holds, and modify its properties.
 
-The types of `WrecState` properties and wrec component properties
+`WrecState` properties and wrec component properties
 can be primitive values or objects.
 When they are objects, nested properties can be set directly.
 The changes are properly synced and the DOM properly updates.
@@ -157,4 +156,4 @@ You've seen how the `WrecState` class can be used
 to share reactively state between wrec components.
 In the next video, we describe additional wrec features,
 where to find more examples, how to run the wrec tests,
-and where to find resources for learning more.
+and where to find resources for learning more about wrec.
