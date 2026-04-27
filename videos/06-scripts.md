@@ -13,6 +13,10 @@ Let's see this in action.
 
 - Enter `npx wrec-scaffold delete-me`.
 - View the file in VS Code.
+- It's a basic "hello world" component,
+  but the class name is `DeleteMe`
+  and the associated tag name is "delete-me".
+- I'll delete the generated file so it can be generated again later.
 
 To check a source file that defines a wrec component for errors,
 enter `npx wrec-lint {file-path}`.
@@ -22,10 +26,15 @@ https://github.com/mvolkmann/wrec/blob/main/scripts/lint.js.
 
 Let's see this in action.
 
-- Add a few errors in ch09/rectangle-area/rectangle-area.ts.
+- Here is the file rectangle-area.ts.
+- I'll change the runtime type of the `height` property
+  from `Number` to `String`.
+- Then I'll change the reference to `this.height`
+  in the `getArea` method to `this.hite`.
 - `cd` to the ch09/rectangle-area directory.
 - Enter `npx wrec-lint rectangle-area.ts`
-- Explain the error messages.
+- Ad Lib: Explain the error messages.
+- Let's revert the changes in this file.
 
 A TypeScript `declare` statement specifies the type of a property
 that is defined somewhere else, not in the normal way.
@@ -48,12 +57,14 @@ Let's see this in action.
 - Open the file `rectangle-area.ts` in the rectangle-area project.
 - Hover over `this.width` inside the `getArea` method
   and note that VS Code says "Property 'width' does not exist".
-- `cd` to the ch09/rectangle-area directory.
+- That's because wrec generates the properties
+  from their descriptions in `static properties`.
 - Enter `npx wrec-declare rectangle-area.ts`
-- Explain the `declare` statements that were added.
+- Ad Lib: Explain the `declare` statements that were added.
 - Hover over `this.width` inside the `getArea` method again
   and note that it now knows that the property exists
   and its type is "number".
+- I'll delete the `declare` statements so they can be added again later.
 
 The configuration objects in the `static properties` object
 can contain `usedBy` properties.
@@ -70,10 +81,13 @@ all `.js` and `.ts` files in and below the current directory.
 
 Let's see this in action.
 
-- `cd` to the ch09/rectangle-area directory.
+- Open `rectangle-area.ts`.
+- Remove the existing `usedBy` properties.
 - Enter `npx wrec-usedby rectangle-area.ts`
-- View the file in VS Code.
-- Explain the `usedBy` properties that were added.
+- Note the `usedBy` properties that are added.
+- It correctly determined that both the `width` and `height` properties
+  are used by the `getArea` method.
+- I'll delete the `usedBy` properties so they can be added again later.
 
 ## "wrec" VS Code Extension
 
@@ -91,10 +105,13 @@ filter to the commands that begin with "wrec:".
 
 The following VS Code commands are provided:
 
-Open
-
 - The "wrec: Scaffold New Component" command prompts for a tag name
   and runs the `scaffold` script described above.
+
+  Let's see this in action.
+  - Open the Command Palette and select the command.
+  - Enter the tag name "delete-me".
+  - This creates the file `delete-me.ts`.
 
 - The "wrec: Lint Current File" command runs the `lint` script
   on the currently open and focused source file.
@@ -107,19 +124,32 @@ Open
   which you can open manually by selecting View ... Problems
   or by pressing cmd-shift-m.
 
-Let's see this in action.
-
-- Add a few errors in ch09/rectangle-area/rectangle-area.ts.
-- Open the Command Palette and select the command.
-- Hover over the yellow squigglies to see the error messages.
-- Open the PROBLEMS panel to see all the error messages.
+  Let's see this in action.
+  - We have the `rectangle-area.ts` file open in VS Code.
+  - I'll change the runtime type of the `height` property
+    from `Number` to `String`.
+  - Then I'll change the reference to `this.height`
+    in the `getArea` method to `this.hite`.
+  - Open the Command Palette and select the command.
+  - Hover over the yellow squigglies to see the error messages.
+  - Open the PROBLEMS panel to see all the error messages.
 
 - The "wrec: Add declare Statements in Current File" command
   runs the `declare` script on the currently open and focused source file,
   which adds `declare` statements.
 
+  Let's see this in action.
+  - The `rectangle-area.ts` file is still open in VS Code.
+  - Open the Command Palette and select the command.
+  - Note the `declare` statements that are added.
+
 - The "wrec: Set usedBy Properties in Current File" command
   runs the `usedby` script on the currently open and focused source file.
+
+  Let's see this in action.
+  - The `rectangle-area.ts` file is still open in VS Code.
+  - Open the Command Palette and select the command.
+  - Note the `usedBy` properties that are added.
 
 ## Summary
 
