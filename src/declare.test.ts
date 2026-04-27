@@ -22,9 +22,9 @@ describe('declare.js', () => {
 
         class Fixture extends Wrec {
           static properties = {
-            count: {type: Number},
             enabled: {type: Boolean},
-            label: {type: String}
+            label: {type: String},
+            count: {type: Number}
           };
 
           static css = css\`\`;

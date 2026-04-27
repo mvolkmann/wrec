@@ -49,6 +49,7 @@ function analyzeSourceFile(sourceFile) {
       if (!declareType) continue;
       declareLines.push(createDeclareLine(propName, declareType));
     }
+    declareLines.sort((a, b) => a.localeCompare(b));
 
     const start = propertiesMember.end;
     const end = findDeclareBlockEnd(classNode, propertiesMember, sourceFile);
