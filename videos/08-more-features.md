@@ -2,6 +2,8 @@
 
 ## More Features
 
+Wrec has additional features not covered in the previous videos.
+
 Wrec components support the use of slots to insert "light DOM" content
 in the same way as vanilla web components.
 
@@ -44,3 +46,6 @@ enter `npm run test`.
 - wrec blog page:https://mvolkmann.github.io/blog/wrec
 - wrec in npm: https://www.npmjs.com/package/wrec
 - wrec repository: https://github.com/mvolkmann/wrec
+
+I hope you'll give wrec a try.
+Please send any feedback or questions you have to this email address.
