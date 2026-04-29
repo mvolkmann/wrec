@@ -39,7 +39,7 @@ To run the unit tests that are implemented with vitest,
 enter `npm run unittest`.
 
 To run the end-to-end tests that are implemented with Playwright,
-enter `npm run test`.
+enter `npm test`.
 
 ## Resources
 

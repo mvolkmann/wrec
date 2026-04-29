@@ -118,7 +118,8 @@ The following VS Code commands are provided:
   While this is running, "Wrec lint" is displayed in the status bar.
   When it completes, the status bar displays
   either "Wrec ok" or "Wrec {issue-count}".
-  Lines where issues are found are marked with yellow squigglies
+  Lines where issues are found are
+  marked with yellow (warning) or red (error) squigglies
   and hovering over them displays an error message.
   The issues are also displayed in the "PROBLEMS" panel,
   which you can open manually by selecting View ... Problems
