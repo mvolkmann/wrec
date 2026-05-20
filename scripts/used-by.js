@@ -666,7 +666,7 @@ function isInstanceMethodMember(member) {
 function isSupportedSourceFile(filePath, excludeTests = false) {
   return (
     /\.(js|ts)$/.test(filePath) &&
-    !/\.d\.ts$/.test(filePath) &&
+    !filePath.endsWith('.d.ts') &&
     (!excludeTests || !filePath.includes('.test.'))
   );
 }
@@ -687,8 +687,13 @@ function main() {
     throw new Error('Specify a single source file');
   }
 
+  const inputPath = inputPaths[0];
+  if (!isSupportedSourceFile(inputPath)) {
+    throw new Error('unsupported file type');
+  }
+
   const dry = args.includes('--dry');
-  const result = evaluateSourceFile(inputPaths[0], {dry});
+  const result = evaluateSourceFile(inputPath, {dry});
   if (dry) {
     // Report the proposed changes.
     for (const {propName, suggestion} of result.suggestions) {

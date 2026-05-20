@@ -261,7 +261,7 @@ function validateFile(absFilePath) {
   const stat = fs.statSync(absFilePath);
   if (!stat.isFile()) throw new Error('Not a file');
 
-  if (!/\.ts$/.test(absFilePath)) {
+  if (!absFilePath.endsWith('.ts')) {
     throw new Error('declare statements can only be added in .ts files');
   }
 }

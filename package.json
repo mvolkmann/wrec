@@ -2,7 +2,7 @@
   "name": "wrec",
   "description": "a library that greatly simplifies building web components",
   "author": "R. Mark Volkmann",
-  "version": "0.40.4",
+  "version": "0.40.5",
   "license": "MIT",
   "repository": {
     "type": "git",
