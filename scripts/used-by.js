@@ -16,22 +16,21 @@
 // Include the --dry flag for a dry run where `usedBy` values are output,
 // but no files are modified.
 
-import fs from 'node:fs';
-import path from 'node:path';
-import ts from 'typescript';
+import fs from "node:fs";
+import path from "node:path";
+import ts from "typescript";
 import {
   extendsWrec,
   getNameText,
   getPropertyAssignmentNames,
   getWrecImportInfo,
-  hasStaticModifier
-} from './ast-utils.js';
+  hasStaticModifier,
+} from "./ast-utils.js";
 
 const cwd = process.cwd();
 const CALL_RE = /this\.([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
-const REFS_RE =
-  /this\.([A-Za-z_$][A-Za-z0-9_$]*)(\.[A-Za-z_$][A-Za-z0-9_$]*)*/g;
-const GETTER_PREFIX = 'get ';
+const REFS_RE = /this\.([A-Za-z_$][A-Za-z0-9_$]*)(\.[A-Za-z_$][A-Za-z0-9_$]*)*/g;
+const GETTER_PREFIX = "get ";
 
 // Records property names introduced by
 // an identifier or object binding pattern.
@@ -65,7 +64,7 @@ function addObjectBindingProps(props, bindingPattern) {
 // This is the heart of the functionality in this script.
 function analyzeSourceFile(sourceFile) {
   const edits = [];
-  const {names: wrecNames, quote} = getWrecImportInfo(sourceFile);
+  const { names: wrecNames, quote } = getWrecImportInfo(sourceFile);
   const suggestions = [];
   let foundWrecSubclass = false;
 
@@ -80,7 +79,7 @@ function analyzeSourceFile(sourceFile) {
       if (
         ts.isPropertyDeclaration(member) &&
         hasStaticModifier(member) &&
-        getNameText(member.name) === 'properties' &&
+        getNameText(member.name) === "properties" &&
         member.initializer &&
         ts.isObjectLiteralExpression(member.initializer)
       ) {
@@ -107,37 +106,30 @@ function analyzeSourceFile(sourceFile) {
       // Skip the member if we can't gets its name
       // or if its value isn't an object literal.
       const propName = getNameText(member.name);
-      if (!propName || !ts.isObjectLiteralExpression(member.initializer))
-        continue;
+      if (!propName || !ts.isObjectLiteralExpression(member.initializer)) continue;
 
       // Convert the Set of methods that use the property into a sorted array.
-      const methodNames = [
-        ...(propToMethods.get(propName) ?? new Set())
-      ].sort();
+      const methodNames = [...(propToMethods.get(propName) ?? new Set())].sort();
 
       // Get an array of all the NodeObjects that represent
       // properties in the configuration object, except the one for "usedBy".
       const configObject = member.initializer;
       const existingMembers = configObject.properties.filter(
-        property =>
-          !(
-            ts.isPropertyAssignment(property) &&
-            getNameText(property.name) === 'usedBy'
-          )
+        (property) =>
+          !(ts.isPropertyAssignment(property) && getNameText(property.name) === "usedBy"),
       );
 
       // If the property is used by any methods ...
       if (methodNames.length > 0) {
         suggestions.push({
           propName,
-          suggestion: createUsedByProperty(methodNames, quote)
+          suggestion: createUsedByProperty(methodNames, quote),
         });
       } else {
         // Determine if the configuration object already had a "usedBy" property.
-        const hadUsedBy =
-          existingMembers.length !== configObject.properties.length;
+        const hadUsedBy = existingMembers.length !== configObject.properties.length;
         if (hadUsedBy) {
-          suggestions.push({propName, suggestion: 'remove usedBy'});
+          suggestions.push({ propName, suggestion: "remove usedBy" });
         } else {
           continue;
         }
@@ -148,7 +140,7 @@ function analyzeSourceFile(sourceFile) {
       // Get the existing text for the property configuration object.
       const currentText = sourceFile.text.slice(
         configObject.getStart(sourceFile),
-        configObject.end
+        configObject.end,
       );
       // If they differ, add an object describing
       // the desired edit to the edits array.
@@ -158,7 +150,7 @@ function analyzeSourceFile(sourceFile) {
           end: configObject.end,
           propName,
           oldText: currentText,
-          text: nextText
+          text: nextText,
         });
       }
     }
@@ -171,7 +163,7 @@ function analyzeSourceFile(sourceFile) {
       edits: [],
       foundWrecSubclass: false,
       suggestions,
-      text: sourceFile.text
+      text: sourceFile.text,
     };
   }
 
@@ -183,7 +175,7 @@ function analyzeSourceFile(sourceFile) {
       edits: [],
       foundWrecSubclass: true,
       suggestions,
-      text: sourceFile.text
+      text: sourceFile.text,
     };
   }
 
@@ -195,8 +187,7 @@ function analyzeSourceFile(sourceFile) {
 
   // Make each of the edits to the source file.
   for (const edit of edits) {
-    nextSource =
-      nextSource.slice(0, edit.start) + edit.text + nextSource.slice(edit.end);
+    nextSource = nextSource.slice(0, edit.start) + edit.text + nextSource.slice(edit.end);
   }
 
   return {
@@ -204,7 +195,7 @@ function analyzeSourceFile(sourceFile) {
     edits,
     foundWrecSubclass: true,
     suggestions,
-    text: nextSource
+    text: nextSource,
   };
 }
 
@@ -220,17 +211,13 @@ function buildConfigText(sourceFile, member, methodNames, quote) {
   // Get an array of AST nodes for all the config object properties
   // except `usedBy`.
   const existingMembers = configObject.properties.filter(
-    property =>
-      !(
-        ts.isPropertyAssignment(property) &&
-        getNameText(property.name) === 'usedBy'
-      )
+    (property) => !(ts.isPropertyAssignment(property) && getNameText(property.name) === "usedBy"),
   );
 
   // Create property assignment strings from the AST nodes.
-  const {text} = sourceFile;
-  const propertyStrings = existingMembers.map(property =>
-    text.slice(property.getStart(sourceFile), property.end).trim()
+  const { text } = sourceFile;
+  const propertyStrings = existingMembers.map((property) =>
+    text.slice(property.getStart(sourceFile), property.end).trim(),
   );
 
   // If this property is used by any methods,
@@ -239,12 +226,9 @@ function buildConfigText(sourceFile, member, methodNames, quote) {
     propertyStrings.push(createUsedByProperty(methodNames, quote));
   }
 
-  const existingPropertiesString = text.slice(
-    configObject.getStart(sourceFile),
-    configObject.end
-  );
+  const existingPropertiesString = text.slice(configObject.getStart(sourceFile), configObject.end);
 
-  const multiline = existingPropertiesString.includes('\n');
+  const multiline = existingPropertiesString.includes("\n");
   if (multiline) {
     // Build and return a multi-line config object string
     // that preserves the existing indentation.
@@ -252,10 +236,8 @@ function buildConfigText(sourceFile, member, methodNames, quote) {
     const [firstMember] = existingMembers;
     const propertyIndent = firstMember
       ? getIndent(text, firstMember.getStart(sourceFile))
-      : memberIndent + '  ';
-    const content = propertyStrings
-      .map(part => `${propertyIndent}${part}`)
-      .join(',\n');
+      : memberIndent + "  ";
+    const content = propertyStrings.map((part) => `${propertyIndent}${part}`).join(",\n");
     return `{\n${content}\n${memberIndent}}`;
   }
 
@@ -263,19 +245,16 @@ function buildConfigText(sourceFile, member, methodNames, quote) {
   // that preserves the existing spacing around curly braces.
   const openMatch = existingPropertiesString.match(/^\{(\s*)/);
   const closeMatch = existingPropertiesString.match(/(\s*)\}$/);
-  const openSpacing = openMatch ? openMatch[1] : ' ';
-  const closeSpacing = closeMatch ? closeMatch[1] : ' ';
-  return `{${openSpacing}${propertyStrings.join(', ')}${closeSpacing}}`;
+  const openSpacing = openMatch ? openMatch[1] : " ";
+  const closeSpacing = closeMatch ? closeMatch[1] : " ";
+  return `{${openSpacing}${propertyStrings.join(", ")}${closeSpacing}}`;
 }
 
 // Walks a method or accessor body to collect component property reads
 // and dependency targets reached through `this`.
 // This is only called by getMethodUsages.
 function collectMethodBodyUsage(node, getterNames, props, calledMethods) {
-  if (
-    ts.isPropertyAccessExpression(node) &&
-    node.expression.kind === ts.SyntaxKind.ThisKeyword
-  ) {
+  if (ts.isPropertyAccessExpression(node) && node.expression.kind === ts.SyntaxKind.ThisKeyword) {
     // Handles direct property access like `this.foo`
     // and records method calls like `this.foo()`.
     recordThisAccess(props, calledMethods, getterNames, node, node.name.text);
@@ -287,13 +266,7 @@ function collectMethodBodyUsage(node, getterNames, props, calledMethods) {
   ) {
     // Handles string-based element access like `this['foo']`
     // and records method calls like `this['foo']()`.
-    recordThisAccess(
-      props,
-      calledMethods,
-      getterNames,
-      node,
-      node.argumentExpression.text
-    );
+    recordThisAccess(props, calledMethods, getterNames, node, node.argumentExpression.text);
   } else if (
     ts.isVariableDeclaration(node) &&
     node.initializer &&
@@ -311,10 +284,7 @@ function collectMethodBodyUsage(node, getterNames, props, calledMethods) {
     // or object-literal patterns that pull named properties from it.
     if (ts.isObjectLiteralExpression(node.left)) {
       for (const property of node.left.properties) {
-        if (
-          ts.isShorthandPropertyAssignment(property) ||
-          ts.isPropertyAssignment(property)
-        ) {
+        if (ts.isShorthandPropertyAssignment(property) || ts.isPropertyAssignment(property)) {
           const name = getNameText(property.name);
           if (name) props.add(name);
         }
@@ -324,8 +294,8 @@ function collectMethodBodyUsage(node, getterNames, props, calledMethods) {
     }
   }
 
-  ts.forEachChild(node, child =>
-    collectMethodBodyUsage(child, getterNames, props, calledMethods)
+  ts.forEachChild(node, (child) =>
+    collectMethodBodyUsage(child, getterNames, props, calledMethods),
   );
 }
 
@@ -334,7 +304,7 @@ function createUsedByProperty(methodNames, quote) {
   const value =
     methodNames.length === 1
       ? `${quote}${methodNames[0]}${quote}`
-      : `[${methodNames.map(name => `${quote}${name}${quote}`).join(', ')}]`;
+      : `[${methodNames.map((name) => `${quote}${name}${quote}`).join(", ")}]`;
   return `usedBy: ${value}`;
 }
 
@@ -342,23 +312,23 @@ function createUsedByProperty(methodNames, quote) {
 // the usedBy properties in property configuration objects
 // found in the file at a given relative path.
 export function evaluateSourceFile(filePath, options = {}) {
-  const {dry = false} = options;
+  const { dry = false } = options;
   const absFilePath = path.resolve(cwd, filePath);
   validateFile(absFilePath);
 
   // The file is read in this function instead of in evaluateSourceText
   // so unit tests can pass hard-coded text to that function.
-  const text = fs.readFileSync(absFilePath, 'utf8');
+  const text = fs.readFileSync(absFilePath, "utf8");
   let {
     changed,
     foundWrecSubclass,
     suggestions,
-    text: nextText
+    text: nextText,
   } = evaluateSourceText(absFilePath, text);
 
   // If we didn't find the definition of a class that extends Wrec ...
   if (!foundWrecSubclass) {
-    throw new Error('No class extending Wrec was found.');
+    throw new Error("No class extending Wrec was found.");
   }
 
   // If this isn't a dry run and changes were made,
@@ -368,7 +338,7 @@ export function evaluateSourceFile(filePath, options = {}) {
     suggestions = []; // all the suggestions have been applied
   }
 
-  return {changed, foundWrecSubclass, suggestions, text: nextText};
+  return { changed, foundWrecSubclass, suggestions, text: nextText };
 }
 
 // Determines what changes, if any, should be made in
@@ -377,16 +347,8 @@ export function evaluateSourceFile(filePath, options = {}) {
 // This function was factored out of evaluateSourceFile
 // to support unit tests.
 export function evaluateSourceText(filePath, text) {
-  const scriptKind = filePath.endsWith('.ts')
-    ? ts.ScriptKind.TS
-    : ts.ScriptKind.JS;
-  const sourceFile = ts.createSourceFile(
-    filePath,
-    text,
-    ts.ScriptTarget.Latest,
-    true,
-    scriptKind
-  );
+  const scriptKind = filePath.endsWith(".ts") ? ts.ScriptKind.TS : ts.ScriptKind.JS;
+  const sourceFile = ts.createSourceFile(filePath, text, ts.ScriptTarget.Latest, true, scriptKind);
   return analyzeSourceFile(sourceFile);
 }
 
@@ -403,11 +365,11 @@ function getCssCalledMethods(classNode) {
     if (
       ts.isPropertyDeclaration(member) &&
       hasStaticModifier(member) &&
-      getNameText(member.name) === 'css' &&
+      getNameText(member.name) === "css" &&
       member.initializer &&
       ts.isTaggedTemplateExpression(member.initializer) &&
       ts.isIdentifier(member.initializer.tag) &&
-      member.initializer.tag.text === 'css'
+      member.initializer.tag.text === "css"
     ) {
       // Keep the last matching declaration because
       // JavaScript class fields use last-one-wins semantics
@@ -441,7 +403,7 @@ function getComputedCalledMethods(classNode) {
     if (
       ts.isPropertyDeclaration(member) &&
       hasStaticModifier(member) &&
-      getNameText(member.name) === 'properties' &&
+      getNameText(member.name) === "properties" &&
       member.initializer &&
       ts.isObjectLiteralExpression(member.initializer)
     ) {
@@ -459,10 +421,7 @@ function getComputedCalledMethods(classNode) {
   for (const property of propertiesNode.properties) {
     // If it isn't a property assignment or
     // the property value isn't an object literal then skip it.
-    if (
-      !ts.isPropertyAssignment(property) ||
-      !ts.isObjectLiteralExpression(property.initializer)
-    ) {
+    if (!ts.isPropertyAssignment(property) || !ts.isObjectLiteralExpression(property.initializer)) {
       continue;
     }
 
@@ -472,7 +431,7 @@ function getComputedCalledMethods(classNode) {
       // the property name isn't "computed" then skip it.
       if (
         !ts.isPropertyAssignment(configProperty) ||
-        getNameText(configProperty.name) !== 'computed'
+        getNameText(configProperty.name) !== "computed"
       ) {
         continue;
       }
@@ -512,9 +471,9 @@ function getGetterDependency(name) {
 // Returns the leading indentation in the line
 // that begins at a given position (`pos`) inside `text`.
 function getIndent(text, pos) {
-  const lineStart = text.lastIndexOf('\n', pos - 1) + 1;
+  const lineStart = text.lastIndexOf("\n", pos - 1) + 1;
   const match = /^[ \t]*/.exec(text.slice(lineStart));
-  return match ? match[0] : '';
+  return match ? match[0] : "";
 }
 
 // Returns a map where the keys are property names and
@@ -543,7 +502,7 @@ function getMethodUsages(classNode, propertyNames) {
     methodInfo.set(methodName, {
       calledMethods,
       isPrivate: ts.isPrivateIdentifier(member.name),
-      props
+      props,
     });
   }
 
@@ -553,7 +512,7 @@ function getMethodUsages(classNode, propertyNames) {
   const entryMethods = new Set([
     ...getCssCalledMethods(classNode),
     ...getTemplateCalledMethods(classNode),
-    ...getComputedCalledMethods(classNode)
+    ...getComputedCalledMethods(classNode),
   ]);
   const memo = new Map();
 
@@ -589,14 +548,14 @@ function getTemplateCalledMethods(classNode) {
     if (
       ts.isPropertyDeclaration(member) &&
       hasStaticModifier(member) &&
-      getNameText(member.name) === 'html' &&
+      getNameText(member.name) === "html" &&
       member.initializer
     ) {
       // If the value is a tagged template literal with the "html" tag ...
       if (
         ts.isTaggedTemplateExpression(member.initializer) &&
         ts.isIdentifier(member.initializer.tag) &&
-        member.initializer.tag.text === 'html'
+        member.initializer.tag.text === "html"
       ) {
         template = member.initializer.template;
       }
@@ -628,12 +587,7 @@ function getTransitiveProps(methodInfo, memo, methodName, seen = new Set()) {
 
   if (info) {
     for (const calledMethod of info.calledMethods) {
-      const calledProps = getTransitiveProps(
-        methodInfo,
-        memo,
-        calledMethod,
-        seen
-      );
+      const calledProps = getTransitiveProps(methodInfo, memo, calledMethod, seen);
       for (const propName of calledProps) props.add(propName);
     }
   }
@@ -666,37 +620,35 @@ function isInstanceMethodMember(member) {
 function isSupportedSourceFile(filePath, excludeTests = false) {
   return (
     /\.(js|ts)$/.test(filePath) &&
-    !filePath.endsWith('.d.ts') &&
-    (!excludeTests || !filePath.includes('.test.'))
+    !filePath.endsWith(".d.ts") &&
+    (!excludeTests || !filePath.includes(".test."))
   );
 }
 
 // Handles CLI arguments and runs the script.
 function main() {
   const args = process.argv.slice(2);
-  const unknownFlags = args.filter(
-    arg => arg.startsWith('--') && arg !== '--dry'
-  );
+  const unknownFlags = args.filter((arg) => arg.startsWith("--") && arg !== "--dry");
   if (unknownFlags.length > 0) {
     throw new Error(`unknown option: ${unknownFlags[0]}`);
   }
 
-  const inputPaths = args.filter(arg => !arg.startsWith('--'));
+  const inputPaths = args.filter((arg) => !arg.startsWith("--"));
 
   if (inputPaths.length !== 1) {
-    throw new Error('Specify a single source file');
+    throw new Error("Specify a single source file");
   }
 
   const inputPath = inputPaths[0];
   if (!isSupportedSourceFile(inputPath)) {
-    throw new Error('unsupported file type');
+    throw new Error("unsupported file type");
   }
 
-  const dry = args.includes('--dry');
-  const result = evaluateSourceFile(inputPath, {dry});
+  const dry = args.includes("--dry");
+  const result = evaluateSourceFile(inputPath, { dry });
   if (dry) {
     // Report the proposed changes.
-    for (const {propName, suggestion} of result.suggestions) {
+    for (const { propName, suggestion } of result.suggestions) {
       console.info(`${propName} - ${suggestion}`);
     }
 
@@ -704,9 +656,9 @@ function main() {
     // so that condition can be checked.
     if (result.changed) process.exit(1);
   } else if (result.changed) {
-    console.info('updated source file');
+    console.info("updated source file");
   } else {
-    console.info('no changes needed');
+    console.info("no changes needed");
   }
 }
 
@@ -723,13 +675,13 @@ function recordThisAccess(props, calledMethods, getterNames, node, name) {
 
 // Validates that a source file exists and has a supported extension.
 function validateFile(absFilePath) {
-  if (!fs.existsSync(absFilePath)) throw new Error('File not found');
+  if (!fs.existsSync(absFilePath)) throw new Error("File not found");
 
   const stat = fs.statSync(absFilePath);
-  if (!stat.isFile()) throw new Error('Not a file');
+  if (!stat.isFile()) throw new Error("Not a file");
 
   if (!/\.(js|ts)$/.test(absFilePath)) {
-    throw new Error('Unsupported file type');
+    throw new Error("Unsupported file type");
   }
 }
 

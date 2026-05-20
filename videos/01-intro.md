@@ -29,13 +29,13 @@ To create this project from scratch ...
   You can also define wrec components in `.js` files.
 
   ```js
-  import {html, Wrec} from 'wrec';
+  import { html, Wrec } from "wrec";
 
   class HelloWorld extends Wrec {
     static html = html`<p>Hello, World!</p>`;
   }
 
-  HelloWorld.define('hello-world');
+  HelloWorld.define("hello-world");
   ```
 
   Wrec components are defined by a class that extends `Wrec`.
@@ -75,11 +75,11 @@ Let's fix that by modifying `hello-world.ts`
 to contain the code shown in `hello-world2.ts`.
 
 ```js
-import {css, html, Wrec} from 'wrec';
+import { css, html, Wrec } from "wrec";
 
 class HelloWorld extends Wrec {
   static properties = {
-    name: {type: String, value: 'World'}
+    name: { type: String, value: "World" },
   };
   static css = css`
     p {
@@ -89,7 +89,7 @@ class HelloWorld extends Wrec {
   static html = html`<p>Hello, <span>this.name</span>!</p>`;
 }
 
-HelloWorld.define('hello-world');
+HelloWorld.define("hello-world");
 ```
 
 The `static properties` property defines the component properties

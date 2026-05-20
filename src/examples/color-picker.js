@@ -1,18 +1,18 @@
-import {css, html, Wrec} from '../wrec';
-import './number-slider';
+import { css, html, Wrec } from "../wrec";
+import "./number-slider";
 
 class ColorPicker extends Wrec {
   static formAssociated = true;
 
   static properties = {
-    labelWidth: {type: String, value: '3rem'},
-    red: {type: Number},
-    green: {type: Number},
-    blue: {type: Number},
+    labelWidth: { type: String, value: "3rem" },
+    red: { type: Number },
+    green: { type: Number },
+    blue: { type: Number },
     color: {
       type: String,
-      computed: '`rgb(${this.red}, ${this.green}, ${this.blue})`'
-    }
+      computed: "`rgb(${this.red}, ${this.green}, ${this.blue})`",
+    },
   };
 
   static css = css`
@@ -38,9 +38,9 @@ class ColorPicker extends Wrec {
     <div id="swatch"></div>
     <div id="sliders">
       <!-- prettier-ignore -->
-      ${this.makeSlider('Red')}
-      ${this.makeSlider('Green')}
-      ${this.makeSlider('Blue')}
+      ${this.makeSlider("Red")}
+      ${this.makeSlider("Green")}
+      ${this.makeSlider("Blue")}
     </div>
   `;
 
@@ -56,4 +56,4 @@ class ColorPicker extends Wrec {
   }
 }
 
-ColorPicker.define('color-picker');
+ColorPicker.define("color-picker");

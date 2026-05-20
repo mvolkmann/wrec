@@ -1,9 +1,9 @@
-import {html, Wrec} from '../../wrec';
+import { html, Wrec } from "../../wrec";
 
 class ComponentTwo extends Wrec {
   static properties = {
-    color: {type: String, value: 'red'},
-    name: {type: String}
+    color: { type: String, value: "red" },
+    name: { type: String },
   };
 
   static html = html`
@@ -18,4 +18,4 @@ class ComponentTwo extends Wrec {
   `;
 }
 
-ComponentTwo.define('component-two');
+ComponentTwo.define("component-two");

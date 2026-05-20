@@ -152,10 +152,7 @@ function createRouteElement(match: RouteMatch): HTMLElement {
 }
 
 // Resolves a path and renders the matching route into the outlet.
-export function renderRoute(
-  outlet: HTMLElement,
-  path = location.pathname,
-): void {
+export function renderRoute(outlet: HTMLElement, path = location.pathname): void {
   const url = new URL(path, location.origin);
   const match = matchRoute(url.href);
   const element = createRouteElement(match);
@@ -189,9 +186,7 @@ so normal anchors become client-side navigations.
 ```ts
 // Handles app-local link clicks without a full page load.
 export function handleLinkClick(event: MouseEvent, outlet: HTMLElement): void {
-  const link = event
-    .composedPath()
-    .find((target) => target instanceof HTMLAnchorElement) as
+  const link = event.composedPath().find((target) => target instanceof HTMLAnchorElement) as
     | HTMLAnchorElement
     | undefined;
 
@@ -283,10 +278,7 @@ const routes: Route[] = [
 ];
 
 // Resolves a path, loads the matched view, and renders it.
-export async function renderRoute(
-  outlet: HTMLElement,
-  path = location.pathname,
-): Promise<void> {
+export async function renderRoute(outlet: HTMLElement, path = location.pathname): Promise<void> {
   const url = new URL(path, location.origin);
   const match = matchRoute(url.href);
 

@@ -1,15 +1,14 @@
-import {css, html, Wrec} from '../wrec';
+import { css, html, Wrec } from "../wrec";
 
-const capitalize = str =>
-  str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
+const capitalize = (str) => (str ? str.charAt(0).toUpperCase() + str.slice(1) : str);
 
 class DataBinding extends Wrec {
   static properties = {
-    color: {type: String},
-    colors: {type: String, required: true, usedBy: 'getLabels'},
-    enabled: {type: Boolean, value: true},
-    labels: {type: String, computed: 'this.getLabels()'},
-    size: {type: Number, value: 18}
+    color: { type: String },
+    colors: { type: String, required: true, usedBy: "getLabels" },
+    enabled: { type: Boolean, value: true },
+    labels: { type: String, computed: "this.getLabels()" },
+    size: { type: Number, value: 18 },
   };
 
   static css = css`
@@ -22,7 +21,7 @@ class DataBinding extends Wrec {
 
     p {
       color: this.color;
-      font-size: this.size + 'px';
+      font-size: this.size + "px";
       margin: 6px 0;
     }
 
@@ -78,8 +77,8 @@ class DataBinding extends Wrec {
   `;
 
   getLabels() {
-    return this.colors.split(',').map(capitalize).join(',');
+    return this.colors.split(",").map(capitalize).join(",");
   }
 }
 
-DataBinding.define('data-binding');
+DataBinding.define("data-binding");

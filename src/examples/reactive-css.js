@@ -1,13 +1,13 @@
-import {css, html, Wrec} from '../wrec';
+import { css, html, Wrec } from "../wrec";
 
 class ReactiveCSS extends Wrec {
   static properties = {
-    size: {type: Number, value: 18}
+    size: { type: Number, value: 18 },
   };
 
   static css = css`
     p {
-      font-size: this.size + 'px';
+      font-size: this.size + "px";
     }
   `;
 
@@ -17,4 +17,4 @@ class ReactiveCSS extends Wrec {
   `;
 }
 
-ReactiveCSS.define('reactive-css');
+ReactiveCSS.define("reactive-css");

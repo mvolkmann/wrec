@@ -16,13 +16,13 @@ To create this project from scratch ...
 - Create a `rectangle-area.ts` file shown here:
 
   ```js
-  import {css, html, Wrec} from 'wrec';
-  import './number-slider.ts';
+  import { css, html, Wrec } from "wrec";
+  import "./number-slider.ts";
 
   class RectangleArea extends Wrec {
     static properties = {
-      width: {type: Number, value: 10},
-      height: {type: Number, value: 5}
+      width: { type: Number, value: 10 },
+      height: { type: Number, value: 5 },
     };
 
     static css = css`
@@ -38,7 +38,7 @@ To create this project from scratch ...
     `;
   }
 
-  RectangleArea.define('rectangle-area');
+  RectangleArea.define("rectangle-area");
   ```
 
   This component defines the properties `width` and `height`

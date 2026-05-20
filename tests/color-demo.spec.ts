@@ -1,17 +1,17 @@
-import {expect, Locator, Page, test} from '@playwright/test';
-import {setInputRangeValue, waitForNextFrame} from './util';
+import { expect, Locator, Page, test } from "@playwright/test";
+import { setInputRangeValue, waitForNextFrame } from "./util";
 
-test.beforeEach(async ({page}: {page: Page}) => {
-  await page.goto('color-demo.html');
+test.beforeEach(async ({ page }: { page: Page }) => {
+  await page.goto("color-demo.html");
 });
 
-test('has title', async ({page}: {page: Page}) => {
+test("has title", async ({ page }: { page: Page }) => {
   await expect(page).toHaveTitle(/Color Demo/);
 });
 
-test('sliders', async ({page}: {page: Page}) => {
-  const colorPicker = page.locator('color-picker');
-  const sliders = colorPicker.locator('number-slider');
+test("sliders", async ({ page }: { page: Page }) => {
+  const colorPicker = page.locator("color-picker");
+  const sliders = colorPicker.locator("number-slider");
   await expect(sliders).toHaveCount(3);
   const redSlider = sliders.nth(0);
   await expect(redSlider).toBeAttached();
@@ -23,8 +23,8 @@ test('sliders', async ({page}: {page: Page}) => {
   const sizeSlider = page.locator("number-slider[label='Size']");
   await expect(sizeSlider).toBeAttached();
 
-  const p = page.locator('p');
-  await expect(p).toHaveText('This is a test.');
+  const p = page.locator("p");
+  await expect(p).toHaveText("This is a test.");
 
   let red = 0;
   let green = 0;
@@ -41,7 +41,7 @@ test('sliders', async ({page}: {page: Page}) => {
     //await page.waitForTimeout(1000);
 
     const expected = `rgb(${red}, ${green}, ${blue})`;
-    return expect(p).toHaveCSS('color', expected);
+    return expect(p).toHaveCSS("color", expected);
   }
 
   red = 100;
@@ -55,5 +55,5 @@ test('sliders', async ({page}: {page: Page}) => {
 
   const size = 36;
   await setInputRangeValue(sizeSlider, size);
-  await expect(p).toHaveCSS('font-size', `${size}px`);
+  await expect(p).toHaveCSS("font-size", `${size}px`);
 });

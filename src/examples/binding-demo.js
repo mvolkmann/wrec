@@ -1,13 +1,13 @@
-import {css, html, Wrec} from '../wrec';
+import { css, html, Wrec } from "../wrec";
 
 class BindingDemo extends Wrec {
   static formAssociated = true;
 
   static properties = {
-    moving: {type: Boolean},
-    name: {type: String},
-    speed: {type: Number},
-    story: {type: String}
+    moving: { type: Boolean },
+    name: { type: String },
+    speed: { type: Number },
+    story: { type: String },
   };
 
   static css = css`
@@ -53,4 +53,4 @@ class BindingDemo extends Wrec {
   `;
 }
 
-BindingDemo.define('binding-demo');
+BindingDemo.define("binding-demo");

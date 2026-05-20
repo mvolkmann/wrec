@@ -1,19 +1,19 @@
-import {beforeAll, expect, test, vi} from 'vitest';
+import { beforeAll, expect, test, vi } from "vitest";
 
-type WrecSsrModule = typeof import('./wrec-ssr.js');
-let html: WrecSsrModule['html'];
-let Wrec: WrecSsrModule['Wrec'];
+type WrecSsrModule = typeof import("./wrec-ssr.js");
+let html: WrecSsrModule["html"];
+let Wrec: WrecSsrModule["Wrec"];
 
 beforeAll(async () => {
   vi.resetModules();
-  ({html, Wrec} = await import('./wrec-ssr.js'));
+  ({ html, Wrec } = await import("./wrec-ssr.js"));
 });
 
-test('renders evaluated attribute and text expressions in SSR output', () => {
+test("renders evaluated attribute and text expressions in SSR output", () => {
   class HelloSsrFixture extends Wrec {
     static properties = {
-      name: {type: String, value: 'World'},
-      title: {type: String, value: 'Greeting'}
+      name: { type: String, value: "World" },
+      title: { type: String, value: "Greeting" },
     };
 
     static html = html`
@@ -26,20 +26,20 @@ test('renders evaluated attribute and text expressions in SSR output', () => {
     declare title: string;
   }
 
-  HelloSsrFixture.define('hello-ssr-fixture');
+  HelloSsrFixture.define("hello-ssr-fixture");
 
-  const output = HelloSsrFixture.ssr({name: 'Mark', title: 'Welcome'});
+  const output = HelloSsrFixture.ssr({ name: "Mark", title: "Welcome" });
 
   expect(output).toContain('<hello-ssr-fixture name="Mark" title="Welcome">');
   expect(output).toContain('<p title="Welcome">');
-  expect(output).toContain('<span>MARK</span>');
+  expect(output).toContain("<span>MARK</span>");
 });
 
-test('escapes outer and evaluated attribute values in SSR output', () => {
+test("escapes outer and evaluated attribute values in SSR output", () => {
   class EscapingSsrFixture extends Wrec {
     static properties = {
-      name: {type: String, value: 'World'},
-      title: {type: String, value: 'Greeting'}
+      name: { type: String, value: "World" },
+      title: { type: String, value: "Greeting" },
     };
 
     static html = html`
@@ -52,25 +52,23 @@ test('escapes outer and evaluated attribute values in SSR output', () => {
     declare title: string;
   }
 
-  EscapingSsrFixture.define('escaping-ssr-fixture');
+  EscapingSsrFixture.define("escaping-ssr-fixture");
 
   const output = EscapingSsrFixture.ssr({
-    name: 'Mark & Co <team>',
-    title: 'Say "hi" <now> & later'
+    name: "Mark & Co <team>",
+    title: 'Say "hi" <now> & later',
   });
 
   expect(output).toContain(
-    '<escaping-ssr-fixture name="Mark &amp; Co &lt;team&gt;" title="Say &quot;hi&quot; &lt;now&gt; &amp; later">'
+    '<escaping-ssr-fixture name="Mark &amp; Co &lt;team&gt;" title="Say &quot;hi&quot; &lt;now&gt; &amp; later">',
   );
-  expect(output).toContain(
-    '<p title="Say &quot;hi&quot; &lt;now&gt; &amp; later">'
-  );
+  expect(output).toContain('<p title="Say &quot;hi&quot; &lt;now&gt; &amp; later">');
 });
 
-test('preserves raw HTML emitted by SSR text expressions', () => {
+test("preserves raw HTML emitted by SSR text expressions", () => {
   class RawHtmlSsrFixture extends Wrec {
     static properties = {
-      content: {type: String, value: '<strong>bold</strong>'}
+      content: { type: String, value: "<strong>bold</strong>" },
     };
 
     static html = html`<div class="content">this.content</div>`;
@@ -78,22 +76,20 @@ test('preserves raw HTML emitted by SSR text expressions', () => {
     declare content: string;
   }
 
-  RawHtmlSsrFixture.define('raw-html-ssr-fixture');
+  RawHtmlSsrFixture.define("raw-html-ssr-fixture");
 
   const output = RawHtmlSsrFixture.ssr({
-    content: '<strong>bold</strong><em>more</em>'
+    content: "<strong>bold</strong><em>more</em>",
   });
 
-  expect(output).toContain(
-    '<div class="content"><strong>bold</strong><em>more</em></div>'
-  );
+  expect(output).toContain('<div class="content"><strong>bold</strong><em>more</em></div>');
 });
 
-test('uses default property values when SSR input omits them', () => {
+test("uses default property values when SSR input omits them", () => {
   class DefaultSsrFixture extends Wrec {
     static properties = {
-      name: {type: String, value: 'World'},
-      title: {type: String, value: 'Greeting'}
+      name: { type: String, value: "World" },
+      title: { type: String, value: "Greeting" },
     };
 
     static html = html`
@@ -106,21 +102,21 @@ test('uses default property values when SSR input omits them', () => {
     declare title: string;
   }
 
-  DefaultSsrFixture.define('default-ssr-fixture');
+  DefaultSsrFixture.define("default-ssr-fixture");
 
   const output = DefaultSsrFixture.ssr();
 
   expect(output).toContain('<p title="Greeting">');
-  expect(output).toContain('<span>World</span>');
-  expect(output).toContain('<default-ssr-fixture>');
+  expect(output).toContain("<span>World</span>");
+  expect(output).toContain("<default-ssr-fixture>");
 });
 
-test('evaluates computed properties in SSR output', () => {
+test("evaluates computed properties in SSR output", () => {
   class ComputedSsrFixture extends Wrec {
     static properties = {
-      area: {type: Number, computed: 'this.width * this.height'},
-      height: {type: Number, value: 4},
-      width: {type: Number, value: 3}
+      area: { type: Number, computed: "this.width * this.height" },
+      height: { type: Number, value: 4 },
+      width: { type: Number, value: 3 },
     };
 
     static html = html`<p>this.area</p>`;
@@ -130,21 +126,21 @@ test('evaluates computed properties in SSR output', () => {
     declare width: number;
   }
 
-  ComputedSsrFixture.define('computed-ssr-fixture');
+  ComputedSsrFixture.define("computed-ssr-fixture");
 
-  const output = ComputedSsrFixture.ssr({height: 6, width: 5});
+  const output = ComputedSsrFixture.ssr({ height: 6, width: 5 });
 
-  expect(output).toContain('<p>30</p>');
+  expect(output).toContain("<p>30</p>");
 });
 
-test('evaluates static context helpers in SSR output', () => {
+test("evaluates static context helpers in SSR output", () => {
   const greet = (name: string) => `Hello, ${name}!`;
 
   class ContextSsrFixture extends Wrec {
-    static context = {greet};
+    static context = { greet };
 
     static properties = {
-      name: {type: String, value: 'World'}
+      name: { type: String, value: "World" },
     };
 
     static html = html`<p>greet(this.name)</p>`;
@@ -152,9 +148,9 @@ test('evaluates static context helpers in SSR output', () => {
     declare name: string;
   }
 
-  ContextSsrFixture.define('context-ssr-fixture');
+  ContextSsrFixture.define("context-ssr-fixture");
 
-  const output = ContextSsrFixture.ssr({name: 'Mark'});
+  const output = ContextSsrFixture.ssr({ name: "Mark" });
 
-  expect(output).toContain('<p>Hello, Mark!</p>');
+  expect(output).toContain("<p>Hello, Mark!</p>");
 });

@@ -1,30 +1,27 @@
-import {spawnSync} from 'node:child_process';
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import {afterEach, describe, expect, test} from 'vitest';
-import {evaluateSourceFile, evaluateSourceText} from '../scripts/used-by.js';
+import { spawnSync } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, describe, expect, test } from "vitest";
+import { evaluateSourceFile, evaluateSourceText } from "../scripts/used-by.js";
 
 const tempPaths: string[] = [];
 
 afterEach(() => {
   for (const filePath of tempPaths.splice(0)) {
-    fs.rmSync(filePath, {force: true});
+    fs.rmSync(filePath, { force: true });
   }
 });
 
 function createTempComponent(source: string) {
-  const filePath = path.join(
-    os.tmpdir(),
-    `wrec-used-by-${Math.random().toString(36).slice(2)}.js`
-  );
+  const filePath = path.join(os.tmpdir(), `wrec-used-by-${Math.random().toString(36).slice(2)}.js`);
   fs.writeFileSync(filePath, source);
   tempPaths.push(filePath);
   return filePath;
 }
 
-describe('used-by.js', () => {
-  test('dry run reports inferred usage for properties that are already up to date', () => {
+describe("used-by.js", () => {
+  test("dry run reports inferred usage for properties that are already up to date", () => {
     const filePath = createTempComponent(`
       import {html, Wrec} from 'wrec';
 
@@ -53,31 +50,27 @@ describe('used-by.js', () => {
       }
     `);
 
-    const result = evaluateSourceFile(filePath, {dry: true});
+    const result = evaluateSourceFile(filePath, { dry: true });
 
     expect(result.changed).toBe(false);
     expect(result.suggestions).toEqual([
-      {propName: 'labels', suggestion: "usedBy: ['makeList', 'makeRows']"},
-      {propName: 'rows', suggestion: "usedBy: 'renderRows'"}
+      { propName: "labels", suggestion: "usedBy: ['makeList', 'makeRows']" },
+      { propName: "rows", suggestion: "usedBy: 'renderRows'" },
     ]);
   });
 
-  test('errors on unknown command-line options', () => {
-    const result = spawnSync(
-      process.execPath,
-      ['scripts/used-by.js', '--bogus'],
-      {
-        cwd: path.resolve(import.meta.dirname, '..'),
-        encoding: 'utf8'
-      }
-    );
+  test("errors on unknown command-line options", () => {
+    const result = spawnSync(process.execPath, ["scripts/used-by.js", "--bogus"], {
+      cwd: path.resolve(import.meta.dirname, ".."),
+      encoding: "utf8",
+    });
 
     expect(result.status).toBe(1);
-    expect(result.stdout).toBe('');
-    expect(result.stderr).toContain('unknown option: --bogus');
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("unknown option: --bogus");
   });
 
-  test('infers usedBy values from methods called in static css expressions', () => {
+  test("infers usedBy values from methods called in static css expressions", () => {
     const source = `
       import {css, html, Wrec} from 'wrec';
 
@@ -100,16 +93,14 @@ describe('used-by.js', () => {
       }
     `;
 
-    const result = evaluateSourceText('/virtual/component.js', source);
+    const result = evaluateSourceText("/virtual/component.js", source);
 
     expect(result.foundWrecSubclass).toBe(true);
     expect(result.changed).toBe(true);
-    expect(result.text).toContain(
-      "theme: {type: String, usedBy: 'getThemeColor'}"
-    );
+    expect(result.text).toContain("theme: {type: String, usedBy: 'getThemeColor'}");
   });
 
-  test('infers usedBy values from getter references in entry expressions', () => {
+  test("infers usedBy values from getter references in entry expressions", () => {
     const source = `
       import {html, Wrec} from 'wrec';
 
@@ -125,15 +116,13 @@ describe('used-by.js', () => {
         }
       }
     `;
-    const result = evaluateSourceText('/virtual/component.js', source);
+    const result = evaluateSourceText("/virtual/component.js", source);
     expect(result.foundWrecSubclass).toBe(true);
     expect(result.changed).toBe(true);
-    expect(result.text).toContain(
-      "count: {type: Number, usedBy: 'get summary'}"
-    );
+    expect(result.text).toContain("count: {type: Number, usedBy: 'get summary'}");
   });
 
-  test('infers usedBy values from template and computed entry methods', () => {
+  test("infers usedBy values from template and computed entry methods", () => {
     const source = `
       import {html, Wrec} from "wrec";
 
@@ -164,23 +153,17 @@ describe('used-by.js', () => {
       }
     `;
 
-    const result = evaluateSourceText('/virtual/component.js', source);
+    const result = evaluateSourceText("/virtual/component.js", source);
 
     expect(result.foundWrecSubclass).toBe(true);
     expect(result.changed).toBe(true);
-    expect(result.text).toContain(
-      'count: {type: Number, usedBy: ["getSummary", "renderCount"]}'
-    );
-    expect(result.text).toContain(
-      'label: {type: String, usedBy: "getSummary"}'
-    );
-    expect(result.text).toContain(
-      'summary: {type: String, computed: "this.getSummary()"}'
-    );
-    expect(result.text).toContain('stale: {type: String}');
+    expect(result.text).toContain('count: {type: Number, usedBy: ["getSummary", "renderCount"]}');
+    expect(result.text).toContain('label: {type: String, usedBy: "getSummary"}');
+    expect(result.text).toContain('summary: {type: String, computed: "this.getSummary()"}');
+    expect(result.text).toContain("stale: {type: String}");
   });
 
-  test('reports all inferred dry-run suggestions without writing the file', () => {
+  test("reports all inferred dry-run suggestions without writing the file", () => {
     const filePath = createTempComponent(`
       import {html, Wrec} from 'wrec';
 
@@ -198,19 +181,19 @@ describe('used-by.js', () => {
       }
     `);
 
-    const before = fs.readFileSync(filePath, 'utf8');
-    const result = evaluateSourceFile(filePath, {dry: true});
-    const after = fs.readFileSync(filePath, 'utf8');
+    const before = fs.readFileSync(filePath, "utf8");
+    const result = evaluateSourceFile(filePath, { dry: true });
+    const after = fs.readFileSync(filePath, "utf8");
 
     expect(result.changed).toBe(true);
     expect(result.suggestions).toEqual([
-      {propName: 'count', suggestion: "usedBy: 'renderCount'"},
-      {propName: 'stale', suggestion: 'remove usedBy'}
+      { propName: "count", suggestion: "usedBy: 'renderCount'" },
+      { propName: "stale", suggestion: "remove usedBy" },
     ]);
     expect(after).toBe(before);
   });
 
-  test('supports aliased Wrec imports', () => {
+  test("supports aliased Wrec imports", () => {
     const source = `
       import {html, Wrec as BaseWrec} from 'wrec';
 
@@ -227,36 +210,26 @@ describe('used-by.js', () => {
       }
     `;
 
-    const result = evaluateSourceText('/virtual/component.js', source);
+    const result = evaluateSourceText("/virtual/component.js", source);
 
     expect(result.foundWrecSubclass).toBe(true);
     expect(result.changed).toBe(true);
-    expect(result.text).toContain(
-      "count: {type: Number, usedBy: 'renderCount'}"
-    );
+    expect(result.text).toContain("count: {type: Number, usedBy: 'renderCount'}");
   });
 
-  test('throws when the source file does not define a Wrec subclass', () => {
+  test("throws when the source file does not define a Wrec subclass", () => {
     expect(() =>
-      evaluateSourceText(
-        '/virtual/not-a-component.js',
-        'export const value = 1;'
-      )
+      evaluateSourceText("/virtual/not-a-component.js", "export const value = 1;"),
     ).not.toThrow();
 
-    const result = evaluateSourceText(
-      '/virtual/not-a-component.js',
-      'export const value = 1;'
-    );
+    const result = evaluateSourceText("/virtual/not-a-component.js", "export const value = 1;");
     expect(result.foundWrecSubclass).toBe(false);
 
-    const filePath = createTempComponent('export const value = 1;');
-    expect(() => evaluateSourceFile(filePath)).toThrow(
-      'No class extending Wrec was found.'
-    );
+    const filePath = createTempComponent("export const value = 1;");
+    expect(() => evaluateSourceFile(filePath)).toThrow("No class extending Wrec was found.");
   });
 
-  test('uses only the last static html declaration for template methods', () => {
+  test("uses only the last static html declaration for template methods", () => {
     const source = `
       import {html, Wrec} from 'wrec';
 
@@ -279,13 +252,13 @@ describe('used-by.js', () => {
       }
     `;
 
-    const result = evaluateSourceText('/virtual/component.js', source);
+    const result = evaluateSourceText("/virtual/component.js", source);
 
     expect(result.text).not.toContain("usedBy: 'oldRender'");
     expect(result.text).toContain("usedBy: 'newRender'");
   });
 
-  test('uses only the last static properties declaration for computed methods', () => {
+  test("uses only the last static properties declaration for computed methods", () => {
     const source = `
       import {html, Wrec} from 'wrec';
 
@@ -310,16 +283,14 @@ describe('used-by.js', () => {
       }
     `;
 
-    const result = evaluateSourceText('/virtual/component.js', source);
+    const result = evaluateSourceText("/virtual/component.js", source);
 
-    expect(result.text).toContain(
-      "count: {type: Number, computed: 'this.newSummary()'}"
-    );
+    expect(result.text).toContain("count: {type: Number, computed: 'this.newSummary()'}");
     expect(result.text).not.toContain("usedBy: 'oldSummary'");
     expect(result.text).toContain("usedBy: 'newSummary'");
   });
 
-  test('writes inferred usedBy values back to the file', () => {
+  test("writes inferred usedBy values back to the file", () => {
     const filePath = createTempComponent(`
       import {html, Wrec} from 'wrec';
 
@@ -337,7 +308,7 @@ describe('used-by.js', () => {
     `);
 
     const result = evaluateSourceFile(filePath);
-    const updated = fs.readFileSync(filePath, 'utf8');
+    const updated = fs.readFileSync(filePath, "utf8");
 
     expect(result.changed).toBe(true);
     expect(updated).toContain("count: {type: Number, usedBy: 'renderCount'}");

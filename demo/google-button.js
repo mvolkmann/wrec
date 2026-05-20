@@ -1,4 +1,4 @@
-import {css, html, Wrec} from '../src/wrec.js';
+import { css, html, Wrec } from "../src/wrec.js";
 
 class GoogleButton extends Wrec {
   static css = css`
@@ -15,8 +15,8 @@ class GoogleButton extends Wrec {
   static html = html` <button onClick="handleClick">Google It</button> `;
 
   handleClick() {
-    window.open('https://google.com', '_blank');
+    window.open("https://google.com", "_blank");
   }
 }
 
-GoogleButton.define('google-button');
+GoogleButton.define("google-button");

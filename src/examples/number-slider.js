@@ -1,14 +1,14 @@
-import {css, html, Wrec} from '../wrec';
+import { css, html, Wrec } from "../wrec";
 
 class NumberSlider extends Wrec {
   static formAssociated = true;
 
   static properties = {
-    label: {type: String},
-    labelWidth: {type: String},
-    max: {type: Number, value: 100},
-    min: {type: Number, value: 0},
-    value: {type: Number}
+    label: { type: String },
+    labelWidth: { type: String },
+    max: { type: Number, value: 100 },
+    min: { type: Number, value: 0 },
+    value: { type: Number },
   };
 
   static css = css`
@@ -18,7 +18,7 @@ class NumberSlider extends Wrec {
       gap: 0.5rem;
     }
 
-    input[type='range'] {
+    input[type="range"] {
       width: 7rem;
     }
 
@@ -31,14 +31,9 @@ class NumberSlider extends Wrec {
 
   static html = html`
     <label>this.label</label>
-    <input
-      type="range"
-      min="this.min"
-      max="this.max"
-      value:input="this.value"
-    />
+    <input type="range" min="this.min" max="this.max" value:input="this.value" />
     <span>this.value</span>
   `;
 }
 
-NumberSlider.define('number-slider');
+NumberSlider.define("number-slider");

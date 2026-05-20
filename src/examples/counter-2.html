@@ -17,24 +17,24 @@
       window.onload = () => {
         function wireCounter(id) {
           const counter = document.getElementById(id);
-          const decBtn = counter.querySelector('.dec-btn');
-          const incBtn = counter.querySelector('.inc-btn');
-          const span = counter.querySelector('span');
-          decBtn.addEventListener('click', () => {
+          const decBtn = counter.querySelector(".dec-btn");
+          const incBtn = counter.querySelector(".inc-btn");
+          const span = counter.querySelector("span");
+          decBtn.addEventListener("click", () => {
             data[id]--;
             span.textContent = data[id];
-            if (data[id] === 0) decBtn.setAttribute('disabled', 'disabled');
+            if (data[id] === 0) decBtn.setAttribute("disabled", "disabled");
           });
-          incBtn.addEventListener('click', () => {
+          incBtn.addEventListener("click", () => {
             data[id]++;
             span.textContent = data[id];
-            decBtn.removeAttribute('disabled');
+            decBtn.removeAttribute("disabled");
           });
         }
 
-        const data = {level: 0, score: 0};
-        wireCounter('level');
-        wireCounter('score');
+        const data = { level: 0, score: 0 };
+        wireCounter("level");
+        wireCounter("score");
       };
     </script>
   </head>

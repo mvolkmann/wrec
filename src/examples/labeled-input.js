@@ -1,11 +1,11 @@
-import {css, html, Wrec} from '../wrec';
+import { css, html, Wrec } from "../wrec";
 
 class LabeledInput extends Wrec {
   static properties = {
-    id: {type: String, required: true},
-    label: {type: String, required: true},
-    name: {type: String},
-    value: {type: String}
+    id: { type: String, required: true },
+    label: { type: String, required: true },
+    name: { type: String },
+    value: { type: String },
   };
 
   static css = css`
@@ -24,4 +24,4 @@ class LabeledInput extends Wrec {
   `;
 }
 
-LabeledInput.define('labeled-input');
+LabeledInput.define("labeled-input");

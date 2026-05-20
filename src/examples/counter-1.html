@@ -15,19 +15,19 @@
     </style>
     <script>
       window.onload = () => {
-        const decBtn = document.getElementById('dec-btn');
-        const incBtn = document.getElementById('inc-btn');
-        const span = document.querySelector('span');
+        const decBtn = document.getElementById("dec-btn");
+        const incBtn = document.getElementById("inc-btn");
+        const span = document.querySelector("span");
         let count = 0;
-        decBtn.addEventListener('click', () => {
+        decBtn.addEventListener("click", () => {
           count--;
           span.textContent = count;
-          if (count === 0) decBtn.setAttribute('disabled', 'disabled');
+          if (count === 0) decBtn.setAttribute("disabled", "disabled");
         });
-        incBtn.addEventListener('click', () => {
+        incBtn.addEventListener("click", () => {
           count++;
           span.textContent = count;
-          decBtn.removeAttribute('disabled');
+          decBtn.removeAttribute("disabled");
         });
       };
     </script>

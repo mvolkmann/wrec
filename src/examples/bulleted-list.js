@@ -1,8 +1,8 @@
-import {html, Wrec} from '../wrec';
+import { html, Wrec } from "../wrec";
 
 class BulletedList extends Wrec {
   static properties = {
-    items: {type: String, required: true}
+    items: { type: String, required: true },
   };
 
   static html = html`
@@ -16,4 +16,4 @@ class BulletedList extends Wrec {
   }
 }
 
-BulletedList.define('bulleted-list');
+BulletedList.define("bulleted-list");

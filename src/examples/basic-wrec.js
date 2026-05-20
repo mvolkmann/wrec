@@ -1,4 +1,4 @@
-import {css, html, Wrec} from '../wrec';
+import { css, html, Wrec } from "../wrec";
 
 class BasicWrec extends Wrec {
   static css = css`
@@ -9,4 +9,4 @@ class BasicWrec extends Wrec {
   static html = html`<span>Hello, World!</span>`;
 }
 
-BasicWrec.define('basic-wrec');
+BasicWrec.define("basic-wrec");

@@ -1,4 +1,4 @@
-const template = document.createElement('template');
+const template = document.createElement("template");
 const html = String.raw;
 template.innerHTML = html`
   <style>
@@ -20,12 +20,12 @@ template.innerHTML = html`
 
 class CounterVanilla extends HTMLElement {
   static get observedAttributes() {
-    return ['count'];
+    return ["count"];
   }
 
   constructor() {
     super();
-    this.attachShadow({mode: 'open'});
+    this.attachShadow({ mode: "open" });
   }
 
   attributeChangedCallback() {
@@ -36,29 +36,29 @@ class CounterVanilla extends HTMLElement {
     const root = this.shadowRoot;
     root.appendChild(template.content.cloneNode(true));
 
-    const label = root.querySelector('label');
-    label.textContent = this.getAttribute('label');
+    const label = root.querySelector("label");
+    label.textContent = this.getAttribute("label");
 
-    this.decBtn = root.querySelector('#dec-btn');
-    this.decBtn.addEventListener('click', () => {
+    this.decBtn = root.querySelector("#dec-btn");
+    this.decBtn.addEventListener("click", () => {
       this.decrement();
     });
-    root.querySelector('#inc-btn').addEventListener('click', () => {
+    root.querySelector("#inc-btn").addEventListener("click", () => {
       this.increment();
     });
 
-    this.span = root.querySelector('span');
+    this.span = root.querySelector("span");
     this.#update();
   }
 
   // Treat the count attribute as the source of truth
   // rather than adding a property.
   get count() {
-    return this.getAttribute('count') || 0;
+    return this.getAttribute("count") || 0;
   }
 
   set count(newCount) {
-    this.setAttribute('count', newCount);
+    this.setAttribute("count", newCount);
   }
 
   decrement() {
@@ -72,15 +72,15 @@ class CounterVanilla extends HTMLElement {
   }
 
   #update() {
-    const count = this.getAttribute('count');
+    const count = this.getAttribute("count");
     if (this.span) this.span.textContent = count;
     // Using == instead of === because count is a string.
     if (count == 0) {
-      this.decBtn.setAttribute('disabled', 'disabled');
+      this.decBtn.setAttribute("disabled", "disabled");
     } else {
-      this.decBtn.removeAttribute('disabled');
+      this.decBtn.removeAttribute("disabled");
     }
   }
 }
 
-customElements.define('counter-vanilla', CounterVanilla);
+customElements.define("counter-vanilla", CounterVanilla);

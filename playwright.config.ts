@@ -1,24 +1,24 @@
-import {defineConfig, devices} from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
 
 const PORT = 5173;
 
 export default defineConfig({
-  testDir: './tests',
+  testDir: "./tests",
   fullyParallel: true,
   //reporter: 'html',
   projects: [
     {
-      name: 'chromium',
-      use: {...devices['Desktop Chrome']}
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
     },
     {
-      name: 'firefox',
-      use: {...devices['Desktop Firefox']}
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"] },
     },
     {
-      name: 'webkit',
-      use: {...devices['Desktop Safari']}
-    }
+      name: "webkit",
+      use: { ...devices["Desktop Safari"] },
+    },
 
     /* Test against mobile view ports. */
     /*
@@ -45,10 +45,10 @@ export default defineConfig({
     */
   ],
   use: {
-    baseURL: `http://localhost:${PORT}/examples/`
+    baseURL: `http://localhost:${PORT}/examples/`,
   },
   webServer: {
     command: `vite --config vite.config.test.ts --port ${PORT} --strictPort`,
-    reuseExistingServer: !process.env.CI
-  }
+    reuseExistingServer: !process.env.CI,
+  },
 });

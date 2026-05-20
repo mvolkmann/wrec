@@ -1,18 +1,18 @@
-import {css, html, Wrec} from '../wrec';
+import { css, html, Wrec } from "../wrec";
 
 class SpeedometerDial extends Wrec {
   static properties = {
-    min: {type: Number, value: 0},
-    max: {type: Number, value: 100},
-    value: {type: Number},
-    backgroundColor: {type: String, value: '#333'},
-    tickColor: {type: String, value: '#ccc'},
-    needleColor: {type: String, value: '#ff0000'}
+    min: { type: Number, value: 0 },
+    max: { type: Number, value: 100 },
+    value: { type: Number },
+    backgroundColor: { type: String, value: "#333" },
+    tickColor: { type: String, value: "#ccc" },
+    needleColor: { type: String, value: "#ff0000" },
   };
 
   connectedCallback() {
     // Set value to min if no value attribute is provided
-    if (!this.hasAttribute('value')) {
+    if (!this.hasAttribute("value")) {
       this.value = this.min;
     }
     super.connectedCallback();
@@ -27,13 +27,13 @@ class SpeedometerDial extends Wrec {
   }
 
   updateColors() {
-    this.style.setProperty('--background-color', this.backgroundColor);
-    this.style.setProperty('--tick-color', this.tickColor);
-    this.style.setProperty('--needle-color', this.needleColor);
+    this.style.setProperty("--background-color", this.backgroundColor);
+    this.style.setProperty("--tick-color", this.tickColor);
+    this.style.setProperty("--needle-color", this.needleColor);
   }
 
   updateNeedlePosition() {
-    const needle = this.shadowRoot.querySelector('.needle');
+    const needle = this.shadowRoot.querySelector(".needle");
     if (needle) {
       const percentage = (this.value - this.min) / (this.max - this.min);
       const angle = 210 + percentage * 300; // 210° (7 o'clock) to 510° (5 o'clock)
@@ -63,12 +63,12 @@ class SpeedometerDial extends Wrec {
   }
 
   generateTickMarks() {
-    const dialFace = this.shadowRoot.querySelector('.dial-face');
+    const dialFace = this.shadowRoot.querySelector(".dial-face");
     if (!dialFace) return;
 
     // Remove existing tick marks and labels
-    dialFace.querySelectorAll('.tick').forEach(tick => tick.remove());
-    dialFace.querySelectorAll('.tick-label').forEach(label => label.remove());
+    dialFace.querySelectorAll(".tick").forEach((tick) => tick.remove());
+    dialFace.querySelectorAll(".tick-label").forEach((label) => label.remove());
 
     const interval = this.calculateTickInterval();
     const range = this.max - this.min;
@@ -83,13 +83,13 @@ class SpeedometerDial extends Wrec {
       const roundedValue = Math.round(value * 1000) / 1000;
       if (roundedValue > this.max) break;
 
-      const tick = document.createElement('div');
-      tick.className = 'tick';
+      const tick = document.createElement("div");
+      tick.className = "tick";
 
       // Make major tick marks at nice intervals
       const majorInterval = interval * 5;
       if (Math.abs(roundedValue % majorInterval) < 0.001) {
-        tick.classList.add('major');
+        tick.classList.add("major");
       }
 
       // Calculate position based on value
@@ -100,53 +100,53 @@ class SpeedometerDial extends Wrec {
       dialFace.appendChild(tick);
 
       // Add label for all tick marks
-      const label = document.createElement('div');
-      label.className = 'tick-label';
+      const label = document.createElement("div");
+      label.className = "tick-label";
       label.textContent = Math.round(roundedValue);
       label.style.transform = `translate(-50%, -50%) rotate(${angle}deg) translateX(-105px) rotate(${-angle}deg)`;
       dialFace.appendChild(label);
     }
 
     // Always add tick marks at min and max positions if they don't exist
-    const minTick = document.createElement('div');
-    minTick.className = 'tick major';
+    const minTick = document.createElement("div");
+    minTick.className = "tick major";
     minTick.style.transform = `translate(-50%, -50%) rotate(300deg) translateX(-85px)`;
     dialFace.appendChild(minTick);
 
-    const minLabel = document.createElement('div');
-    minLabel.className = 'tick-label';
+    const minLabel = document.createElement("div");
+    minLabel.className = "tick-label";
     minLabel.textContent = Math.round(this.min);
     minLabel.style.transform = `translate(-50%, -50%) rotate(300deg) translateX(-105px) rotate(-300deg)`;
     dialFace.appendChild(minLabel);
 
-    const maxTick = document.createElement('div');
-    maxTick.className = 'tick major';
+    const maxTick = document.createElement("div");
+    maxTick.className = "tick major";
     maxTick.style.transform = `translate(-50%, -50%) rotate(600deg) translateX(-85px)`;
     dialFace.appendChild(maxTick);
 
-    const maxLabel = document.createElement('div');
-    maxLabel.className = 'tick-label';
+    const maxLabel = document.createElement("div");
+    maxLabel.className = "tick-label";
     maxLabel.textContent = Math.round(this.max);
     maxLabel.style.transform = `translate(-50%, -50%) rotate(600deg) translateX(-105px) rotate(-600deg)`;
     dialFace.appendChild(maxLabel);
   }
 
   setupDragListeners() {
-    const needleTip = this.shadowRoot.querySelector('.needle-tip');
-    const dialFace = this.shadowRoot.querySelector('.dial-face');
+    const needleTip = this.shadowRoot.querySelector(".needle-tip");
+    const dialFace = this.shadowRoot.querySelector(".dial-face");
 
     if (!needleTip || !dialFace) return;
 
     let isDragging = false;
 
-    const handleMouseDown = e => {
+    const handleMouseDown = (e) => {
       isDragging = true;
       e.preventDefault();
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
     };
 
-    const handleMouseMove = e => {
+    const handleMouseMove = (e) => {
       if (!isDragging) return;
 
       const rect = dialFace.getBoundingClientRect();
@@ -185,19 +185,19 @@ class SpeedometerDial extends Wrec {
 
     const handleMouseUp = () => {
       isDragging = false;
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
     };
 
     // Add touch support
-    const handleTouchStart = e => {
+    const handleTouchStart = (e) => {
       isDragging = true;
       e.preventDefault();
-      document.addEventListener('touchmove', handleTouchMove);
-      document.addEventListener('touchend', handleTouchEnd);
+      document.addEventListener("touchmove", handleTouchMove);
+      document.addEventListener("touchend", handleTouchEnd);
     };
 
-    const handleTouchMove = e => {
+    const handleTouchMove = (e) => {
       if (!isDragging) return;
 
       const touch = e.touches[0];
@@ -237,22 +237,22 @@ class SpeedometerDial extends Wrec {
 
     const handleTouchEnd = () => {
       isDragging = false;
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handleTouchEnd);
     };
 
-    needleTip.addEventListener('mousedown', handleMouseDown);
-    needleTip.addEventListener('touchstart', handleTouchStart);
+    needleTip.addEventListener("mousedown", handleMouseDown);
+    needleTip.addEventListener("touchstart", handleTouchStart);
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
     super.attributeChangedCallback(attrName, oldValue, newValue);
 
     // Update needle position when any property changes
-    if (attrName === 'value' || attrName === 'min' || attrName === 'max') {
+    if (attrName === "value" || attrName === "min" || attrName === "max") {
       requestAnimationFrame(() => {
         // Regenerate tick marks if min or max changed
-        if (attrName === 'min' || attrName === 'max') {
+        if (attrName === "min" || attrName === "max") {
           this.generateTickMarks();
         }
         this.updateNeedlePosition();
@@ -261,9 +261,9 @@ class SpeedometerDial extends Wrec {
 
     // Update colors when color attributes change
     if (
-      attrName === 'background-color' ||
-      attrName === 'tick-color' ||
-      attrName === 'needle-color'
+      attrName === "background-color" ||
+      attrName === "tick-color" ||
+      attrName === "needle-color"
     ) {
       requestAnimationFrame(() => {
         this.updateColors();
@@ -325,8 +325,7 @@ class SpeedometerDial extends Wrec {
       transform-origin: bottom center;
       transform: translate(-50%, -100%) rotate(210deg);
       border-radius: 1px;
-      box-shadow: 0 0 3px
-        color-mix(in srgb, var(--needle-color) 50%, transparent);
+      box-shadow: 0 0 3px color-mix(in srgb, var(--needle-color) 50%, transparent);
       z-index: 3;
       transition: transform 0.1s ease;
     }
@@ -341,13 +340,11 @@ class SpeedometerDial extends Wrec {
       left: 50%;
       transform: translateX(-50%);
       cursor: pointer;
-      box-shadow: 0 0 3px
-        color-mix(in srgb, var(--needle-color) 50%, transparent);
+      box-shadow: 0 0 3px color-mix(in srgb, var(--needle-color) 50%, transparent);
     }
 
     .needle-tip:hover {
-      box-shadow: 0 0 5px
-        color-mix(in srgb, var(--needle-color) 80%, transparent);
+      box-shadow: 0 0 5px color-mix(in srgb, var(--needle-color) 80%, transparent);
     }
 
     .center-dot {
@@ -386,7 +383,7 @@ class SpeedometerDial extends Wrec {
       left: 50%;
       transform-origin: center;
       color: var(--tick-color);
-      font-family: 'Courier New', monospace;
+      font-family: "Courier New", monospace;
       font-size: 10px;
       font-weight: bold;
       z-index: 2;
@@ -401,7 +398,7 @@ class SpeedometerDial extends Wrec {
       left: 50%;
       transform: translateX(-50%);
       color: #fff;
-      font-family: 'Courier New', monospace;
+      font-family: "Courier New", monospace;
       font-size: 14px;
       background: rgba(0, 0, 0, 0.7);
       padding: 4px 8px;
@@ -423,4 +420,4 @@ class SpeedometerDial extends Wrec {
   `;
 }
 
-SpeedometerDial.define('speedometer-dial');
+SpeedometerDial.define("speedometer-dial");

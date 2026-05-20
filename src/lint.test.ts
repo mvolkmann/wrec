@@ -1,25 +1,23 @@
-import {spawnSync} from 'node:child_process';
-import os from 'node:os';
-import path from 'node:path';
-import {describe, expect, test} from 'vitest';
-import {lintSource} from '../scripts/lint.js';
+import { spawnSync } from "node:child_process";
+import os from "node:os";
+import path from "node:path";
+import { describe, expect, test } from "vitest";
+import { lintSource } from "../scripts/lint.js";
 
-const repoRoot = path.resolve(import.meta.dirname, '..');
-const wrecImportPath = path
-  .join(repoRoot, 'src', 'wrec.ts')
-  .replaceAll('\\', '\\\\');
+const repoRoot = path.resolve(import.meta.dirname, "..");
+const wrecImportPath = path.join(repoRoot, "src", "wrec.ts").replaceAll("\\", "\\\\");
 
 // Runs the linter against inline source text.
 function runLint(source: string) {
   const fixturePath = path.join(
     os.tmpdir(),
-    `wrec-lint-test-${Math.random().toString(36).slice(2)}.ts`
+    `wrec-lint-test-${Math.random().toString(36).slice(2)}.ts`,
   );
   return lintSource(fixturePath, source);
 }
 
-describe('lint.js', () => {
-  test('does not report incompatible arguments for rest-parameter methods like console.log', () => {
+describe("lint.js", () => {
+  test("does not report incompatible arguments for rest-parameter methods like console.log", () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
 
@@ -32,10 +30,10 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).not.toContain('incompatible arguments:');
+    expect(output).not.toContain("incompatible arguments:");
   });
 
-  test('does not report invalid html nesting for valid table structure', () => {
+  test("does not report invalid html nesting for valid table structure", () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
 
@@ -53,21 +51,21 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).not.toContain('invalid html nesting:');
+    expect(output).not.toContain("invalid html nesting:");
   });
 
-  test('errors on unknown command-line options', () => {
-    const result = spawnSync(process.execPath, ['scripts/lint.js', '--bogus'], {
+  test("errors on unknown command-line options", () => {
+    const result = spawnSync(process.execPath, ["scripts/lint.js", "--bogus"], {
       cwd: repoRoot,
-      encoding: 'utf8'
+      encoding: "utf8",
     });
 
     expect(result.status).toBe(1);
-    expect(result.stdout).toBe('');
-    expect(result.stderr).toContain('unknown option: --bogus');
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("unknown option: --bogus");
   });
 
-  test('reports css-based undefined properties with line numbers', () => {
+  test("reports css-based undefined properties with line numbers", () => {
     const output = runLint(`
       import {css, Wrec} from '${wrecImportPath}';
 
@@ -82,11 +80,11 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('undefined properties:');
+    expect(output).toContain("undefined properties:");
     expect(output).toMatch(/  :\d+:\d+ missingColor/);
   });
 
-  test('reports arithmetic type errors', () => {
+  test("reports arithmetic type errors", () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
 
@@ -100,13 +98,13 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('type errors:');
+    expect(output).toContain("type errors:");
     expect(output).toMatch(
-      /  :\d+:\d+ this.count \* this.label: right operand "this.label" has type string, but arithmetic operators require number/
+      /  :\d+:\d+ this.count \* this.label: right operand "this.label" has type string, but arithmetic operators require number/,
     );
   });
 
-  test('reports arithmetic type errors for invalid left operands', () => {
+  test("reports arithmetic type errors for invalid left operands", () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
 
@@ -120,13 +118,13 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('type errors:');
+    expect(output).toContain("type errors:");
     expect(output).toContain(
-      'this.label * this.count: left operand "this.label" has type string, but arithmetic operators require number'
+      'this.label * this.count: left operand "this.label" has type string, but arithmetic operators require number',
     );
   });
 
-  test('reports default-value mismatches for boolean, array, and object properties', () => {
+  test("reports default-value mismatches for boolean, array, and object properties", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -148,16 +146,16 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('invalid default values:');
+    expect(output).toContain("invalid default values:");
     expect(output).toContain('property "badBoolean" default value has type');
-    expect(output).toContain('but declared type is Boolean');
+    expect(output).toContain("but declared type is Boolean");
     expect(output).toContain('property "badArray" default value has type');
-    expect(output).toContain('but declared type is Array');
+    expect(output).toContain("but declared type is Array");
     expect(output).toContain('property "badObject" default value has type');
-    expect(output).toContain('but declared type is Object');
+    expect(output).toContain("but declared type is Object");
   });
 
-  test('reports invalid type constructors in static properties', () => {
+  test("reports invalid type constructors in static properties", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -174,9 +172,9 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('invalid type properties:');
+    expect(output).toContain("invalid type properties:");
     expect(output).toContain(
-      'property "badDate" type must be one of Boolean, Number, String, Object, Array, or HTMLElement'
+      'property "badDate" type must be one of Boolean, Number, String, Object, Array, or HTMLElement',
     );
     expect(output).not.toContain('property "badElement" type must be one of');
     expect(output).not.toContain('property "goodArray" type must be one of');
@@ -186,7 +184,7 @@ describe('lint.js', () => {
     expect(output).not.toContain('property "goodString" type must be one of');
   });
 
-  test('reports generic type syntax in static properties', () => {
+  test("reports generic type syntax in static properties", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -197,13 +195,13 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('invalid type properties:');
+    expect(output).toContain("invalid type properties:");
     expect(output).toMatch(
-      /  :\d+:\d+ property "items" type cannot use generic syntax like "Array<string>"; use "Array" instead/
+      /  :\d+:\d+ property "items" type cannot use generic syntax like "Array<string>"; use "Array" instead/,
     );
   });
 
-  test('reports duplicate and reserved property names', () => {
+  test("reports duplicate and reserved property names", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -216,15 +214,13 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('duplicate properties:');
-    expect(output).toMatch(
-      /  :\d+:\d+ "name" first declared at :\d+:\d+, duplicated at :\d+:\d+/
-    );
-    expect(output).toContain('reserved property names:');
+    expect(output).toContain("duplicate properties:");
+    expect(output).toMatch(/  :\d+:\d+ "name" first declared at :\d+:\d+, duplicated at :\d+:\d+/);
+    expect(output).toContain("reserved property names:");
     expect(output).toMatch(/  :\d+:\d+ class/);
   });
 
-  test('reports duplicate ref attributes that target the same property', () => {
+  test("reports duplicate ref attributes that target the same property", () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
 
@@ -240,13 +236,13 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('invalid ref attributes:');
+    expect(output).toContain("invalid ref attributes:");
     expect(output).toMatch(
-      /  :\d+:\d+ ref="inputRef" is a duplicate reference to the property "inputRef"/
+      /  :\d+:\d+ ref="inputRef" is a duplicate reference to the property "inputRef"/,
     );
   });
 
-  test('reports invalid checked bindings for checkbox and radio inputs', () => {
+  test("reports invalid checked bindings for checkbox and radio inputs", () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
 
@@ -263,16 +259,16 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('invalid checked bindings:');
+    expect(output).toContain("invalid checked bindings:");
     expect(output).toMatch(
-      /  :\d+:\d+ input type="checkbox" attribute "checked" refers to property "checkedFlag" whose type is not Boolean/
+      /  :\d+:\d+ input type="checkbox" attribute "checked" refers to property "checkedFlag" whose type is not Boolean/,
     );
     expect(output).toMatch(
-      /  :\d+:\d+ input type="radio" attribute "checked" refers to property "selectedValue" whose type is not String/
+      /  :\d+:\d+ input type="radio" attribute "checked" refers to property "selectedValue" whose type is not String/,
     );
   });
 
-  test('reports form-assoc mappings to missing component properties', () => {
+  test("reports form-assoc mappings to missing component properties", () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
 
@@ -291,13 +287,13 @@ describe('lint.js', () => {
       ChildWidget.define('child-widget');
     `);
 
-    expect(output).toContain('invalid form-assoc values:');
+    expect(output).toContain("invalid form-assoc values:");
     expect(output).toMatch(
-      /  :\d+:\d+ form-assoc="missing:value" refers to missing component property "missing"/
+      /  :\d+:\d+ form-assoc="missing:value" refers to missing component property "missing"/,
     );
   });
 
-  test('reports invalid array usedBy references and ignores valid ones', () => {
+  test("reports invalid array usedBy references and ignores valid ones", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -313,19 +309,15 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('invalid usedBy references:');
+    expect(output).toContain("invalid usedBy references:");
     expect(output).toMatch(
-      /  :\d+:\d+ property "badArray" usedBy references missing method "missingMethod"/
+      /  :\d+:\d+ property "badArray" usedBy references missing method "missingMethod"/,
     );
-    expect(output).not.toContain(
-      'property "goodSingle" usedBy references missing method'
-    );
-    expect(output).not.toContain(
-      'property "goodArray" usedBy references missing method'
-    );
+    expect(output).not.toContain('property "goodSingle" usedBy references missing method');
+    expect(output).not.toContain('property "goodArray" usedBy references missing method');
   });
 
-  test('accepts getter references in usedBy values', () => {
+  test("accepts getter references in usedBy values", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -340,16 +332,14 @@ describe('lint.js', () => {
         };
       }
     `);
-    expect(output).toContain('invalid usedBy references:');
+    expect(output).toContain("invalid usedBy references:");
     expect(output).toMatch(
-      /  :\d+:\d+ property "badGetter" usedBy references missing getter "missingSummary"/
+      /  :\d+:\d+ property "badGetter" usedBy references missing getter "missingSummary"/,
     );
-    expect(output).not.toContain(
-      'property "goodGetter" usedBy references missing'
-    );
+    expect(output).not.toContain('property "goodGetter" usedBy references missing');
   });
 
-  test('reports invalid computed property references and non-method calls', () => {
+  test("reports invalid computed property references and non-method calls", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -363,16 +353,16 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('invalid computed properties:');
+    expect(output).toContain("invalid computed properties:");
     expect(output).toMatch(
-      /  :\d+:\d+ property "badRef" computed references missing property "missingProp"/
+      /  :\d+:\d+ property "badRef" computed references missing property "missingProp"/,
     );
     expect(output).toMatch(
-      /  :\d+:\d+ property "badCall" computed calls non-method instance member "label"/
+      /  :\d+:\d+ property "badCall" computed calls non-method instance member "label"/,
     );
   });
 
-  test('reports computed property cycles', () => {
+  test("reports computed property cycles", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -385,13 +375,11 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('invalid computed properties:');
-    expect(output).toMatch(
-      /  :\d+:\d+ computed properties form a cycle: first, second/
-    );
+    expect(output).toContain("invalid computed properties:");
+    expect(output).toMatch(/  :\d+:\d+ computed properties form a cycle: first, second/);
   });
 
-  test('reports self-referential computed property cycles', () => {
+  test("reports self-referential computed property cycles", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -403,11 +391,11 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('invalid computed properties:');
+    expect(output).toContain("invalid computed properties:");
     expect(output).toMatch(/  :\d+:\d+ computed properties form a cycle: doubled/);
   });
 
-  test('reports invalid event handler references', () => {
+  test("reports invalid event handler references", () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
 
@@ -416,13 +404,11 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('invalid event handler references:');
-    expect(output).toMatch(
-      /  :\d+:\d+ "missingHandler" is not a defined instance method/
-    );
+    expect(output).toContain("invalid event handler references:");
+    expect(output).toMatch(/  :\d+:\d+ "missingHandler" is not a defined instance method/);
   });
 
-  test('reports invalid form-assoc values', () => {
+  test("reports invalid form-assoc values", () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
 
@@ -435,13 +421,13 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('invalid form-assoc values:');
+    expect(output).toContain("invalid form-assoc values:");
     expect(output).toMatch(
-      /  :\d+:\d+ form-assoc="value" is invalid; expected "property:field" or a comma-separated list of them/
+      /  :\d+:\d+ form-assoc="value" is invalid; expected "property:field" or a comma-separated list of them/,
     );
   });
 
-  test('reports invalid html nesting', () => {
+  test("reports invalid html nesting", () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
 
@@ -450,11 +436,11 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('invalid html nesting:');
+    expect(output).toContain("invalid html nesting:");
     expect(output).toMatch(/  :\d+:\d+ <div> is not allowed directly inside <tr>/);
   });
 
-  test('reports declare statements with incompatible property types', () => {
+  test("reports declare statements with incompatible property types", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -469,16 +455,14 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('incompatible declare types:');
+    expect(output).toContain("incompatible declare types:");
     expect(output).toMatch(
-      /  :\d+:\d+ property "count" declare type "string" is not compatible with static properties type "Number"/
+      /  :\d+:\d+ property "count" declare type "string" is not compatible with static properties type "Number"/,
     );
-    expect(output).not.toContain(
-      'property "label" declare type "unknown" is not compatible'
-    );
+    expect(output).not.toContain('property "label" declare type "unknown" is not compatible');
   });
 
-  test('treats primitive declare types as compatible with boxed property config types', () => {
+  test("treats primitive declare types as compatible with boxed property config types", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -495,10 +479,10 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).not.toContain('incompatible declare types:');
+    expect(output).not.toContain("incompatible declare types:");
   });
 
-  test('reports invalid ref attributes', () => {
+  test("reports invalid ref attributes", () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
 
@@ -511,14 +495,14 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('invalid ref attributes:');
+    expect(output).toContain("invalid ref attributes:");
     expect(output).toMatch(
-      /  :\d+:\d+ ref="inputRef" refers to property "inputRef" whose type is not HTMLElement/
+      /  :\d+:\d+ ref="inputRef" refers to property "inputRef" whose type is not HTMLElement/,
     );
-    expect(output).not.toContain('unsupported html attributes:');
+    expect(output).not.toContain("unsupported html attributes:");
   });
 
-  test('reports invalid single-string usedBy references', () => {
+  test("reports invalid single-string usedBy references", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -529,13 +513,13 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('invalid usedBy references:');
+    expect(output).toContain("invalid usedBy references:");
     expect(output).toMatch(
-      /  :\d+:\d+ property "count" usedBy references missing method "missingMethod"/
+      /  :\d+:\d+ property "count" usedBy references missing method "missingMethod"/,
     );
   });
 
-  test('reports invalid values configurations and invalid defaults', () => {
+  test("reports invalid values configurations and invalid defaults", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -558,22 +542,20 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('invalid values configurations:');
+    expect(output).toContain("invalid values configurations:");
     expect(output).toMatch(
-      /  :\d+:\d+ property "wrongValuesType" uses values, but its type is not String/
+      /  :\d+:\d+ property "wrongValuesType" uses values, but its type is not String/,
     );
 
-    expect(output).toContain('invalid default values:');
-    expect(output).toContain(
-      'property "wrongDefaultType" default value has type'
-    );
-    expect(output).toContain('but declared type is Number');
+    expect(output).toContain("invalid default values:");
+    expect(output).toContain('property "wrongDefaultType" default value has type');
+    expect(output).toContain("but declared type is Number");
     expect(output).toMatch(
-      /  :\d+:\d+ property "wrongDefaultValue" default value "large" is not in values/
+      /  :\d+:\d+ property "wrongDefaultValue" default value "large" is not in values/,
     );
   });
 
-  test('reports malformed values configurations', () => {
+  test("reports malformed values configurations", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -601,22 +583,20 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('invalid values configurations:');
+    expect(output).toContain("invalid values configurations:");
     expect(output).toMatch(
-      /  :\d+:\d+ property "duplicateValues" values contains duplicate entry "small"/
+      /  :\d+:\d+ property "duplicateValues" values contains duplicate entry "small"/,
     );
     expect(output).toMatch(
-      /  :\d+:\d+ property "dynamicValues" values must be a literal array of strings/
+      /  :\d+:\d+ property "dynamicValues" values must be a literal array of strings/,
     );
+    expect(output).toMatch(/  :\d+:\d+ property "emptyValues" values must not be empty/);
     expect(output).toMatch(
-      /  :\d+:\d+ property "emptyValues" values must not be empty/
-    );
-    expect(output).toMatch(
-      /  :\d+:\d+ property "nonStringValues" values must contain only string literals/
+      /  :\d+:\d+ property "nonStringValues" values must contain only string literals/,
     );
   });
 
-  test('reports missing formAssociated property when formAssociatedCallback is defined', () => {
+  test("reports missing formAssociated property when formAssociatedCallback is defined", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -625,24 +605,24 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('missing required members:');
+    expect(output).toContain("missing required members:");
     expect(output).toMatch(
-      /  :\d+:\d+ formAssociatedCallback is defined, but static formAssociated is not true/
+      /  :\d+:\d+ formAssociatedCallback is defined, but static formAssociated is not true/,
     );
   });
 
-  test('reports missing static html property', () => {
+  test("reports missing static html property", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
       class Fixture extends Wrec {}
     `);
 
-    expect(output).toContain('missing required members:');
+    expect(output).toContain("missing required members:");
     expect(output).toMatch(/  :\d+:\d+ static html property must be defined/);
   });
 
-  test('reports missing type properties in property configurations', () => {
+  test("reports missing type properties in property configurations", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -653,13 +633,11 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('missing type properties:');
-    expect(output).toMatch(
-      /  :\d+:\d+ property "count" does not specify a type/
-    );
+    expect(output).toContain("missing type properties:");
+    expect(output).toMatch(/  :\d+:\d+ property "count" does not specify a type/);
   });
 
-  test('reports multiple undefined methods in one section without numbering', () => {
+  test("reports multiple undefined methods in one section without numbering", () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
 
@@ -671,14 +649,14 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('undefined methods:');
+    expect(output).toContain("undefined methods:");
     expect(output).toMatch(/  :\d+:\d+ firstMissing/);
     expect(output).toMatch(/  :\d+:\d+ secondMissing/);
-    expect(output).not.toContain('1. firstMissing');
-    expect(output).not.toContain('2. secondMissing');
+    expect(output).not.toContain("1. firstMissing");
+    expect(output).not.toContain("2. secondMissing");
   });
 
-  test('reports no issues found for a valid component', () => {
+  test("reports no issues found for a valid component", () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
 
@@ -699,14 +677,14 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('no issues found');
-    expect(output).not.toContain('undefined properties:');
-    expect(output).not.toContain('undefined methods:');
-    expect(output).not.toContain('incompatible arguments:');
-    expect(output).not.toContain('type errors:');
+    expect(output).toContain("no issues found");
+    expect(output).not.toContain("undefined properties:");
+    expect(output).not.toContain("undefined methods:");
+    expect(output).not.toContain("incompatible arguments:");
+    expect(output).not.toContain("type errors:");
   });
 
-  test('reports undefined context functions and incompatible arguments', () => {
+  test("reports undefined context functions and incompatible arguments", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -726,15 +704,15 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('undefined context functions:');
+    expect(output).toContain("undefined context functions:");
     expect(output).toMatch(/  :\d+:\d+ missingContextFn/);
-    expect(output).toContain('incompatible arguments:');
+    expect(output).toContain("incompatible arguments:");
     expect(output).toMatch(
-      /  :\d+:\d+ helper: argument "this.label" has type string, but parameter "count" expects number/
+      /  :\d+:\d+ helper: argument "this.label" has type string, but parameter "count" expects number/,
     );
   });
 
-  test('reports missing component properties referenced inside instance methods', () => {
+  test("reports missing component properties referenced inside instance methods", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -750,11 +728,11 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('undefined properties:');
+    expect(output).toContain("undefined properties:");
     expect(output).toMatch(/  :\d+:\d+ missingProp/);
   });
 
-  test('does not treat normal helper calls inside methods as missing context functions', () => {
+  test("does not treat normal helper calls inside methods as missing context functions", () => {
     const output = runLint(`
       import {Wrec} from '${wrecImportPath}';
 
@@ -775,11 +753,11 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('no issues found');
-    expect(output).not.toContain('undefined context functions:');
+    expect(output).toContain("no issues found");
+    expect(output).not.toContain("undefined context functions:");
   });
 
-  test('reports undefined properties and methods', () => {
+  test("reports undefined properties and methods", () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
 
@@ -795,13 +773,13 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('undefined properties:');
+    expect(output).toContain("undefined properties:");
     expect(output).toMatch(/  :\d+:\d+ missingProp/);
-    expect(output).toContain('undefined methods:');
+    expect(output).toContain("undefined methods:");
     expect(output).toMatch(/  :\d+:\d+ missingMethod/);
   });
 
-  test('reports unsupported event names in value bindings', () => {
+  test("reports unsupported event names in value bindings", () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
 
@@ -814,13 +792,13 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('unsupported event names:');
+    expect(output).toContain("unsupported event names:");
     expect(output).toMatch(
-      /  :\d+:\d+ input attribute "value:monkey" refers to an unsupported event name "monkey"/
+      /  :\d+:\d+ input attribute "value:monkey" refers to an unsupported event name "monkey"/,
     );
   });
 
-  test('reports invalid value bindings for native form controls', () => {
+  test("reports invalid value bindings for native form controls", () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
 
@@ -839,16 +817,16 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('invalid value bindings:');
+    expect(output).toContain("invalid value bindings:");
     expect(output).toMatch(
-      /  :\d+:\d+ input attribute "value:input" refers to property "enabled" whose type is not String or Number/
+      /  :\d+:\d+ input attribute "value:input" refers to property "enabled" whose type is not String or Number/,
     );
     expect(output).toMatch(
-      /  :\d+:\d+ select attribute "value" refers to property "data" whose type is not String or Number/
+      /  :\d+:\d+ select attribute "value" refers to property "data" whose type is not String or Number/,
     );
   });
 
-  test('reports unsupported html attributes', () => {
+  test("reports unsupported html attributes", () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
 
@@ -857,11 +835,11 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('unsupported html attributes:');
+    expect(output).toContain("unsupported html attributes:");
     expect(output).toMatch(/  :\d+:\d+ div attribute "bogus" is not supported/);
   });
 
-  test('reports useState maps to missing component properties', () => {
+  test("reports useState maps to missing component properties", () => {
     const output = runLint(`
       import {Wrec, WrecState} from '${wrecImportPath}';
 
@@ -877,13 +855,13 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('invalid useState map entries:');
+    expect(output).toContain("invalid useState map entries:");
     expect(output).toMatch(
-      /  :\d+:\d+ useState maps state property "total" to missing component property "missingProp"/
+      /  :\d+:\d+ useState maps state property "total" to missing component property "missingProp"/,
     );
   });
 
-  test('supports aliased Wrec imports', () => {
+  test("supports aliased Wrec imports", () => {
     const output = runLint(`
       import {html, Wrec as BaseWrec} from '${wrecImportPath}';
 
@@ -896,7 +874,7 @@ describe('lint.js', () => {
       }
     `);
 
-    expect(output).toContain('undefined methods:');
+    expect(output).toContain("undefined methods:");
     expect(output).toMatch(/  :\d+:\d+ missingMethod/);
   });
 });

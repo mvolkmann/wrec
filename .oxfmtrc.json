@@ -1,0 +1,6 @@
+{
+  "ignorePatterns": ["dist/**", "scripts/template.ts"],
+  "rules": {
+    "printWidth": 80
+  }
+}

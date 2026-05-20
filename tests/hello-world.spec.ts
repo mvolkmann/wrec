@@ -1,19 +1,19 @@
-import {expect, Page, test} from '@playwright/test';
-import {setAttribute} from './util';
+import { expect, Page, test } from "@playwright/test";
+import { setAttribute } from "./util";
 
-test.beforeEach(async ({page}: {page: Page}) => {
-  await page.goto('hello-world.html');
+test.beforeEach(async ({ page }: { page: Page }) => {
+  await page.goto("hello-world.html");
 });
 
-test('hello-world', async ({page}: {page: Page}) => {
-  let component = page.locator('hello-world').first();
-  let p = component.locator('p');
-  await expect(p).toHaveText('Hello, World!');
+test("hello-world", async ({ page }: { page: Page }) => {
+  let component = page.locator("hello-world").first();
+  let p = component.locator("p");
+  await expect(p).toHaveText("Hello, World!");
 
-  component = page.locator('hello-world').last();
-  p = component.locator('p');
-  await expect(p).toHaveText('Hello, Mark!');
+  component = page.locator("hello-world").last();
+  p = component.locator("p");
+  await expect(p).toHaveText("Hello, Mark!");
 
-  await setAttribute(component, 'name', 'Tami');
-  await expect(p).toHaveText('Hello, Tami!');
+  await setAttribute(component, "name", "Tami");
+  await expect(p).toHaveText("Hello, Tami!");
 });

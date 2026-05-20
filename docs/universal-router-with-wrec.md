@@ -35,11 +35,11 @@ For example, the `/users/:id` route can create a `user-view` element
 and set its `userId` property.
 
 ```ts
-import {html, Wrec} from 'wrec';
+import { html, Wrec } from "wrec";
 
 class UserView extends Wrec {
   static properties = {
-    userId: {type: String, value: ''}
+    userId: { type: String, value: "" },
   };
 
   static html = html`
@@ -48,13 +48,13 @@ class UserView extends Wrec {
   `;
 }
 
-UserView.define('user-view');
+UserView.define("user-view");
 ```
 
 Add a fallback component for unmatched paths.
 
 ```ts
-import {html, Wrec} from 'wrec';
+import { html, Wrec } from "wrec";
 
 class NotFoundView extends Wrec {
   static html = html`
@@ -63,7 +63,7 @@ class NotFoundView extends Wrec {
   `;
 }
 
-NotFoundView.define('not-found-view');
+NotFoundView.define("not-found-view");
 ```
 
 ## Configure Routes
@@ -73,11 +73,11 @@ The render instruction contains the custom element tag name and optional
 properties to assign to the element.
 
 ```ts
-import UniversalRouter from 'universal-router';
+import UniversalRouter from "universal-router";
 
-import './views/home-view';
-import './views/not-found-view';
-import './views/user-view';
+import "./views/home-view";
+import "./views/not-found-view";
+import "./views/user-view";
 
 type RouteResult = {
   properties?: Record<string, unknown>;
@@ -86,20 +86,20 @@ type RouteResult = {
 
 const router = new UniversalRouter<RouteResult>([
   {
-    path: '',
-    action: () => ({tagName: 'home-view'})
+    path: "",
+    action: () => ({ tagName: "home-view" }),
   },
   {
-    path: '/users/:id',
-    action: context => ({
-      properties: {userId: context.params.id},
-      tagName: 'user-view'
-    })
+    path: "/users/:id",
+    action: (context) => ({
+      properties: { userId: context.params.id },
+      tagName: "user-view",
+    }),
   },
   {
-    path: '(.*)',
-    action: () => ({tagName: 'not-found-view'})
-  }
+    path: "(.*)",
+    action: () => ({ tagName: "not-found-view" }),
+  },
 ]);
 ```
 
@@ -120,10 +120,7 @@ function createRouteElement(result: RouteResult): HTMLElement {
 }
 
 // Resolves a path and renders the matching route into the outlet.
-export async function renderRoute(
-  outlet: HTMLElement,
-  path = location.pathname
-): Promise<void> {
+export async function renderRoute(outlet: HTMLElement, path = location.pathname): Promise<void> {
   const result = await router.resolve(path);
   const element = createRouteElement(result);
   outlet.replaceChildren(element);
@@ -137,17 +134,14 @@ This keeps the page from reloading and lets the router update the outlet.
 
 ```ts
 // Navigates to a new path and renders it.
-export async function navigateTo(
-  outlet: HTMLElement,
-  path: string
-): Promise<void> {
-  history.pushState(null, '', path);
+export async function navigateTo(outlet: HTMLElement, path: string): Promise<void> {
+  history.pushState(null, "", path);
   await renderRoute(outlet, path);
 }
 
 // Starts browser back and forward button handling.
 export function startRouteListener(outlet: HTMLElement): void {
-  window.addEventListener('popstate', () => {
+  window.addEventListener("popstate", () => {
     void renderRoute(outlet);
   });
 }
@@ -158,9 +152,7 @@ You can also intercept same-origin anchor clicks inside the app shell.
 ```ts
 // Handles app-local link clicks without a full page load.
 export function handleLinkClick(event: MouseEvent, outlet: HTMLElement): void {
-  const link = event
-    .composedPath()
-    .find(target => target instanceof HTMLAnchorElement) as
+  const link = event.composedPath().find((target) => target instanceof HTMLAnchorElement) as
     | HTMLAnchorElement
     | undefined;
 
@@ -176,9 +168,9 @@ export function handleLinkClick(event: MouseEvent, outlet: HTMLElement): void {
 The app shell owns the outlet and starts routing when the component is ready.
 
 ```ts
-import {html, Wrec} from 'wrec';
+import { html, Wrec } from "wrec";
 
-import {handleLinkClick, renderRoute, startRouteListener} from './router';
+import { handleLinkClick, renderRoute, startRouteListener } from "./router";
 
 class AppRoot extends Wrec {
   static html = html`
@@ -192,10 +184,10 @@ class AppRoot extends Wrec {
 
   // Starts route rendering after the outlet exists.
   ready(): void {
-    const outlet = this.shadowRoot?.getElementById('outlet');
+    const outlet = this.shadowRoot?.getElementById("outlet");
 
     if (outlet instanceof HTMLElement) {
-      this.addEventListener('click', event => {
+      this.addEventListener("click", (event) => {
         handleLinkClick(event, outlet);
       });
       startRouteListener(outlet);
@@ -204,7 +196,7 @@ class AppRoot extends Wrec {
   }
 }
 
-AppRoot.define('app-root');
+AppRoot.define("app-root");
 ```
 
 Then mount the app shell from HTML.
@@ -231,22 +223,22 @@ Route actions can import view modules only when a route matches.
 ```ts
 const router = new UniversalRouter<RouteResult>([
   {
-    path: '',
+    path: "",
     action: async () => {
-      await import('./views/home-view');
-      return {tagName: 'home-view'};
-    }
+      await import("./views/home-view");
+      return { tagName: "home-view" };
+    },
   },
   {
-    path: '/users/:id',
-    action: async context => {
-      await import('./views/user-view');
+    path: "/users/:id",
+    action: async (context) => {
+      await import("./views/user-view");
       return {
-        properties: {userId: context.params.id},
-        tagName: 'user-view'
+        properties: { userId: context.params.id },
+        tagName: "user-view",
       };
-    }
-  }
+    },
+  },
 ]);
 ```
 

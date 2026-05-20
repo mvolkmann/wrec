@@ -1,20 +1,20 @@
-import {html, Wrec} from '../wrec';
+import { html, Wrec } from "../wrec";
 
 class ObjectDemo extends Wrec {
   static properties = {
     doubleCount: {
-      computed: 'this.person.stats.count * 2',
-      type: Number
+      computed: "this.person.stats.count * 2",
+      type: Number,
     },
     person: {
       type: Object,
       value: {
-        name: 'Ada',
+        name: "Ada",
         stats: {
-          count: 1
-        }
-      }
-    }
+          count: 1,
+        },
+      },
+    },
   };
 
   static html = html`
@@ -23,4 +23,4 @@ class ObjectDemo extends Wrec {
   `;
 }
 
-customElements.define('object-demo', ObjectDemo);
+customElements.define("object-demo", ObjectDemo);

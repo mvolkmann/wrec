@@ -11,15 +11,15 @@
     <script src="sortable-table.js" type="module"></script>
     <script src="sortable-table2.js" type="module"></script>
     <script type="module">
-      const propNames = ['name', 'age', 'occupation'];
-      const headings = ['Name', 'Age', 'Occupation'];
+      const propNames = ["name", "age", "occupation"];
+      const headings = ["Name", "Age", "Occupation"];
       const data = [
-        {name: 'Alice', age: 30, occupation: 'Engineer'},
-        {name: 'Bob', age: 25, occupation: 'Designer'},
-        {name: 'Charlie', age: 35, occupation: 'Teacher'}
+        { name: "Alice", age: 30, occupation: "Engineer" },
+        { name: "Bob", age: 25, occupation: "Designer" },
+        { name: "Charlie", age: 35, occupation: "Teacher" },
       ];
 
-      const tableManual = document.querySelector('table-manual');
+      const tableManual = document.querySelector("table-manual");
       // The property "properties" must be set before the property "headings"
       // because changing "headings" triggers the "buildTh" method
       // which uses properties to determine the data to sort.
@@ -27,12 +27,12 @@
       tableManual.headings = headings;
       tableManual.data = data;
 
-      const sortableTable = document.querySelector('sortable-table');
+      const sortableTable = document.querySelector("sortable-table");
       sortableTable.data = data;
 
-      const button = document.querySelector('button');
-      button.addEventListener('click', () => {
-        sortableTable.batchSet({headings: 'Age,Name', properties: 'age,name'});
+      const button = document.querySelector("button");
+      button.addEventListener("click", () => {
+        sortableTable.batchSet({ headings: "Age,Name", properties: "age,name" });
         button.remove();
       });
 

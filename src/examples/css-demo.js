@@ -1,10 +1,10 @@
-import {css, html, Wrec} from '../wrec';
+import { css, html, Wrec } from "../wrec";
 
 class CssDemo extends Wrec {
   static formAssociated = true;
   static properties = {
-    name: {type: String},
-    value: {type: String, value: 'blue'}
+    name: { type: String },
+    value: { type: String, value: "blue" },
   };
 
   static css = css`
@@ -44,4 +44,4 @@ class CssDemo extends Wrec {
   `;
 }
 
-CssDemo.define('css-demo');
+CssDemo.define("css-demo");

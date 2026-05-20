@@ -20,17 +20,17 @@ To create this project from scratch ...
 - Create a `number-slider.ts` file shown here.
 
   ```ts
-  import {css, html, Wrec} from 'wrec';
+  import { css, html, Wrec } from "wrec";
 
   class NumberSlider extends Wrec {
     static formAssociated = true;
 
     static properties = {
-      label: {type: String},
-      labelWidth: {type: String},
-      max: {type: Number, value: 100},
-      min: {type: Number, value: 0},
-      value: {type: Number}
+      label: { type: String },
+      labelWidth: { type: String },
+      max: { type: Number, value: 100 },
+      min: { type: Number, value: 0 },
+      value: { type: Number },
     };
 
     static css = css`
@@ -39,7 +39,7 @@ To create this project from scratch ...
         align-items: center;
         gap: 0.5rem;
       }
-      input[type='range'] {
+      input[type="range"] {
         width: 7rem;
       }
       label {
@@ -51,17 +51,12 @@ To create this project from scratch ...
 
     static html = html`
       <label>this.label</label>
-      <input
-        type="range"
-        min="this.min"
-        max="this.max"
-        value:input="this.value"
-      />
+      <input type="range" min="this.min" max="this.max" value:input="this.value" />
       <span>this.value</span>
     `;
   }
 
-  NumberSlider.define('number-slider');
+  NumberSlider.define("number-slider");
   ```
 
   This defines a web component the renders a `label`,
@@ -81,21 +76,21 @@ To create this project from scratch ...
 - Create a `color-picker.ts` file shown here.
 
   ```ts
-  import {css, html, Wrec} from 'wrec';
-  import './number-slider';
+  import { css, html, Wrec } from "wrec";
+  import "./number-slider";
 
   class ColorPicker extends Wrec {
     static formAssociated = true;
 
     static properties = {
-      labelWidth: {type: String, value: '3rem'},
-      red: {type: Number},
-      green: {type: Number},
-      blue: {type: Number},
+      labelWidth: { type: String, value: "3rem" },
+      red: { type: Number },
+      green: { type: Number },
+      blue: { type: Number },
       color: {
         type: String,
-        computed: '`rgb(${this.red}, ${this.green}, ${this.blue})`'
-      }
+        computed: "`rgb(${this.red}, ${this.green}, ${this.blue})`",
+      },
     };
 
     static css = css`
@@ -119,9 +114,9 @@ To create this project from scratch ...
       <div id="swatch"></div>
       <div id="sliders">
         <!-- prettier-ignore -->
-        ${this.makeSlider('Red')}
-        ${this.makeSlider('Green')}
-        ${this.makeSlider('Blue')}
+        ${this.makeSlider("Red")}
+        ${this.makeSlider("Green")}
+        ${this.makeSlider("Blue")}
       </div>
     `;
 
@@ -137,7 +132,7 @@ To create this project from scratch ...
     }
   }
 
-  ColorPicker.define('color-picker');
+  ColorPicker.define("color-picker");
   ```
 
   This defines a web component that renders a color swatch
@@ -157,15 +152,15 @@ To create this project from scratch ...
 - Create a `color-demo.ts` file shown here.
 
   ```ts
-  import {css, html, Wrec} from 'wrec';
-  import './color-picker';
-  import './number-slider';
+  import { css, html, Wrec } from "wrec";
+  import "./color-picker";
+  import "./number-slider";
 
   class ColorDemo extends Wrec {
     static properties = {
-      color: {type: String},
-      disablePicker: {type: Boolean},
-      size: {type: Number, value: 18}
+      color: { type: String },
+      disablePicker: { type: Boolean },
+      size: { type: Number, value: 18 },
     };
 
     static css = css`
@@ -180,7 +175,7 @@ To create this project from scratch ...
       }
       p {
         color: this.color;
-        font-size: this.size + 'px';
+        font-size: this.size + "px";
       }
     `;
 
@@ -195,13 +190,7 @@ To create this project from scratch ...
           <label>Lock in color</label>
           <input type="checkbox" checked="this.disablePicker" />
         </div>
-        <number-slider
-          label="Size"
-          max="48"
-          min="12"
-          value="this.size"
-          name="size"
-        ></number-slider>
+        <number-slider label="Size" max="48" min="12" value="this.size" name="size"></number-slider>
         <p>This is a test.</p>
         <button type="submit">Submit</button>
         <button type="reset">Reset</button>
@@ -209,7 +198,7 @@ To create this project from scratch ...
     `;
   }
 
-  ColorDemo.define('color-demo');
+  ColorDemo.define("color-demo");
   ```
 
   This begins by importing the definitions of other components that it uses.

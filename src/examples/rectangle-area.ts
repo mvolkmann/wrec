@@ -1,12 +1,12 @@
-import {css, html, Wrec} from '../wrec';
+import { css, html, Wrec } from "../wrec";
 
 class RectangleArea extends Wrec {
   static properties = {
-    height: {type: Number, value: 5},
-    width: {type: Number, value: 10},
+    height: { type: Number, value: 5 },
+    width: { type: Number, value: 10 },
     // tests/computed-properties.spec.ts assumes area is a computed property.
     // If it is computed inline in the span element below, the test will fail.
-    area: {type: Number, computed: 'this.width * this.height'}
+    area: { type: Number, computed: "this.width * this.height" },
   };
   declare width: number;
   declare height: number;
@@ -24,15 +24,9 @@ class RectangleArea extends Wrec {
     <div class="area">Area: <span>this.area</span></div>
   `;
 
-  propertyChangedCallback(
-    propName: string,
-    oldValue: unknown,
-    newValue: unknown
-  ) {
-    console.log(
-      `propertyChangedCallback: ${propName} changed from ${oldValue} to ${newValue}`
-    );
+  propertyChangedCallback(propName: string, oldValue: unknown, newValue: unknown) {
+    console.log(`propertyChangedCallback: ${propName} changed from ${oldValue} to ${newValue}`);
   }
 }
 
-RectangleArea.define('rectangle-area');
+RectangleArea.define("rectangle-area");

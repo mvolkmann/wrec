@@ -9,22 +9,18 @@
 // Include the --dry flag to report whether changes are needed
 // without writing the modified source back to the file.
 
-import fs from 'node:fs';
-import path from 'node:path';
-import ts from 'typescript';
-import {
-  collectWrecClasses,
-  getMemberName,
-  hasStaticModifier
-} from './ast-utils.js';
+import fs from "node:fs";
+import path from "node:path";
+import ts from "typescript";
+import { collectWrecClasses, getMemberName, hasStaticModifier } from "./ast-utils.js";
 
 const cwd = process.cwd();
 const DECLARE_TYPE_MAP = new Map([
-  ['Array', 'unknown[]'],
-  ['Boolean', 'boolean'],
-  ['Number', 'number'],
-  ['Object', 'object'],
-  ['String', 'string']
+  ["Array", "unknown[]"],
+  ["Boolean", "boolean"],
+  ["Number", "number"],
+  ["Object", "object"],
+  ["String", "string"],
 ]);
 
 // Analyzes a parsed source file and returns any proposed `declare` edits.
@@ -53,46 +49,35 @@ function analyzeSourceFile(sourceFile) {
 
     const start = propertiesMember.end;
     const end = findDeclareBlockEnd(classNode, propertiesMember, sourceFile);
-    const nextText = buildDeclareBlock(
-      sourceFile,
-      classNode,
-      propertiesMember,
-      declareLines
-    );
+    const nextText = buildDeclareBlock(sourceFile, classNode, propertiesMember, declareLines);
     const currentText = sourceFile.text.slice(start, end);
 
     if (nextText !== currentText) {
-      edits.push({end, start, text: nextText});
+      edits.push({ end, start, text: nextText });
     }
   }
 
   if (classNodes.length === 0) {
-    return {changed: false, foundWrecSubclass: false, text: sourceFile.text};
+    return { changed: false, foundWrecSubclass: false, text: sourceFile.text };
   }
 
   if (edits.length === 0) {
-    return {changed: false, foundWrecSubclass: true, text: sourceFile.text};
+    return { changed: false, foundWrecSubclass: true, text: sourceFile.text };
   }
 
   let nextSource = sourceFile.text;
   edits.sort((a, b) => b.start - a.start);
 
   for (const edit of edits) {
-    nextSource =
-      nextSource.slice(0, edit.start) + edit.text + nextSource.slice(edit.end);
+    nextSource = nextSource.slice(0, edit.start) + edit.text + nextSource.slice(edit.end);
   }
 
-  return {changed: true, foundWrecSubclass: true, text: nextSource};
+  return { changed: true, foundWrecSubclass: true, text: nextSource };
 }
 
 // Builds the `declare` block that should appear after `static properties`.
-function buildDeclareBlock(
-  sourceFile,
-  classNode,
-  propertiesMember,
-  declareLines
-) {
-  const {text} = sourceFile;
+function buildDeclareBlock(sourceFile, classNode, propertiesMember, declareLines) {
+  const { text } = sourceFile;
   const memberIndent = getIndent(text, propertiesMember.getStart(sourceFile));
   const startIndex = classNode.members.indexOf(propertiesMember) + 1;
   let nextMember = null;
@@ -105,15 +90,13 @@ function buildDeclareBlock(
     break;
   }
 
-  const nextIndent = nextMember
-    ? getIndent(text, nextMember.getStart(sourceFile))
-    : '';
+  const nextIndent = nextMember ? getIndent(text, nextMember.getStart(sourceFile)) : "";
 
   if (declareLines.length === 0) {
-    return nextMember ? `\n\n${nextIndent}` : '\n';
+    return nextMember ? `\n\n${nextIndent}` : "\n";
   }
 
-  const content = declareLines.map(line => `${memberIndent}${line}`).join('\n');
+  const content = declareLines.map((line) => `${memberIndent}${line}`).join("\n");
   return nextMember ? `\n${content}\n\n${nextIndent}` : `\n${content}\n`;
 }
 
@@ -124,15 +107,15 @@ function createDeclareLine(propName, declareType) {
 
 // Determines what changes, if any, should be made in a source file.
 export function evaluateSourceFile(filePath, options = {}) {
-  const {dry = false} = options;
+  const { dry = false } = options;
   const absFilePath = path.resolve(cwd, filePath);
   validateFile(absFilePath);
 
-  const text = fs.readFileSync(absFilePath, 'utf8');
+  const text = fs.readFileSync(absFilePath, "utf8");
   const result = evaluateSourceText(absFilePath, text);
 
   if (!result.foundWrecSubclass) {
-    throw new Error('No class extending Wrec was found.');
+    throw new Error("No class extending Wrec was found.");
   }
 
   if (!dry && result.changed) {
@@ -149,7 +132,7 @@ export function evaluateSourceText(filePath, text) {
     text,
     ts.ScriptTarget.Latest,
     true,
-    ts.ScriptKind.TS
+    ts.ScriptKind.TS,
   );
   return analyzeSourceFile(sourceFile);
 }
@@ -174,7 +157,7 @@ function getDeclareType(initializer) {
   for (const property of initializer.properties) {
     if (
       !ts.isPropertyAssignment(property) ||
-      getMemberName(property) !== 'type' ||
+      getMemberName(property) !== "type" ||
       !ts.isIdentifier(property.initializer)
     ) {
       continue;
@@ -188,9 +171,9 @@ function getDeclareType(initializer) {
 
 // Gets the leading indentation in the line that contains a given position.
 function getIndent(text, pos) {
-  const lineStart = text.lastIndexOf('\n', pos - 1) + 1;
+  const lineStart = text.lastIndexOf("\n", pos - 1) + 1;
   const match = /^[ \t]*/.exec(text.slice(lineStart));
-  return match ? match[0] : '';
+  return match ? match[0] : "";
 }
 
 // Gets the last `static properties = { ... }` declaration in a class.
@@ -201,7 +184,7 @@ function getLastPropertiesDeclaration(classNode) {
     if (
       ts.isPropertyDeclaration(member) &&
       hasStaticModifier(member) &&
-      getMemberName(member) === 'properties' &&
+      getMemberName(member) === "properties" &&
       member.initializer &&
       ts.isObjectLiteralExpression(member.initializer)
     ) {
@@ -217,52 +200,48 @@ function isDeclarePropertyDeclaration(member) {
   return (
     ts.isPropertyDeclaration(member) &&
     ts.canHaveModifiers(member) &&
-    ts
-      .getModifiers(member)
-      ?.some(mod => mod.kind === ts.SyntaxKind.DeclareKeyword) === true
+    ts.getModifiers(member)?.some((mod) => mod.kind === ts.SyntaxKind.DeclareKeyword) === true
   );
 }
 
 // Handles CLI arguments and runs the script.
 function main() {
   const args = process.argv.slice(2);
-  const unknownFlags = args.filter(
-    arg => arg.startsWith('--') && arg !== '--dry'
-  );
+  const unknownFlags = args.filter((arg) => arg.startsWith("--") && arg !== "--dry");
   if (unknownFlags.length > 0) {
     throw new Error(`unknown option: ${unknownFlags[0]}`);
   }
 
-  const inputPaths = args.filter(arg => !arg.startsWith('--'));
+  const inputPaths = args.filter((arg) => !arg.startsWith("--"));
   if (inputPaths.length !== 1) {
-    throw new Error('Specify a single source file');
+    throw new Error("Specify a single source file");
   }
 
-  const dry = args.includes('--dry');
-  const result = evaluateSourceFile(inputPaths[0], {dry});
+  const dry = args.includes("--dry");
+  const result = evaluateSourceFile(inputPaths[0], { dry });
 
   if (dry) {
     if (result.changed) process.exit(1);
-    console.info('no changes needed');
+    console.info("no changes needed");
     return;
   }
 
   if (result.changed) {
-    console.info('updated source file');
+    console.info("updated source file");
   } else {
-    console.info('no changes needed');
+    console.info("no changes needed");
   }
 }
 
 // Validates that a source file exists and has a supported extension.
 function validateFile(absFilePath) {
-  if (!fs.existsSync(absFilePath)) throw new Error('File not found');
+  if (!fs.existsSync(absFilePath)) throw new Error("File not found");
 
   const stat = fs.statSync(absFilePath);
-  if (!stat.isFile()) throw new Error('Not a file');
+  if (!stat.isFile()) throw new Error("Not a file");
 
-  if (!absFilePath.endsWith('.ts')) {
-    throw new Error('declare statements can only be added in .ts files');
+  if (!absFilePath.endsWith(".ts")) {
+    throw new Error("declare statements can only be added in .ts files");
   }
 }
 

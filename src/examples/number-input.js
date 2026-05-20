@@ -1,11 +1,11 @@
-import {css, html, Wrec} from '../wrec';
+import { css, html, Wrec } from "../wrec";
 
 class NumberInput extends Wrec {
   static formAssociated = true;
 
   static properties = {
-    label: {type: String},
-    value: {type: Number}
+    label: { type: String },
+    value: { type: Number },
   };
 
   static css = css`
@@ -16,13 +16,13 @@ class NumberInput extends Wrec {
       color: white;
     }
 
-    input[type='number'] {
+    input[type="number"] {
       text-align: right;
       width: 2rem;
     }
 
-    input[type='number']::-webkit-inner-spin-button,
-    input[type='number']::-webkit-outer-spin-button {
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
       appearance: none;
     }
 
@@ -34,12 +34,10 @@ class NumberInput extends Wrec {
 
   static html = html`
     <label>this.label</label>
-    <button disabled="this.value === 0" onclick="this.value--" type="button">
-      -
-    </button>
+    <button disabled="this.value === 0" onclick="this.value--" type="button">-</button>
     <input min="0" type="number" value="this.value" />
     <button onclick="this.value++" type="button">+</button>
   `;
 }
 
-NumberInput.define('number-input');
+NumberInput.define("number-input");

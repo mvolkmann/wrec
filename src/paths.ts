@@ -15,19 +15,17 @@ export function getPathValue(obj: LooseObject, path: string) {
 }
 
 // Determines whether a value can be traversed by path segments.
-function isObjectLike(
-  value: unknown
-): value is PathTarget {
-  return typeof value === 'object' && value !== null;
+function isObjectLike(value: unknown): value is PathTarget {
+  return typeof value === "object" && value !== null;
 }
 
 // Parses and validates a dot-separated path.
 function parsePath(path: string): string[] {
   path = path.trim();
-  if (!path) throw new Error('path cannot be empty');
+  if (!path) throw new Error("path cannot be empty");
 
-  const keys = path.split('.');
-  if (keys.some(key => key.length === 0)) {
+  const keys = path.split(".");
+  if (keys.some((key) => key.length === 0)) {
     throw new Error(`path "${path}" contains an empty segment`);
   }
 
@@ -42,10 +40,8 @@ export function setPathValue(obj: LooseObject, path: string, value: unknown) {
 
   keys.forEach((key, index) => {
     if (!isObjectLike(target)) {
-      const parentPath = keys.slice(0, index).join('.');
-      throw new Error(
-        `cannot set path "${path}": "${parentPath}" is not object-like`
-      );
+      const parentPath = keys.slice(0, index).join(".");
+      throw new Error(`cannot set path "${path}": "${parentPath}" is not object-like`);
     }
 
     const indexableTarget = target as Record<string, unknown>;
@@ -56,15 +52,13 @@ export function setPathValue(obj: LooseObject, path: string, value: unknown) {
 
     const next = indexableTarget[key];
     if (next === undefined) {
-      const missingPath = keys.slice(0, index + 1).join('.');
+      const missingPath = keys.slice(0, index + 1).join(".");
       throw new Error(`cannot set path "${path}": missing "${missingPath}"`);
     }
 
     if (!isObjectLike(next)) {
-      const parentPath = keys.slice(0, index + 1).join('.');
-      throw new Error(
-        `cannot set path "${path}": "${parentPath}" is not object-like`
-      );
+      const parentPath = keys.slice(0, index + 1).join(".");
+      throw new Error(`cannot set path "${path}": "${parentPath}" is not object-like`);
     }
 
     target = next;

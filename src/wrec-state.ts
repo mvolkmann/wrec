@@ -1,7 +1,6 @@
-import {createDeepProxy, proxyToPlainObject} from './proxies.js';
+import { createDeepProxy, proxyToPlainObject } from "./proxies.js";
 
-const inBrowser =
-  typeof window !== 'undefined' && typeof window.document !== 'undefined';
+const inBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
 
 export type StateChange = {
   state: WrecState;
@@ -26,7 +25,7 @@ export class WrecState {
 
   static {
     if (inBrowser) {
-      window.addEventListener('beforeunload', () => {
+      window.addEventListener("beforeunload", () => {
         // This persists the data in all WrecState objects
         // created with the "persist" option set to true
         // to sessionStorage as JSON strings so they can be
@@ -34,7 +33,7 @@ export class WrecState {
         for (const [name, state] of this.#stateMap.entries()) {
           if (state.#persist) {
             const obj = proxyToPlainObject(state);
-            sessionStorage.setItem('wrec-state-' + name, JSON.stringify(obj));
+            sessionStorage.setItem("wrec-state-" + name, JSON.stringify(obj));
           }
         }
       });
@@ -56,7 +55,7 @@ export class WrecState {
   }
 
   #callbackHolders: CallbackHolder[] = [];
-  #id = Symbol('objectId');
+  #id = Symbol("objectId");
   #name: string;
   #persist: boolean;
   #proxy: LooseObject;
@@ -69,17 +68,11 @@ export class WrecState {
   // Creates a state object with explicit persistence and optional initial values.
   constructor(name: string, persist: boolean, initial?: LooseObject);
   // Creates a state object with optional persistence and initial values.
-  constructor(
-    name: string,
-    persistOrInitial?: boolean | LooseObject,
-    initial?: LooseObject
-  ) {
-    const persist =
-      typeof persistOrInitial === 'boolean' ? persistOrInitial : false;
-    initial =
-      typeof persistOrInitial === 'boolean' ? initial : persistOrInitial;
+  constructor(name: string, persistOrInitial?: boolean | LooseObject, initial?: LooseObject) {
+    const persist = typeof persistOrInitial === "boolean" ? persistOrInitial : false;
+    initial = typeof persistOrInitial === "boolean" ? initial : persistOrInitial;
 
-    if (!name) throw new WrecError('name cannot be empty');
+    if (!name) throw new WrecError("name cannot be empty");
     if (WrecState.#stateMap.has(name)) {
       throw new WrecError(`WrecState with name "${name}" already exists`);
     }
@@ -91,7 +84,7 @@ export class WrecState {
     // If there is existing state data in sessionStorage,
     // use that instead of the supplied initial data.
     if (persist && inBrowser) {
-      const json = sessionStorage.getItem('wrec-state-' + name);
+      const json = sessionStorage.getItem("wrec-state-" + name);
       const existingState = json ? JSON.parse(json) : undefined;
       if (existingState) initial = existingState;
     }
@@ -107,17 +100,15 @@ export class WrecState {
 
   // Omit the `paths` argument to subscribe to all state changes.
   subscribe(callback: ChangeCallback, paths: string[] = []): () => void {
-    if (this.#callbackHolders.some(holder => holder.callback === callback)) {
-      throw new WrecError(
-        'WrecState subscribe was passed a callback that was already added'
-      );
+    if (this.#callbackHolders.some((holder) => holder.callback === callback)) {
+      throw new WrecError("WrecState subscribe was passed a callback that was already added");
     }
-    const holder = {callback, statePaths: paths};
+    const holder = { callback, statePaths: paths };
     this.#callbackHolders.push(holder);
 
     return () => {
       this.#callbackHolders = this.#callbackHolders.filter(
-        existingHolder => existingHolder !== holder
+        (existingHolder) => existingHolder !== holder,
       );
     };
   }
@@ -130,7 +121,7 @@ export class WrecState {
       },
       set(newValue: unknown) {
         this.#proxy[propName] = newValue;
-      }
+      },
     });
     this.#proxy[propName] = initialValue;
   }
@@ -142,17 +133,15 @@ export class WrecState {
   // Determines whether any subscribed state path matches the changed path.
   #hasMatchingStatePath(statePath: string, statePaths: string[]) {
     return statePaths.some(
-      path =>
-        statePath === path ||
-        statePath.startsWith(path + '.') ||
-        path.startsWith(statePath + '.')
+      (path) =>
+        statePath === path || statePath.startsWith(path + ".") || path.startsWith(statePath + "."),
     );
   }
 
   // This is useful for debugging from the DevTools console.
   // For example: state.log()
   log() {
-    console.log('WrecState:', this.#name);
+    console.log("WrecState:", this.#name);
     for (const [key, value] of Object.entries(this.#proxy)) {
       console.log(`  ${key} = ${JSON.stringify(value)}`);
     }
@@ -166,13 +155,10 @@ export class WrecState {
       `${JSON.stringify(oldValue)} to ${JSON.stringify(newValue)}`
     );
     */
-    const change = {state: this, statePath, oldValue, newValue};
+    const change = { state: this, statePath, oldValue, newValue };
 
-    for (const {callback, statePaths} of this.#callbackHolders) {
-      if (
-        statePaths.length === 0 ||
-        this.#hasMatchingStatePath(statePath, statePaths)
-      ) {
+    for (const { callback, statePaths } of this.#callbackHolders) {
+      if (statePaths.length === 0 || this.#hasMatchingStatePath(statePath, statePaths)) {
         callback(change);
       }
     }
@@ -180,7 +166,7 @@ export class WrecState {
 }
 
 if (inBrowser) {
-  const inDevelopment = process.env.NODE_ENV === 'development';
+  const inDevelopment = process.env.NODE_ENV === "development";
   if (inDevelopment) {
     // This makes the WrecState class available in the DevTools console.
     (window as any).WrecState = WrecState;

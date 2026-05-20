@@ -8,24 +8,24 @@
       }
     </style>
     <script type="module">
-      import {WrecState} from '../wrec-state.js';
-      import './hello-world.js';
-      import './labeled-input.js';
+      import { WrecState } from "../wrec-state.js";
+      import "./hello-world.js";
+      import "./labeled-input.js";
 
-      const state = new WrecState('demo', {name: 'World'});
-      const li = document.querySelector('labeled-input');
-      li.useState(state, {name: 'value'});
-      const hw = document.querySelector('hello-world');
+      const state = new WrecState("demo", { name: "World" });
+      const li = document.querySelector("labeled-input");
+      li.useState(state, { name: "value" });
+      const hw = document.querySelector("hello-world");
       hw.useState(state);
 
-      const button = document.querySelector('button');
-      button.addEventListener('click', () => {
-        state.name = 'World';
+      const button = document.querySelector("button");
+      button.addEventListener("click", () => {
+        state.name = "World";
       });
 
-      state.subscribe(({statePath, newValue, oldValue}) => {
+      state.subscribe(({ statePath, newValue, oldValue }) => {
         const msg = `${statePath} changed from ${oldValue} to ${newValue}`;
-        console.log('state-demo.html:', msg);
+        console.log("state-demo.html:", msg);
       });
     </script>
   </head>

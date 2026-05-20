@@ -1,9 +1,9 @@
-import {css, html, Wrec} from '../wrec';
+import { css, html, Wrec } from "../wrec";
 
 class SlotsDemo extends Wrec {
   static properties = {
-    color: {type: String, value: 'cornflowerblue'},
-    width: {type: String, value: '20rem'}
+    color: { type: String, value: "cornflowerblue" },
+    width: { type: String, value: "20rem" },
   };
   // TypeScript wants these to be explicitly declared.
   //color = 'cornflowerblue';
@@ -58,4 +58,4 @@ class SlotsDemo extends Wrec {
   `;
 }
 
-SlotsDemo.define('slots-demo');
+SlotsDemo.define("slots-demo");

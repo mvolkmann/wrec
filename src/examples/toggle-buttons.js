@@ -1,11 +1,11 @@
-import {css, html, Wrec} from '../wrec';
+import { css, html, Wrec } from "../wrec";
 
 // Compare this to the vanilla version.
 // It is a great example of how much wrec simplifies the code.
 class ToggleButtons extends Wrec {
   static properties = {
-    labels: {type: String, usedBy: 'makeButtons'},
-    value: {type: String, dispatch: true}
+    labels: { type: String, usedBy: "makeButtons" },
+    value: { type: String, dispatch: true },
   };
 
   static css = css`
@@ -37,21 +37,19 @@ class ToggleButtons extends Wrec {
     }
   `;
 
-  static html = 'this.makeButtons()';
+  static html = "this.makeButtons()";
 
   handleClick(event) {
     this.value = event.target.textContent.trim();
   }
 
   makeButtons() {
-    const labelArray = this.labels.split(',');
-    return labelArray.map(label => {
+    const labelArray = this.labels.split(",");
+    return labelArray.map((label) => {
       const classExpr = `this.value === '${label}' ? 'selected' : ''`;
-      return html`
-        <button class="${classExpr}" onClick="handleClick">${label}</button>
-      `;
+      return html` <button class="${classExpr}" onClick="handleClick">${label}</button> `;
     });
   }
 }
 
-ToggleButtons.define('toggle-buttons');
+ToggleButtons.define("toggle-buttons");

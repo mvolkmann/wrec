@@ -1,13 +1,13 @@
-import {css, html, Wrec} from '../wrec';
+import { css, html, Wrec } from "../wrec";
 
 type LooseObject = Record<string, unknown>;
 
 // This component is replaced by the newer sortable-table component.
 class TableWired extends Wrec {
   static properties = {
-    headings: {type: Array},
-    propNames: {type: Array},
-    data: {type: Array}
+    headings: { type: Array },
+    propNames: { type: Array },
+    data: { type: Array },
   };
   declare headings: string[];
   declare propNames: string[];
@@ -86,16 +86,16 @@ class TableWired extends Wrec {
 
   sort(event: Event) {
     let th = event.target! as HTMLTableCellElement;
-    const property = th.getAttribute('data-property')!;
+    const property = th.getAttribute("data-property")!;
     this.sortAscending = th === this.sortHeader ? !this.sortAscending : true;
 
     this.data.sort((a: LooseObject, b: LooseObject) => {
       const aValue = a[property];
       const bValue = b[property];
       let compare =
-        typeof aValue === 'string'
+        typeof aValue === "string"
           ? aValue.localeCompare(bValue as string)
-          : typeof aValue === 'number'
+          : typeof aValue === "number"
             ? aValue - (bValue as number)
             : 0;
       return this.sortAscending ? compare : -compare;
@@ -106,18 +106,18 @@ class TableWired extends Wrec {
 
     // Clear sort indicator from previously selected header.
     if (this.sortHeader) {
-      const sortIndicator = this.sortHeader.querySelector('.sort-indicator');
-      if (sortIndicator) sortIndicator.textContent = '';
+      const sortIndicator = this.sortHeader.querySelector(".sort-indicator");
+      if (sortIndicator) sortIndicator.textContent = "";
     }
 
     // Add sort indicator to currently selected header.
-    const sortIndicator = th.querySelector('.sort-indicator');
+    const sortIndicator = th.querySelector(".sort-indicator");
     if (sortIndicator) {
-      sortIndicator.textContent = this.sortAscending ? '\u25B2' : '\u25BC';
+      sortIndicator.textContent = this.sortAscending ? "\u25B2" : "\u25BC";
     }
 
     this.sortHeader = th;
   }
 }
 
-TableWired.define('table-wired');
+TableWired.define("table-wired");

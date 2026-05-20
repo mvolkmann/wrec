@@ -1,8 +1,8 @@
-import {css, html, Wrec} from '../wrec';
+import { css, html, Wrec } from "../wrec";
 
 class NumberBind extends Wrec {
   static properties = {
-    score: {type: Number}
+    score: { type: Number },
   };
 
   static css = css`
@@ -24,4 +24,4 @@ class NumberBind extends Wrec {
   `;
 }
 
-NumberBind.define('number-bind');
+NumberBind.define("number-bind");

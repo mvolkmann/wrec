@@ -1,6 +1,6 @@
-import {createDeepProxy} from './proxies.js';
-import {WrecState} from './wrec-state';
-import {getPathValue, setPathValue} from './paths';
+import { createDeepProxy } from "./proxies.js";
+import { WrecState } from "./wrec-state";
+import { getPathValue, setPathValue } from "./paths";
 import {
   CALL_RE,
   HTML_COMMENT_TEXT_RE,
@@ -8,13 +8,13 @@ import {
   REFS_RE,
   REFS_TEST_RE,
   evaluateInScope,
-  getExpressionPropName
-} from './evaluation';
-import sanitize from './sanitize-xss';
+  getExpressionPropName,
+} from "./evaluation";
+import sanitize from "./sanitize-xss";
 
 // When this package is bundled by Vite,
 // the bundle exports everything exported by this file.
-export {WrecState};
+export { WrecState };
 
 type PropertyConfig<T = any> = {
   computed?: string;
@@ -36,7 +36,7 @@ type StringToAny = Record<string, any>;
 type StringToString = Record<string, string>;
 type StringToStrings = Map<string, string[]>;
 const newStringToStrings = (): StringToStrings => new Map();
-type StateBinding = {state: WrecState; stateProp: string};
+type StateBinding = { state: WrecState; stateProp: string };
 type StateSubscription = {
   map: StringToString;
   unsubscribe: () => void;
@@ -48,17 +48,9 @@ type ComputedGraph = {
   computedToExprMap: StringToString;
 };
 
-const globalAttributes = new Set([
-  'class',
-  'disabled',
-  'hidden',
-  'id',
-  'tabindex',
-  'title'
-]);
+const globalAttributes = new Set(["class", "disabled", "hidden", "id", "tabindex", "title"]);
 
-const HTMLElementBase =
-  globalThis.HTMLElement ?? (class {} as typeof HTMLElement);
+const HTMLElementBase = globalThis.HTMLElement ?? (class {} as typeof HTMLElement);
 const customElementsApi: CustomElementRegistry =
   globalThis.customElements ??
   ({
@@ -68,19 +60,11 @@ const customElementsApi: CustomElementRegistry =
     initialize: (_root: Node) => {},
     upgrade: (_root: Node) => {},
     whenDefined: () =>
-      Promise.reject(
-        new Error('customElements is not available in this environment')
-      )
+      Promise.reject(new Error("customElements is not available in this environment")),
   } as CustomElementRegistry);
-type HTMLValueElement =
-  | HTMLInputElement
-  | HTMLSelectElement
-  | HTMLTextAreaElement;
+type HTMLValueElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
-type Ref =
-  | HTMLElement
-  | CSSStyleRule
-  | {element: HTMLElement | CSSStyleRule; attrName: string};
+type Ref = HTMLElement | CSSStyleRule | { element: HTMLElement | CSSStyleRule; attrName: string };
 
 class WrecError extends Error {}
 
@@ -103,7 +87,7 @@ function canDisable(element: Element) {
 export function createElement(
   name: string,
   attributes: StringToString,
-  innerHTML: string
+  innerHTML: string,
 ): HTMLElement {
   const element = document.createElement(name);
   if (attributes) {
@@ -122,7 +106,7 @@ const defaultForConfig = (config: PropertyConfig) =>
 
 const defaultForType = (type: PropertyType) =>
   type === String
-    ? ''
+    ? ""
     : type === Number
       ? 0
       : type === Boolean
@@ -135,9 +119,7 @@ const defaultForType = (type: PropertyType) =>
 
 // Returns an array of all descendant elements of a given element,
 // including those in nested shadow DOMs.
-function getAllDescendants(
-  root: DocumentFragment | Element | ShadowRoot
-): Element[] {
+function getAllDescendants(root: DocumentFragment | Element | ShadowRoot): Element[] {
   const elements = [];
   let element = root.firstElementChild;
   while (element) {
@@ -155,10 +137,7 @@ function getAllDescendants(
 }
 
 // Looks up a property descriptor on an object or its prototypes.
-function getPropertyDescriptor(
-  object: object,
-  propName: string
-): PropertyDescriptor | undefined {
+function getPropertyDescriptor(object: object, propName: string): PropertyDescriptor | undefined {
   let current: object | null = object;
   while (current) {
     const descriptor = Object.getOwnPropertyDescriptor(current, propName);
@@ -170,7 +149,7 @@ function getPropertyDescriptor(
 
 // Converts a getter method name to a property name.
 function getterToProperty(target: string) {
-  return target.substring('get '.length).trim();
+  return target.substring("get ".length).trim();
 }
 
 function interpolate(strings: TemplateStringsArray, values: unknown[]) {
@@ -182,44 +161,39 @@ function interpolate(strings: TemplateStringsArray, values: unknown[]) {
 }
 
 function isCheckboxInput(element: Element): element is HTMLInputElement {
-  return element instanceof HTMLInputElement && element.type === 'checkbox';
+  return element instanceof HTMLInputElement && element.type === "checkbox";
 }
 
 // Determines whether a string refers to a getter method.
 function isGetter(target: string) {
-  return target.startsWith('get ');
+  return target.startsWith("get ");
 }
 
 function isPrimitive(value: unknown) {
   const t = typeof value;
-  return t === 'string' || t === 'number' || t === 'boolean';
+  return t === "string" || t === "number" || t === "boolean";
 }
 
 function isRadioInput(element: Element): element is HTMLInputElement {
-  return element instanceof HTMLInputElement && element.type === 'radio';
+  return element instanceof HTMLInputElement && element.type === "radio";
 }
 
 function isTextArea(element: Element) {
-  return element.localName === 'textarea';
+  return element.localName === "textarea";
 }
 
 function isValueElement(element: Element) {
-  const {localName} = element;
-  return localName === 'input' || localName === 'select';
+  const { localName } = element;
+  return localName === "input" || localName === "select";
 }
 
 // Converts a property name to a getter method name.
 const propertyToGetter = (propName: string) => `get ${propName}`;
 
-const removeHtmlComments = (str: string) => str.replace(/<!--[\s\S]*?-->/g, '');
+const removeHtmlComments = (str: string) => str.replace(/<!--[\s\S]*?-->/g, "");
 
 // Returns a new string where a specified substring is replaced.
-function replace(
-  full: string,
-  index: number,
-  length: number,
-  replacement: string
-): string {
+function replace(full: string, index: number, length: number, replacement: string): string {
   return full.slice(0, index) + replacement + full.slice(index + length);
 }
 
@@ -229,18 +203,10 @@ function stringToNumber(str: string | null): number {
   return n;
 }
 
-function updateAttribute(
-  element: HTMLElement,
-  attrName: string,
-  value: string | number | boolean
-) {
-  const [realAttrName] = attrName.split(':');
+function updateAttribute(element: HTMLElement, attrName: string, value: string | number | boolean) {
+  const [realAttrName] = attrName.split(":");
 
-  if (
-    realAttrName === 'checked' &&
-    isRadioInput(element) &&
-    typeof value === 'string'
-  ) {
+  if (realAttrName === "checked" && isRadioInput(element) && typeof value === "string") {
     const isChecked = element.value === value;
     if (isChecked) {
       element.setAttribute(realAttrName, realAttrName);
@@ -253,7 +219,7 @@ function updateAttribute(
 
   // Attributes can only be set to primitive values.
   if (isPrimitive(value)) {
-    if (typeof value === 'boolean') {
+    if (typeof value === "boolean") {
       if (value) {
         element.setAttribute(realAttrName, realAttrName);
       } else {
@@ -271,7 +237,7 @@ function updateAttribute(
       const newValue = String(value);
       if (currentValue !== newValue) {
         element.setAttribute(realAttrName, newValue);
-        if (realAttrName === 'value' && isValueElement(element)) {
+        if (realAttrName === "value" && isValueElement(element)) {
           (element as HTMLValueElement).value = newValue;
         }
       }
@@ -284,12 +250,8 @@ function updateAttribute(
 }
 
 // Updates an attribute or CSS property reference with a new value.
-function updateValue(
-  element: HTMLElement | CSSStyleRule,
-  attrName: string,
-  value: string
-) {
-  const [realAttrName] = attrName.split(':');
+function updateValue(element: HTMLElement | CSSStyleRule, attrName: string, value: string) {
+  const [realAttrName] = attrName.split(":");
 
   if (element instanceof CSSStyleRule) {
     const currentValue = element.style.getPropertyValue(realAttrName);
@@ -298,7 +260,7 @@ function updateValue(
     }
   } else {
     updateAttribute(element, realAttrName, value);
-    if (realAttrName === 'value' && isValueElement(element)) {
+    if (realAttrName === "value" && isValueElement(element)) {
       if ((element as HTMLValueElement).value !== value) {
         (element as HTMLValueElement).value = value;
       }
@@ -307,17 +269,15 @@ function updateValue(
 }
 
 const usedByArray = (usedBy?: string | string[]) =>
-  typeof usedBy === 'string' ? [usedBy] : usedBy;
+  typeof usedBy === "string" ? [usedBy] : usedBy;
 
 // Waits for all custom elements used in a template to be defined.
-async function waitForDefines(
-  template: HTMLTemplateElement
-): Promise<unknown[]> {
+async function waitForDefines(template: HTMLTemplateElement): Promise<unknown[]> {
   // Find all the custom elements used in the template.
   const customSet = new Set<string>();
   for (const element of getAllDescendants(template.content)) {
-    const {localName} = element;
-    if (localName.includes('-')) customSet.add(localName);
+    const { localName } = element;
+    if (localName.includes("-")) customSet.add(localName);
   }
 
   function getTimeout(tagName: string) {
@@ -331,12 +291,9 @@ async function waitForDefines(
 
   // Wait for all the custom elements to be defined.
   return Promise.all(
-    [...customSet].map(async tagName =>
-      Promise.race([
-        customElementsApi.whenDefined(tagName),
-        getTimeout(tagName)
-      ])
-    )
+    [...customSet].map(async (tagName) =>
+      Promise.race([customElementsApi.whenDefined(tagName), getTimeout(tagName)]),
+    ),
   );
 }
 
@@ -369,9 +326,9 @@ export abstract class Wrec extends HTMLElementBase {
 
   // This can be set in each Wrec subclass.
   // It describes CSS rules that a web component uses.
-  static css = '';
+  static css = "";
 
-  private static elementName = '';
+  private static elementName = "";
 
   // Set this to true in Wrec subclasses that need
   // the ability to contribute data to form submissions.
@@ -379,7 +336,7 @@ export abstract class Wrec extends HTMLElementBase {
 
   // This must be set in each Wrec subclass.
   // It describes HTML that a web component renders.
-  static html = '';
+  static html = "";
 
   // This must be set in each Wrec subclass.
   // It describes all the properties that a web component supports.
@@ -467,32 +424,28 @@ export abstract class Wrec extends HTMLElementBase {
 
   constructor() {
     super();
-    this.attachShadow({mode: 'open'});
+    this.attachShadow({ mode: "open" });
 
     // Create one instance of `properties`, `propToComputedMap`,
     // and `propToExprsMap` for each Wrec subclass.
     const ctor = this.#ctor;
-    if (!this.#hasOwn('attrToPropMap')) ctor.attrToPropMap = new Map();
-    if (!this.#hasOwn('computedGraph')) ctor.computedGraph = null;
-    if (!this.#hasOwn('computedPropsRegistered')) {
+    if (!this.#hasOwn("attrToPropMap")) ctor.attrToPropMap = new Map();
+    if (!this.#hasOwn("computedGraph")) ctor.computedGraph = null;
+    if (!this.#hasOwn("computedPropsRegistered")) {
       ctor.computedPropsRegistered = false;
     }
     //if (!this.#hasOwn('methodToExprsMap')) ctor.methodToExprsMap = null;
-    if (!this.#hasOwn('properties')) ctor.properties = {};
-    if (!this.#hasOwn('propToAttrMap')) ctor.propToAttrMap = new Map();
-    if (!this.#hasOwn('propToComputedMap')) ctor.propToComputedMap = new Map();
-    if (!this.#hasOwn('propToExprsMap')) ctor.propToExprsMap = new Map();
-    if (!this.#hasOwn('registeredComputedProps')) {
+    if (!this.#hasOwn("properties")) ctor.properties = {};
+    if (!this.#hasOwn("propToAttrMap")) ctor.propToAttrMap = new Map();
+    if (!this.#hasOwn("propToComputedMap")) ctor.propToComputedMap = new Map();
+    if (!this.#hasOwn("propToExprsMap")) ctor.propToExprsMap = new Map();
+    if (!this.#hasOwn("registeredComputedProps")) {
       ctor.registeredComputedProps = new Set();
     }
   }
 
-  attributeChangedCallback(
-    attrName: string,
-    _oldValue: string | null,
-    newValue: string | null
-  ) {
-    if (attrName === 'disabled') this.#disableOrEnable();
+  attributeChangedCallback(attrName: string, _oldValue: string | null, newValue: string | null) {
+    if (attrName === "disabled") this.#disableOrEnable();
 
     const propName = Wrec.getPropName(attrName);
     if (!this.#isComputedProp(propName) && this.#hasProperty(propName)) {
@@ -536,9 +489,9 @@ export abstract class Wrec extends HTMLElementBase {
 
   async #buildDOM() {
     const ctor = this.#ctor;
-    let {template} = ctor;
+    let { template } = ctor;
     if (!template) {
-      template = ctor.template = document.createElement('template');
+      template = ctor.template = document.createElement("template");
       template.innerHTML = ctor.buildHTML();
     }
     await waitForDefines(template);
@@ -550,14 +503,14 @@ export abstract class Wrec extends HTMLElementBase {
     // This is a web.dev custom element best practice.
     let style = `<style>\n    :host([hidden]) { display: none; }`;
     if (this.css) style += this.css;
-    style += '</style>\n';
+    style += "</style>\n";
 
     let html = this.html.trim();
-    if (!html) throw new WrecError('static property html must be set');
+    if (!html) throw new WrecError("static property html must be set");
 
     // If the HTML string does not start with <,
     // assume it is a JavaScript expression.
-    if (!html.startsWith('<')) html = `<span><!--${html}--></span>`;
+    if (!html.startsWith("<")) html = `<span><!--${html}--></span>`;
 
     return style + html;
   }
@@ -570,7 +523,7 @@ export abstract class Wrec extends HTMLElementBase {
     this.#validateAttributes();
     this.#defineProps();
     await this.#buildDOM();
-    if (this.hasAttribute('disabled')) this.#disableOrEnable();
+    if (this.hasAttribute("disabled")) this.#disableOrEnable();
     this.#wireEvents(this.shadowRoot!);
     this.#makeReactive(this.shadowRoot!);
     this.#usedBy();
@@ -580,8 +533,8 @@ export abstract class Wrec extends HTMLElementBase {
 
   #computeProps() {
     const ctor = this.#ctor;
-    const {properties} = ctor;
-    for (const [propName, {computed}] of Object.entries(properties)) {
+    const { properties } = ctor;
+    for (const [propName, { computed }] of Object.entries(properties)) {
       if (computed) {
         this.#setComputed(propName, this.#evaluateInContext(computed));
       }
@@ -590,7 +543,7 @@ export abstract class Wrec extends HTMLElementBase {
 
   #defineProps() {
     const ctor = this.#ctor;
-    const {observedAttributes, properties} = ctor;
+    const { observedAttributes, properties } = ctor;
 
     // Define all the non-computed properties first.
     for (const [propName, config] of Object.entries(properties)) {
@@ -607,19 +560,15 @@ export abstract class Wrec extends HTMLElementBase {
     this.#registerComputedProps();
   }
 
-  #defineProp(
-    propName: string,
-    config: PropertyConfig,
-    observedAttributes: string[]
-  ) {
-    if (propName === 'class' || propName === 'style') {
+  #defineProp(propName: string, config: PropertyConfig, observedAttributes: string[]) {
+    if (propName === "class" || propName === "style") {
       throw new WrecError(`"${propName}" is a reserved property`);
     }
 
     const attrName = Wrec.getAttrName(propName);
     const has = this.hasAttribute(attrName);
     if (config.required && !has) {
-      this.#throw(this, attrName, 'is a required attribute');
+      this.#throw(this, attrName, "is a required attribute");
     }
 
     // This follows the best practice
@@ -633,18 +582,15 @@ export abstract class Wrec extends HTMLElementBase {
 
     // Copy the property value to a private property.
     // The property is replaced below with Object.defineProperty.
-    const {type} = config;
+    const { type } = config;
     const typedValue =
       type === Boolean
         ? value || has
         : observedAttributes.includes(attrName) && has
           ? this.#typedAttribute(propName, attrName)
           : (value ?? defaultForConfig(config));
-    const privateName = '#' + propName;
-    this.#setDynamic(
-      privateName,
-      this.#makePropReactive(propName, type, typedValue)
-    );
+    const privateName = "#" + propName;
+    this.#setDynamic(privateName, this.#makePropReactive(propName, type, typedValue));
 
     Object.defineProperty(this, propName, {
       enumerable: true,
@@ -653,13 +599,9 @@ export abstract class Wrec extends HTMLElementBase {
       },
       set(value) {
         if (config.computed && !this.#computedUpdates.has(propName)) {
-          this.#throw(
-            null,
-            propName,
-            'is a computed property and cannot be set directly'
-          );
+          this.#throw(null, propName, "is a computed property and cannot be set directly");
         }
-        if (type === Number && typeof value === 'string') {
+        if (type === Number && typeof value === "string") {
           value = stringToNumber(value);
         }
         const oldValue = this.#getDynamic(privateName);
@@ -684,14 +626,14 @@ export abstract class Wrec extends HTMLElementBase {
         if (formKey) this.setFormValue(formKey, String(value));
         this.propertyChangedCallback(propName, oldValue, value);
         if (config.dispatch) {
-          this.dispatch('change', {
+          this.dispatch("change", {
             tagName: this.localName,
             property: propName,
             oldValue,
-            value
+            value,
           });
         }
-      }
+      },
     });
   }
 
@@ -702,16 +644,16 @@ export abstract class Wrec extends HTMLElementBase {
 
   #disableOrEnable() {
     // Update all descendant form control elements.
-    const isDisabled = this.hasAttribute('disabled');
+    const isDisabled = this.hasAttribute("disabled");
     const elements = getAllDescendants(this.shadowRoot!);
     for (const element of elements) {
       if (!canDisable(element)) continue;
 
       if (element instanceof Wrec) {
         if (isDisabled) {
-          element.setAttribute('disabled', '');
+          element.setAttribute("disabled", "");
         } else {
-          element.removeAttribute('disabled');
+          element.removeAttribute("disabled");
         }
       } else {
         element.disabled = isDisabled;
@@ -723,7 +665,7 @@ export abstract class Wrec extends HTMLElementBase {
   // and per-instance reactive bookkeeping.
   disconnectedCallback() {
     // Unsubscribe from all state updates.
-    for (const {unsubscribe} of this.#stateSubscriptionMap.values()) {
+    for (const { unsubscribe } of this.#stateSubscriptionMap.values()) {
       unsubscribe();
     }
 
@@ -739,13 +681,13 @@ export abstract class Wrec extends HTMLElementBase {
       new CustomEvent(name, {
         bubbles: true, // up DOM tree
         composed: true, // can pass through shadow DOM
-        detail
-      })
+        detail,
+      }),
     );
   }
 
-  displayIfSet(value: any, display = 'block') {
-    return `display: ${value == null ? 'none' : display}`;
+  displayIfSet(value: any, display = "block") {
+    return `display: ${value == null ? "none" : display}`;
   }
 
   #evaluateAttributes(element: HTMLElement) {
@@ -754,7 +696,7 @@ export abstract class Wrec extends HTMLElementBase {
 
     for (const attrName of element.getAttributeNames()) {
       const text = element.getAttribute(attrName);
-      if (attrName === 'ref') {
+      if (attrName === "ref") {
         this.#setElementRef(element, text);
         continue;
       }
@@ -768,23 +710,23 @@ export abstract class Wrec extends HTMLElementBase {
           this.#throwInvalidRef(element, attrName, propName);
         }
 
-        let [realAttrName, eventName] = attrName.split(':');
+        let [realAttrName, eventName] = attrName.split(":");
         const childPropName = Wrec.getPropName(realAttrName);
 
-        if (realAttrName === 'checked') {
-          const {type} = this.#ctor.properties[propName];
+        if (realAttrName === "checked") {
+          const { type } = this.#ctor.properties[propName];
           if (isCheckboxInput(element) && type !== Boolean) {
             this.#throw(
               element,
               attrName,
-              `refers to property "${propName}" whose type is not Boolean`
+              `refers to property "${propName}" whose type is not Boolean`,
             );
           }
           if (isRadioInput(element) && type !== String) {
             this.#throw(
               element,
               attrName,
-              `refers to property "${propName}" whose type is not String`
+              `refers to property "${propName}" whose type is not String`,
             );
           }
         }
@@ -792,26 +734,24 @@ export abstract class Wrec extends HTMLElementBase {
         // Bindings to computed properties are one-way,
         // from child to parent, not two-way.
         const parentComputed = this.#isComputedProp(propName);
-        const childComputed = isWC
-          ? (element as Wrec).#isComputedProp(childPropName)
-          : false;
+        const childComputed = isWC ? (element as Wrec).#isComputedProp(childPropName) : false;
         if (!childComputed) {
-          if (realAttrName === 'checked' && isRadioInput(element)) {
+          if (realAttrName === "checked" && isRadioInput(element)) {
             (element as HTMLInputElement).checked = element.value === value;
           } else {
             (element as any)[childPropName] = value;
           }
         }
 
-        if (realAttrName === 'value') {
+        if (realAttrName === "value") {
           if (eventName) {
-            if ((element as any)['on' + eventName] === undefined) {
-              const msg = 'refers to an unsupported event name';
+            if ((element as any)["on" + eventName] === undefined) {
+              const msg = "refers to an unsupported event name";
               this.#throw(element, attrName, msg);
             }
             element.setAttribute(realAttrName, this.#getDynamic(propName));
           } else {
-            eventName = 'change';
+            eventName = "change";
           }
         }
 
@@ -819,10 +759,7 @@ export abstract class Wrec extends HTMLElementBase {
         // save a mapping from the attribute name in this web component
         // to the property name in that web component.
         if (isWC && !parentComputed) {
-          (element as Wrec).#propToParentPropMap.set(
-            Wrec.getPropName(realAttrName),
-            propName
-          );
+          (element as Wrec).#propToParentPropMap.set(Wrec.getPropName(realAttrName), propName);
         }
       }
 
@@ -838,9 +775,7 @@ export abstract class Wrec extends HTMLElementBase {
 
       for (const ref of refs) {
         const element =
-          ref instanceof HTMLElement || ref instanceof CSSStyleRule
-            ? ref
-            : ref.element;
+          ref instanceof HTMLElement || ref instanceof CSSStyleRule ? ref : ref.element;
         if (element instanceof HTMLElement && !element.isConnected) {
           disconnectedRefs.add(ref);
           continue;
@@ -857,7 +792,7 @@ export abstract class Wrec extends HTMLElementBase {
           // in the #evaluateText method creates those.
           // That case is is handled by the else block below.
         } else {
-          const {element, attrName} = ref;
+          const { element, attrName } = ref;
           if (element instanceof CSSStyleRule) {
             element.style.setProperty(attrName, value);
           } else {
@@ -867,7 +802,7 @@ export abstract class Wrec extends HTMLElementBase {
       }
 
       if (disconnectedRefs.size > 0) {
-        const newRefs = refs.filter(ref => !disconnectedRefs.has(ref));
+        const newRefs = refs.filter((ref) => !disconnectedRefs.has(ref));
         if (newRefs.length === 0) {
           this.#exprToRefsMap.delete(expr);
         } else {
@@ -883,10 +818,10 @@ export abstract class Wrec extends HTMLElementBase {
   }
 
   #evaluateText(element: HTMLElement) {
-    const {localName} = element;
+    const { localName } = element;
 
-    if (localName === 'style') {
-      const {sheet} = element as HTMLStyleElement;
+    if (localName === "style") {
+      const { sheet } = element as HTMLStyleElement;
       const rules = sheet?.cssRules ?? [];
       const ruleArray = Array.from(rules) as CSSStyleRule[];
       for (const rule of ruleArray) {
@@ -904,7 +839,7 @@ export abstract class Wrec extends HTMLElementBase {
              *   color: var(--color);
              * }
              */
-            if (prop.startsWith('--')) {
+            if (prop.startsWith("--")) {
               const value = rule.style.getPropertyValue(prop);
               this.#registerPlaceholders(value, rule, prop);
             }
@@ -912,7 +847,7 @@ export abstract class Wrec extends HTMLElementBase {
         }
       }
     } else {
-      let commentText = '';
+      let commentText = "";
 
       if (isTextArea(element)) {
         this.#registerPlaceholders(element.textContent, element);
@@ -923,9 +858,9 @@ export abstract class Wrec extends HTMLElementBase {
         if (match) commentText = match[1];
       } else {
         const comment = Array.from(element.childNodes).find(
-          node => node.nodeType === Node.COMMENT_NODE
+          (node) => node.nodeType === Node.COMMENT_NODE,
         );
-        if (comment) commentText = comment.textContent?.trim() ?? '';
+        if (comment) commentText = comment.textContent?.trim() ?? "";
       }
 
       if (commentText) {
@@ -946,16 +881,16 @@ export abstract class Wrec extends HTMLElementBase {
   // the static property formAssociated is true.
   // It does things that are only necessary in that situation.
   formAssociatedCallback() {
-    let fa = this.getAttribute('form-assoc');
+    let fa = this.getAttribute("form-assoc");
 
     // If the form-assoc attribute is not set,
     // but the name attribute is set AND there is a value property,
     // use those for form association.
     // This matches the behavior for built-in form control elements like input.
     if (!fa) {
-      const name = this.getAttribute('name');
+      const name = this.getAttribute("name");
       if (name) {
-        if (this.#hasProperty('value')) {
+        if (this.#hasProperty("value")) {
           fa = `value:${name}`;
         } else {
           //TODO: Should this be considered an error?
@@ -973,9 +908,9 @@ export abstract class Wrec extends HTMLElementBase {
 
     // Build mapping from component property names to form field names.
     const formAssoc: StringToString = {};
-    const pairs = fa.split(',');
+    const pairs = fa.split(",");
     for (const pair of pairs) {
-      const [key, value] = pair.split(':');
+      const [key, value] = pair.split(":");
       formAssoc[key.trim()] = value.trim();
     }
     this.#formAssoc = formAssoc;
@@ -1013,7 +948,7 @@ export abstract class Wrec extends HTMLElementBase {
   private static getAttrName(propName: string) {
     let attrName = this.propToAttrMap.get(propName);
     if (!attrName) {
-      attrName = propName.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+      attrName = propName.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
       this.propToAttrMap.set(propName, attrName);
     }
     return attrName;
@@ -1053,7 +988,7 @@ export abstract class Wrec extends HTMLElementBase {
     graph = {
       computedToDependenciesMap,
       computedToDependentsMap,
-      computedToExprMap
+      computedToExprMap,
     };
     ctor.computedGraph = graph;
     return graph;
@@ -1063,11 +998,8 @@ export abstract class Wrec extends HTMLElementBase {
   // and returns [computed property name, computed expression] tuples
   // ordered so dependencies are updated before dependents.
   #getComputedUpdates(propNames: Iterable<string>): string[][] {
-    const {
-      computedToDependenciesMap,
-      computedToDependentsMap,
-      computedToExprMap
-    } = this.#getComputedGraph();
+    const { computedToDependenciesMap, computedToDependentsMap, computedToExprMap } =
+      this.#getComputedGraph();
     const map = this.#ctor.propToComputedMap!;
     const affectedSet = new Set<string>();
     const namesToVisit = [...new Set(propNames)];
@@ -1094,10 +1026,10 @@ export abstract class Wrec extends HTMLElementBase {
     // that do not depend on any other affected computed properties,
     // so they can be updated first.
     const queue = [...affectedSet].filter(
-      computedName =>
-        (computedToDependenciesMap.get(computedName) || []).filter(
-          dependencyName => affectedSet.has(dependencyName)
-        ).length === 0
+      (computedName) =>
+        (computedToDependenciesMap.get(computedName) || []).filter((dependencyName) =>
+          affectedSet.has(dependencyName),
+        ).length === 0,
     );
     const orderedNames: string[] = [];
     const dependencyCountMap = new Map<string, number>();
@@ -1134,17 +1066,12 @@ export abstract class Wrec extends HTMLElementBase {
       // Any remaining computed properties still depend on each other,
       // which means there is a cycle in the computed-property graph.
       const cycleNames = [...affectedSet]
-        .filter(computedName => dependencyCountMap.get(computedName)! > 0)
+        .filter((computedName) => dependencyCountMap.get(computedName)! > 0)
         .sort();
-      throw new WrecError(
-        `computed properties form a cycle: ${cycleNames.join(', ')}`
-      );
+      throw new WrecError(`computed properties form a cycle: ${cycleNames.join(", ")}`);
     }
 
-    return orderedNames.map(computedName => [
-      computedName,
-      computedToExprMap[computedName]
-    ]);
+    return orderedNames.map((computedName) => [computedName, computedToExprMap[computedName]]);
   }
 
   // Gets a dynamically named property from this component instance.
@@ -1162,12 +1089,8 @@ export abstract class Wrec extends HTMLElementBase {
   }
 
   // Handles a nested mutation within an object or array property.
-  #handleDeepPropChange(
-    propName: string,
-    oldValue: unknown,
-    newValue: unknown
-  ) {
-    const value = this.#getDynamic('#' + propName);
+  #handleDeepPropChange(propName: string, oldValue: unknown, newValue: unknown) {
+    const value = this.#getDynamic("#" + propName);
     const stateBinding = this.#propToStateMap.get(propName);
     if (stateBinding) {
       setPathValue(stateBinding.state, stateBinding.stateProp, value);
@@ -1181,11 +1104,7 @@ export abstract class Wrec extends HTMLElementBase {
     this.propertyChangedCallback(propName, oldValue, newValue);
   }
 
-  #handleEvents(
-    element: HTMLElement,
-    attrName: string | undefined,
-    matches: string[]
-  ) {
+  #handleEvents(element: HTMLElement, attrName: string | undefined, matches: string[]) {
     if (matches.length !== 1) return;
     const [match] = matches;
     if (!REF_RE.test(match)) return;
@@ -1193,41 +1112,38 @@ export abstract class Wrec extends HTMLElementBase {
     const isCheckbox = isCheckboxInput(element);
     const isRadio = isRadioInput(element);
     const isFormControl = isValueElement(element) || isTextArea(element);
-    let [realAttrName, eventName] = (attrName ?? '').split(':');
+    let [realAttrName, eventName] = (attrName ?? "").split(":");
     const shouldListen =
-      (isFormControl && realAttrName === 'value') ||
-      (isCheckbox && realAttrName === 'checked') ||
-      (isRadio && realAttrName === 'checked') ||
+      (isFormControl && realAttrName === "value") ||
+      (isCheckbox && realAttrName === "checked") ||
+      (isRadio && realAttrName === "checked") ||
       isTextArea(element);
     if (!shouldListen) return;
 
     if (eventName) {
-      if ((element as any)['on' + eventName] === undefined) {
-        const msg = 'refers to an unsupported event name';
+      if ((element as any)["on" + eventName] === undefined) {
+        const msg = "refers to an unsupported event name";
         this.#throw(element, attrName, msg);
       }
     } else {
-      eventName = 'change';
+      eventName = "change";
     }
 
     const propName = getExpressionPropName(match);
     element.addEventListener(eventName, (event: Event) => {
-      const {target} = event;
+      const { target } = event;
       if (!target) return;
-      const {type} = this.#ctor.properties[propName];
+      const { type } = this.#ctor.properties[propName];
       const input = target as HTMLInputElement;
-      const {value} = input;
-      if (realAttrName === 'checked') {
+      const { value } = input;
+      if (realAttrName === "checked") {
         if (isCheckbox) {
           this.#setDynamic(propName, input.checked);
         } else if (isRadio && input.checked) {
           this.#setDynamic(propName, value);
         }
       } else {
-        this.#setDynamic(
-          propName,
-          type === Number ? stringToNumber(value) : value
-        );
+        this.#setDynamic(propName, type === Number ? stringToNumber(value) : value);
       }
       this.#react(propName);
     });
@@ -1247,11 +1163,7 @@ export abstract class Wrec extends HTMLElementBase {
 
   // Wraps object and array property values in deep proxies.
   #makePropReactive(propName: string, type: PropertyType, value: unknown) {
-    if (
-      value === null ||
-      typeof value !== 'object' ||
-      (type !== Array && type !== Object)
-    ) {
+    if (value === null || typeof value !== "object" || (type !== Array && type !== Object)) {
       return value;
     }
 
@@ -1260,19 +1172,16 @@ export abstract class Wrec extends HTMLElementBase {
     const existingProxy = this.#objectProxyMap.get(value as object);
     if (existingProxy) return existingProxy;
 
-    const proxy = createDeepProxy(
-      value as LooseObject,
-      (_path, oldValue, newValue) => {
-        this.#handleDeepPropChange(propName, oldValue, newValue);
-      }
-    );
+    const proxy = createDeepProxy(value as LooseObject, (_path, oldValue, newValue) => {
+      this.#handleDeepPropChange(propName, oldValue, newValue);
+    });
     this.#objectProxyMap.set(value as object, proxy);
     this.#proxiedObjects.add(proxy);
     return proxy;
   }
 
   #makeReactive(root: ShadowRoot | HTMLElement) {
-    const elements = Array.from(root.querySelectorAll('*')) as HTMLElement[];
+    const elements = Array.from(root.querySelectorAll("*")) as HTMLElement[];
     for (const element of elements) {
       this.#evaluateAttributes(element);
 
@@ -1297,22 +1206,18 @@ export abstract class Wrec extends HTMLElementBase {
     const keys = Object.entries(this.properties || {})
       .filter(([_key, config]) => !config.computed)
       .map(([key]) => Wrec.getAttrName(key));
-    if (!keys.includes('disabled')) keys.push('disabled');
+    if (!keys.includes("disabled")) keys.push("disabled");
     return keys;
   }
 
   // Subclasses can override this to add functionality.
-  propertyChangedCallback(
-    _propName: string,
-    _oldValue: unknown,
-    _newValue: unknown
-  ) {}
+  propertyChangedCallback(_propName: string, _oldValue: unknown, _newValue: unknown) {}
 
   #propRefName(element: HTMLElement, text: string | null) {
     if (!text || !REF_RE.test(text)) return;
     const propName = getExpressionPropName(text);
     if (this.#getDynamic(propName) === undefined) {
-      this.#throwInvalidRef(element, '', propName);
+      this.#throwInvalidRef(element, "", propName);
     }
     return propName;
   }
@@ -1379,10 +1284,7 @@ export abstract class Wrec extends HTMLElementBase {
         }
       }
 
-      if (
-        !registeredGetterDependency &&
-        typeof this.#getDynamic(referencedProp) !== 'function'
-      ) {
+      if (!registeredGetterDependency && typeof this.#getDynamic(referencedProp) !== "function") {
         register(referencedProp, expr);
       }
     }
@@ -1390,10 +1292,8 @@ export abstract class Wrec extends HTMLElementBase {
     // Iterate over all the method calls in the expression.
     for (const match of expr.matchAll(CALL_RE)) {
       const methodName = match[1];
-      if (typeof this.#getDynamic(methodName) !== 'function') {
-        throw new WrecError(
-          `property ${computedPropName} computed calls non-method ${methodName}`
-        );
+      if (typeof this.#getDynamic(methodName) !== "function") {
+        throw new WrecError(`property ${computedPropName} computed calls non-method ${methodName}`);
       }
 
       // Iterate over all the properties of the component.
@@ -1425,26 +1325,26 @@ export abstract class Wrec extends HTMLElementBase {
   #registerPlaceholders(
     text: string | null,
     element: HTMLElement | CSSStyleRule,
-    attrName: string | undefined = undefined
+    attrName: string | undefined = undefined,
   ) {
     if (!text) return;
 
     const matches = this.#validateExpression(element, attrName, text);
     if (!matches) {
       // Handle escaped periods in expressions.
-      const value = text.replaceAll('this..', 'this.');
+      const value = text.replaceAll("this..", "this.");
       if (attrName) {
         updateValue(element, attrName, value);
-      } else if ('textContent' in element) {
+      } else if ("textContent" in element) {
         element.textContent = value;
       }
       return;
     }
 
     const ctor = this.#ctor;
-    matches.forEach(capture => {
+    matches.forEach((capture) => {
       const propName = getExpressionPropName(capture);
-      if (typeof this.#getDynamic(propName) === 'function') return;
+      if (typeof this.#getDynamic(propName) === "function") return;
 
       const map = ctor.propToExprsMap;
       let exprs = map!.get(propName);
@@ -1466,7 +1366,7 @@ export abstract class Wrec extends HTMLElementBase {
         if (!element.isConnected) {
           this.#exprToRefsMap.set(
             expr,
-            refs.filter(r => r !== ref)
+            refs.filter((r) => r !== ref),
           );
         }
       }
@@ -1477,7 +1377,7 @@ export abstract class Wrec extends HTMLElementBase {
       refs = [];
       this.#exprToRefsMap.set(text, refs);
     }
-    refs.push(attrName ? {element, attrName} : element);
+    refs.push(attrName ? { element, attrName } : element);
 
     if (element instanceof HTMLElement) {
       this.#handleEvents(element, attrName, matches);
@@ -1492,26 +1392,18 @@ export abstract class Wrec extends HTMLElementBase {
   }
 
   #setElementRef(element: HTMLElement, text: string | null) {
-    const propName = text?.trim() ?? '';
+    const propName = text?.trim() ?? "";
     const config = this.#ctor.properties[propName];
-    if (!config) this.#throwInvalidRef(element, 'ref', propName);
+    if (!config) this.#throwInvalidRef(element, "ref", propName);
     const configType = config.type as unknown as typeof HTMLElementBase;
     if (configType !== HTMLElementBase) {
-      this.#throw(
-        element,
-        'ref',
-        `refers to property "${propName}" whose type is not HTMLElement`
-      );
+      this.#throw(element, "ref", `refers to property "${propName}" whose type is not HTMLElement`);
     }
     if (this.#getDynamic(propName)) {
-      this.#throw(
-        element,
-        'ref',
-        `is a duplicate reference to the property "${propName}"`
-      );
+      this.#throw(element, "ref", `is a duplicate reference to the property "${propName}"`);
     }
     this.#setDynamic(propName, element);
-    element.removeAttribute('ref');
+    element.removeAttribute("ref");
   }
 
   // This follows the best practice
@@ -1528,28 +1420,27 @@ export abstract class Wrec extends HTMLElementBase {
 
   static ssr(properties: StringToAny = {}): string {
     void properties;
-    throw new WrecError('SSR is not available in the browser build.');
+    throw new WrecError("SSR is not available in the browser build.");
   }
 
   #throw(
     element: HTMLElement | CSSStyleRule | null,
     attrName: string | undefined,
-    message: string
+    message: string,
   ) {
-    const name =
-      element instanceof HTMLElement ? element.localName : 'CSS rule';
+    const name = element instanceof HTMLElement ? element.localName : "CSS rule";
     throw new WrecError(
       `component ${this.#ctor.elementName}` +
-        (element ? `, element "${name}"` : '') +
-        (attrName ? `, attribute "${attrName}"` : '') +
-        ` ${message}`
+        (element ? `, element "${name}"` : "") +
+        (attrName ? `, attribute "${attrName}"` : "") +
+        ` ${message}`,
     );
   }
 
   #throwInvalidRef(
     element: HTMLElement | CSSStyleRule | null,
     attrName: string | undefined,
-    propName: string
+    propName: string,
   ) {
     this.#throw(element, attrName, `refers to missing property "${propName}"`);
   }
@@ -1563,33 +1454,32 @@ export abstract class Wrec extends HTMLElementBase {
 
     const ctor = this.#ctor;
     const config = ctor.properties[propName];
-    const {type, values} = config;
-    if (!type) this.#throw(null, propName, 'does not specify its type');
+    const { type, values } = config;
+    if (!type) this.#throw(null, propName, "does not specify its type");
     if (stringValue === null) {
       return type === Boolean ? false : defaultForConfig(config);
     }
 
     if (type === String) {
       if (values && !values.includes(stringValue)) {
-        const allowed = values.map(value => `"${value}"`).join(', ');
+        const allowed = values.map((value) => `"${value}"`).join(", ");
         this.#throw(null, propName, `must be one of ${allowed}`);
       }
       return stringValue;
     }
     if (type === Number) return stringToNumber(stringValue);
     if (type === Boolean) {
-      if (stringValue === 'true') return true;
-      if (stringValue === 'false' || stringValue === 'null') return false;
+      if (stringValue === "true") return true;
+      if (stringValue === "false" || stringValue === "null") return false;
       const attrName = Wrec.getAttrName(propName);
       if (stringValue && stringValue !== attrName) {
         this.#throw(
           null,
           propName,
-          'is a Boolean attribute, so its value ' +
-            'must match attribute name or be missing'
+          "is a Boolean attribute, so its value " + "must match attribute name or be missing",
         );
       }
-      return stringValue === '' || stringValue === attrName;
+      return stringValue === "" || stringValue === attrName;
     }
   }
 
@@ -1598,9 +1488,7 @@ export abstract class Wrec extends HTMLElementBase {
   #updateAttribute(propName: string, type: any, value: any, attrName: string) {
     if (isPrimitive(value) && !this.#isComputedProp(propName)) {
       const oldValue =
-        type === Boolean
-          ? this.hasAttribute(attrName)
-          : this.#typedAttribute(propName, attrName);
+        type === Boolean ? this.hasAttribute(attrName) : this.#typedAttribute(propName, attrName);
       if (value !== oldValue) {
         updateAttribute(this, attrName || propName, value);
       }
@@ -1621,14 +1509,10 @@ export abstract class Wrec extends HTMLElementBase {
     if (value === undefined) return;
 
     const isHTML = element instanceof HTMLElement;
-    if (Array.isArray(value)) value = value.join('');
+    if (Array.isArray(value)) value = value.join("");
     const t = typeof value;
-    if (t !== 'string' && t !== 'number') {
-      this.#throw(
-        element,
-        undefined,
-        ` computed content is not a string or number`
-      );
+    if (t !== "string" && t !== "number") {
+      this.#throw(element, undefined, ` computed content is not a string or number`);
     }
 
     const text = String(value);
@@ -1637,7 +1521,7 @@ export abstract class Wrec extends HTMLElementBase {
       if ((element as HTMLTextAreaElement).value !== text) {
         (element as HTMLTextAreaElement).value = text;
       }
-    } else if (isHTML && t === 'string' && text.trim().startsWith('<')) {
+    } else if (isHTML && t === "string" && text.trim().startsWith("<")) {
       //element.innerHTML = value as string; // This approach allows XSS attacks!
       const safeValue = sanitize(text);
       if (element.innerHTML === safeValue) return;
@@ -1659,7 +1543,7 @@ export abstract class Wrec extends HTMLElementBase {
 
     const root = this.getRootNode();
     if (!(root instanceof ShadowRoot)) return;
-    const {host} = root;
+    const { host } = root;
     if (!host) return;
 
     const parent = host as StringToAny;
@@ -1699,13 +1583,13 @@ export abstract class Wrec extends HTMLElementBase {
 
     // For each property whose configuration object
     // contains a "usedBy" property ...
-    const {properties, propToExprsMap} = ctor;
+    const { properties, propToExprsMap } = ctor;
     for (const [propName, config] of Object.entries(properties)) {
       const usedBy = usedByArray(config.usedBy);
       if (!usedBy) continue;
 
       if (!ctor.methodToExprsMap) buildMap();
-      const {methodToExprsMap} = ctor;
+      const { methodToExprsMap } = ctor;
 
       // Get the array of expressions where the property is used.
       let propExprs = propToExprsMap.get(propName);
@@ -1719,15 +1603,11 @@ export abstract class Wrec extends HTMLElementBase {
         if (isGetter(method)) {
           const property = getterToProperty(method);
           const descriptor = getPropertyDescriptor(this, property);
-          if (typeof descriptor?.get !== 'function') {
-            throw new WrecError(
-              `property ${propName} usedBy contains non-getter ${method}`
-            );
+          if (typeof descriptor?.get !== "function") {
+            throw new WrecError(`property ${propName} usedBy contains non-getter ${method}`);
           }
-        } else if (typeof this.#getDynamic(method) !== 'function') {
-          throw new WrecError(
-            `property ${propName} usedBy contains non-method ${method}`
-          );
+        } else if (typeof this.#getDynamic(method) !== "function") {
+          throw new WrecError(`property ${propName} usedBy contains non-method ${method}`);
         }
 
         // For each expression that calls the method or reads the getter ...
@@ -1761,17 +1641,17 @@ export abstract class Wrec extends HTMLElementBase {
       if (this.#hasProperty(componentProp)) {
         const value = getPathValue(state, stateProp);
         if (value !== undefined) this.#setDynamic(componentProp, value);
-        this.#propToStateMap.set(componentProp, {state, stateProp});
+        this.#propToStateMap.set(componentProp, { state, stateProp });
       }
     }
 
     // If there is an existing subscription to the state,
     // merge the new map of properties to watch with the existing map.
     const existingSubscription = this.#stateSubscriptionMap.get(state);
-    const mergedMap = {...existingSubscription?.map, ...map};
+    const mergedMap = { ...existingSubscription?.map, ...map };
     existingSubscription?.unsubscribe();
 
-    const unsubscribe = state.subscribe(({statePath, newValue}) => {
+    const unsubscribe = state.subscribe(({ statePath, newValue }) => {
       const componentProp = mergedMap[statePath];
       if (componentProp) {
         this.#setDynamic(componentProp, newValue);
@@ -1779,36 +1659,32 @@ export abstract class Wrec extends HTMLElementBase {
       }
 
       const parentStateProp = Object.keys(mergedMap).find(
-        key =>
-          statePath.startsWith(key + '.') || key.startsWith(statePath + '.')
+        (key) => statePath.startsWith(key + ".") || key.startsWith(statePath + "."),
       );
       if (!parentStateProp) return;
 
       const parentComponentProp = mergedMap[parentStateProp];
-      this.#setDynamic(
-        parentComponentProp,
-        getPathValue(state, parentStateProp)
-      );
+      this.#setDynamic(parentComponentProp, getPathValue(state, parentStateProp));
     }, Object.keys(mergedMap));
-    this.#stateSubscriptionMap.set(state, {map: mergedMap, unsubscribe});
+    this.#stateSubscriptionMap.set(state, { map: mergedMap, unsubscribe });
   }
 
   #validateAttributes() {
     const propNames = new Set(Object.keys(this.#ctor.properties));
     for (const attrName of this.getAttributeNames()) {
       if (globalAttributes.has(attrName)) continue;
-      if (attrName.startsWith('on')) continue;
-      if (attrName === 'ref') continue;
-      if (attrName === 'form-assoc') {
+      if (attrName.startsWith("on")) continue;
+      if (attrName === "ref") continue;
+      if (attrName === "form-assoc") {
         this.#verifyFormAssociated();
         continue;
       }
       if (!propNames.has(Wrec.getPropName(attrName))) {
-        if (attrName === 'name') {
+        if (attrName === "name") {
           this.#verifyFormAssociated();
           continue;
         }
-        this.#throw(null, attrName, 'is not a supported attribute');
+        this.#throw(null, attrName, "is not a supported attribute");
       }
     }
   }
@@ -1816,12 +1692,12 @@ export abstract class Wrec extends HTMLElementBase {
   #validateExpression(
     element: HTMLElement | CSSStyleRule,
     attrName: string | undefined,
-    expr: string
+    expr: string,
   ) {
     const matches = expr.match(REFS_RE);
     if (!matches) return;
 
-    matches.forEach(capture => {
+    matches.forEach((capture) => {
       const propName = getExpressionPropName(capture);
       if (this.#getDynamic(propName) === undefined) {
         this.#throwInvalidRef(element, attrName, propName);
@@ -1840,11 +1716,7 @@ export abstract class Wrec extends HTMLElementBase {
 
       value = this.#getDynamic(componentProp);
       if (!this.#hasProperty(componentProp)) {
-        this.#throw(
-          null,
-          componentProp,
-          'refers to missing property in useState map'
-        );
+        this.#throw(null, componentProp, "refers to missing property in useState map");
       }
     }
   }
@@ -1852,15 +1724,15 @@ export abstract class Wrec extends HTMLElementBase {
   // When type is an array, this can't validate the type of the array elements.
   // This is called by #defineProp.
   #validateType(propName: string, type: PropertyType, value: any) {
-    const {values} = this.#ctor.properties[propName] as PropertyConfig;
+    const { values } = this.#ctor.properties[propName] as PropertyConfig;
     if (values) {
       let msg;
       if (type !== String) {
-        msg = 'declares allowed values, but its type is not String';
-      } else if (typeof value !== 'string') {
+        msg = "declares allowed values, but its type is not String";
+      } else if (typeof value !== "string") {
         msg = `value is a ${typeof value}, but type is String`;
       } else if (!values.includes(value)) {
-        const allowed = values.map(value => `"${value}"`).join(', ');
+        const allowed = values.map((value) => `"${value}"`).join(", ");
         msg = `must be one of ${allowed}`;
       }
       if (msg) this.#throw(null, propName, msg);
@@ -1869,58 +1741,48 @@ export abstract class Wrec extends HTMLElementBase {
     if (value instanceof type) return;
 
     let t = typeof value as string;
-    if (t === 'object') {
-      const {constructor} = value;
+    if (t === "object") {
+      const { constructor } = value;
       t = constructor.name;
       if (constructor !== type) {
-        this.#throw(
-          null,
-          propName,
-          `was set to a ${t}, but must be a ${type.name}`
-        );
+        this.#throw(null, propName, `was set to a ${t}, but must be a ${type.name}`);
       }
     }
 
     // Handle primitive types.
     if (t !== type.name.toLowerCase()) {
-      this.#throw(
-        null,
-        propName,
-        `was set to a ${t}, but must be a ${type.name}`
-      );
+      this.#throw(null, propName, `was set to a ${t}, but must be a ${type.name}`);
     }
   }
 
   // formAssociated is only needed when the component is inside a form.
   #verifyFormAssociated() {
-    if (this.#ctor.formAssociated || this.closest('form') === null) return;
+    if (this.#ctor.formAssociated || this.closest("form") === null) return;
     const className = this.#ctor.name;
     this.#throw(
       this,
       undefined,
-      `inside form, class ${className} requires "static formAssociated = true;"`
+      `inside form, class ${className} requires "static formAssociated = true;"`,
     );
   }
 
   #wireEvents(root: ShadowRoot | HTMLElement) {
-    const elements = Array.from(root.querySelectorAll('*')) as HTMLElement[];
+    const elements = Array.from(root.querySelectorAll("*")) as HTMLElement[];
     for (const element of elements) {
       // We don't want to remove attributes while we are iterating over them.
       const attributesToRemove = [];
 
       for (const attr of Array.from(element.attributes)) {
         const attrName = attr.name;
-        if (attrName.startsWith('on')) {
+        if (attrName.startsWith("on")) {
           let eventName = attrName.slice(2);
-          eventName =
-            eventName[0].toLowerCase() + eventName.slice(1).toLowerCase();
+          eventName = eventName[0].toLowerCase() + eventName.slice(1).toLowerCase();
           const attrValue = attr.value;
           this.#validateExpression(element, attrName, attrValue);
 
           let fn;
-          if (typeof this.#getDynamic(attrValue) === 'function') {
-            fn = (event: Event) =>
-              this.#getDynamic(attrValue).call(this, event);
+          if (typeof this.#getDynamic(attrValue) === "function") {
+            fn = (event: Event) => this.#getDynamic(attrValue).call(this, event);
           } else {
             this.#validateExpression(element, attrName, attrValue);
             // oxlint-disable-next-line no-eval no-unused-vars
@@ -1950,7 +1812,7 @@ export function css(strings: TemplateStringsArray, ...values: unknown[]) {
     const propValue = match[2];
     if (REFS_TEST_RE.test(propValue)) {
       const propName = match[1];
-      if (!propName.startsWith('--')) {
+      if (!propName.startsWith("--")) {
         const replacement = `--${propName}: ${propValue};
       ${propName}: var(--${propName})`;
         result = replace(result, match.index, match[0].length, replacement);
@@ -1969,11 +1831,11 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]) {
   while (true) {
     const match = HTML_ELEMENT_TEXT_RE.exec(result);
     // Don't do this in style elements.
-    if (!match || match[1] === 'style') break;
+    if (!match || match[1] === "style") break;
     const textContent = removeHtmlComments(match[2]);
     if (REFS_TEST_RE.test(textContent)) {
       const comment = `<!-- ${textContent.trim()} -->`;
-      const index = match.index + match[0].indexOf('>') + 1;
+      const index = match.index + match[0].indexOf(">") + 1;
       result = replace(result, index, textContent.length, comment);
     }
   }

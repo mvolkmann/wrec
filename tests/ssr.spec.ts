@@ -1,17 +1,17 @@
-import {expect, test} from '@playwright/test';
-import './dom-setup';
+import { expect, test } from "@playwright/test";
+import "./dom-setup";
 
-import HelloSsr from '../src/examples/hello-ssr.js';
+import HelloSsr from "../src/examples/hello-ssr.js";
 
 const normalize = (str: string) =>
   str
-    .split('\n')
-    .map(line => line.trim())
-    .join('\n');
+    .split("\n")
+    .map((line) => line.trim())
+    .join("\n");
 
-test('ssr 1', async () => {
-  const name = 'Earth';
-  const actual = normalize(HelloSsr.ssr({name}));
+test("ssr 1", async () => {
+  const name = "Earth";
+  const actual = normalize(HelloSsr.ssr({ name }));
   const expected = normalize(`
     <hello-world name="${name}">
       <template shadowrootmode="open">
@@ -29,11 +29,11 @@ test('ssr 1', async () => {
   expect(actual).toBe(expected);
 });
 
-test('ssr 2', async () => {
-  const color = 'red';
-  const name = 'Moon';
-  const title = 'My Title';
-  const actual = normalize(HelloSsr.ssr({color, name, title}));
+test("ssr 2", async () => {
+  const color = "red";
+  const name = "Moon";
+  const title = "My Title";
+  const actual = normalize(HelloSsr.ssr({ color, name, title }));
   const expected = normalize(`
     <hello-world color="${color}" name="${name}" title="${title}">
       <template shadowrootmode="open">

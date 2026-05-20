@@ -1,33 +1,33 @@
-import {expect, Page, test} from '@playwright/test';
-import {expectProperty, setProperty, waitForNextFrame} from './util';
+import { expect, Page, test } from "@playwright/test";
+import { expectProperty, setProperty, waitForNextFrame } from "./util";
 
-test.beforeEach(async ({page}: {page: Page}) => {
-  await page.goto('number-bind.html');
+test.beforeEach(async ({ page }: { page: Page }) => {
+  await page.goto("number-bind.html");
 });
 
-test('number-bind', async ({page}: {page: Page}) => {
-  const numberBind = page.locator('number-bind');
+test("number-bind", async ({ page }: { page: Page }) => {
+  const numberBind = page.locator("number-bind");
   await expect(numberBind).toBeAttached();
 
-  const numberInput = numberBind.locator('number-input');
+  const numberInput = numberBind.locator("number-input");
   await expect(numberInput).toBeAttached();
 
-  const input = numberInput.locator('input');
-  const decBtn = numberInput.locator('button').first();
-  await expect(decBtn).toHaveText('-');
-  const incBtn = numberInput.locator('button').last();
-  await expect(incBtn).toHaveText('+');
+  const input = numberInput.locator("input");
+  const decBtn = numberInput.locator("button").first();
+  await expect(decBtn).toHaveText("-");
+  const incBtn = numberInput.locator("button").last();
+  await expect(incBtn).toHaveText("+");
 
-  const numberSlider = numberBind.locator('number-slider');
+  const numberSlider = numberBind.locator("number-slider");
   await expect(numberSlider).toBeAttached();
 
-  const span = numberBind.locator('p > span');
+  const span = numberBind.locator("p > span");
   await expect(span).toBeAttached();
 
   async function testNumber(expected: number) {
     await waitForNextFrame(page);
-    await expectProperty(numberInput, 'value', expected);
-    await expectProperty(numberSlider, 'value', expected);
+    await expectProperty(numberInput, "value", expected);
+    await expectProperty(numberSlider, "value", expected);
     await expect(span).toHaveText(String(expected));
   }
 
@@ -45,7 +45,7 @@ test('number-bind', async ({page}: {page: Page}) => {
   // Enter a new number in the input element of the number-input element.
   let expected = 19;
   await input.fill(String(expected));
-  await input.press('Enter');
+  await input.press("Enter");
   await waitForNextFrame(page);
   await testNumber(expected);
 
@@ -53,6 +53,6 @@ test('number-bind', async ({page}: {page: Page}) => {
   expected = 100;
   //TODO: Why doesn't this work instead of modifying a number-slider property?
   //await setAttribute(rangeInput, "value", expected);
-  await setProperty(numberSlider, 'value', expected);
+  await setProperty(numberSlider, "value", expected);
   await testNumber(expected);
 });

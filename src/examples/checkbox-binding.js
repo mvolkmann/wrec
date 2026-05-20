@@ -1,8 +1,8 @@
-import {html, Wrec} from '../wrec';
+import { html, Wrec } from "../wrec";
 
 class CheckboxBinding extends Wrec {
   static properties = {
-    moving: {type: Boolean, value: true}
+    moving: { type: Boolean, value: true },
   };
 
   static html = html`
@@ -14,4 +14,4 @@ class CheckboxBinding extends Wrec {
   `;
 }
 
-CheckboxBinding.define('checkbox-binding');
+CheckboxBinding.define("checkbox-binding");

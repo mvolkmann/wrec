@@ -1,8 +1,8 @@
-import {css, html, Wrec} from './wrec.es.js';
+import { css, html, Wrec } from "./wrec.es.js";
 
 class HelloWorld extends Wrec {
   static properties = {
-    name: {type: String, value: 'World'}
+    name: { type: String, value: "World" },
   };
 
   static css = css`
@@ -14,4 +14,4 @@ class HelloWorld extends Wrec {
   static html = html` <p>Hello, <span>this.name</span>!</p> `;
 }
 
-HelloWorld.define('hello-world');
+HelloWorld.define("hello-world");

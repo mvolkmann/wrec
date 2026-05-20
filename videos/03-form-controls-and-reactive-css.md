@@ -17,13 +17,13 @@ To create this project from scratch ...
 - Create a `form-controls.ts` file shown here:
 
   ```ts
-  import {css, html, Wrec} from 'wrec';
+  import { css, html, Wrec } from "wrec";
 
   class FormControls extends Wrec {
     static properties = {
-      color: {type: String, value: 'red'},
-      size: {type: Number, value: 18},
-      story: {type: String, value: 'Once upon a time...'}
+      color: { type: String, value: "red" },
+      size: { type: Number, value: 18 },
+      story: { type: String, value: "Once upon a time..." },
     };
 
     static css = css`
@@ -44,7 +44,7 @@ To create this project from scratch ...
       p {
         color: this.color;
         /* reactive CSS */
-        font-size: this.size + 'px';
+        font-size: this.size + "px";
         margin: 0;
       }
       .row {
@@ -81,7 +81,7 @@ To create this project from scratch ...
     `;
   }
 
-  FormControls.define('form-controls');
+  FormControls.define("form-controls");
   ```
 
   The component has the properties `color`, `size`, and `story`.

@@ -72,11 +72,11 @@ Here are the steps:
    "Prettier" to add syntax highlighting and format the CSS and HTML strings.
 
    ```js
-   import {css, html, Wrec} from 'wrec';
+   import { css, html, Wrec } from "wrec";
 
    class MyCounter extends Wrec {
      static properties = {
-       count: {type: Number}
+       count: { type: Number },
      };
 
      static css = css`
@@ -95,13 +95,7 @@ Here are the steps:
 
      static html = html`
        <div>
-         <button
-           onClick="this.count--"
-           type="button"
-           disabled="this.count === 0"
-         >
-           -
-         </button>
+         <button onClick="this.count--" type="button" disabled="this.count === 0">-</button>
          <span>this.count</span>
          <button onClick="this.count++" type="button">+</button>
          <span>(this.count < 10 ? "single" : "multi") + "-digit"</span>
@@ -109,7 +103,7 @@ Here are the steps:
      `;
    }
 
-   MyCounter.define('my-counter');
+   MyCounter.define("my-counter");
    ```
 
 Property definitions can also constrain string values to an allowed set:
@@ -119,9 +113,9 @@ class TrafficLight extends Wrec {
   static properties = {
     color: {
       type: String,
-      values: ['red', 'yellow', 'green'],
-      value: 'red'
-    }
+      values: ["red", "yellow", "green"],
+      value: "red",
+    },
   };
 }
 ```
@@ -245,10 +239,10 @@ to share state across multiple wrec components.
   in the DevTools console as follows:
 
   ```js
-  state = WrecState.get('demo');
+  state = WrecState.get("demo");
   state; // to examine the entire object
   state.name; // to see current value of "name" property
-  state.name = 'Earth'; // to modify "name" property
+  state.name = "Earth"; // to modify "name" property
   ```
 
 `traffic-light.html` demonstrates a property with an enumerated value.

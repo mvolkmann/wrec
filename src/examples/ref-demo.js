@@ -1,8 +1,8 @@
-import {html, Wrec} from '../wrec';
+import { html, Wrec } from "../wrec";
 
 class RefDemo extends Wrec {
   static properties = {
-    inputRef: {type: HTMLElement}
+    inputRef: { type: HTMLElement },
   };
 
   static html = html`
@@ -12,8 +12,8 @@ class RefDemo extends Wrec {
 
   async connectedCallback() {
     await super.connectedCallback();
-    this.inputRef.setAttribute('data-ref-ready', 'true');
+    this.inputRef.setAttribute("data-ref-ready", "true");
   }
 }
 
-RefDemo.define('ref-demo');
+RefDemo.define("ref-demo");

@@ -1,13 +1,11 @@
-import {html, Wrec} from '../wrec';
+import { html, Wrec } from "../wrec";
 
 class TemperatureEval extends Wrec {
   static properties = {
-    temperature: {type: Number}
+    temperature: { type: Number },
   };
 
-  static html = html`
-    <p>this.temperature < 32 ? "freezing" : "not freezing"</p>
-  `;
+  static html = html` <p>this.temperature < 32 ? "freezing" : "not freezing"</p> `;
 }
 
-TemperatureEval.define('temperature-eval');
+TemperatureEval.define("temperature-eval");

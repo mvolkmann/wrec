@@ -1,33 +1,16 @@
 {
   "name": "wrec",
+  "version": "0.41.0",
   "description": "a library that greatly simplifies building web components",
-  "author": "R. Mark Volkmann",
-  "version": "0.40.7",
-  "packageManager": "pnpm@11.0.6",
+  "keywords": [
+    "component",
+    "web"
+  ],
   "license": "MIT",
+  "author": "R. Mark Volkmann",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mvolkmann/wrec.git"
-  },
-  "keywords": [
-    "web",
-    "component"
-  ],
-  "type": "module",
-  "module": "./dist/wrec.es.js",
-  "types": "./dist/wrec.d.ts",
-  "moduleResolution": "bundler",
-  "exports": {
-    ".": {
-      "types": "./dist/wrec.d.ts",
-      "browser": "./dist/wrec.es.js",
-      "node": "./dist/wrec-ssr.es.js",
-      "default": "./dist/wrec.es.js"
-    },
-    "./ssr": {
-      "types": "./dist/wrec-ssr.d.ts",
-      "import": "./dist/wrec-ssr.es.js"
-    }
   },
   "bin": {
     "wrec-declare": "./scripts/declare.js",
@@ -45,29 +28,48 @@
     "scripts/used-by.js",
     "README.md"
   ],
+  "type": "module",
+  "module": "./dist/wrec.es.js",
+  "types": "./dist/wrec.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/wrec.d.ts",
+      "browser": "./dist/wrec.es.js",
+      "node": "./dist/wrec-ssr.es.js",
+      "default": "./dist/wrec.es.js"
+    },
+    "./ssr": {
+      "types": "./dist/wrec-ssr.d.ts",
+      "import": "./dist/wrec-ssr.es.js"
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "clean": "rm -rf dist",
+    "format": "oxfmt",
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "node port-check.js && playwright test",
     "testui": "playwright test --ui",
     "unittest": "vitest run"
   },
+  "dependencies": {
+    "node-html-parser": "^7.1.0",
+    "typescript": "^6.0.2",
+    "xss": "^1.0.15"
+  },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "@types/node": "^25.5.2",
     "get-port": "^7.2.0",
     "jsdom": "^29.0.2",
+    "oxfmt": "^0.51.0",
     "oxlint": "^1.58.0",
     "vite": "^8.0.3",
     "vite-plugin-dts": "^4.5.4",
     "vitest": "^4.1.7"
   },
-  "dependencies": {
-    "node-html-parser": "^7.1.0",
-    "typescript": "^6.0.2",
-    "xss": "^1.0.15"
-  }
+  "packageManager": "pnpm@11.0.6",
+  "moduleResolution": "bundler"
 }

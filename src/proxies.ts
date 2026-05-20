@@ -1,10 +1,6 @@
 type LooseObject = Record<string, unknown>;
 
-export type ProxyCallback = (
-  keyPath: string,
-  oldValue: unknown,
-  newValue: unknown
-) => void;
+export type ProxyCallback = (keyPath: string, oldValue: unknown, newValue: unknown) => void;
 
 /**
  * Creates a recursive Proxy to monitor deep property changes,
@@ -17,7 +13,7 @@ export type ProxyCallback = (
 export function createDeepProxy(
   target: LooseObject,
   callback: ProxyCallback,
-  path = ''
+  path = "",
 ): LooseObject {
   // Use a WeakMap to cache proxies and
   // avoid infinite recursion or memory leaks.
@@ -30,7 +26,7 @@ export function createDeepProxy(
       const value = Reflect.get(target, key);
 
       // If the value is a primitive, return it.
-      if (value === null || typeof value !== 'object') return value;
+      if (value === null || typeof value !== "object") return value;
 
       // If a proxy for this object has already been created, return it.
       const proxy = proxyCache.get(value);
@@ -52,7 +48,7 @@ export function createDeepProxy(
         callback(newPath, oldValue, newValue);
       }
       return true;
-    }
+    },
   };
 
   return new Proxy(target, deepHandler);
@@ -62,7 +58,7 @@ export function createDeepProxy(
 export function proxyToPlainObject(obj: LooseObject): LooseObject {
   const clone = (Array.isArray(obj) ? [] : {}) as Record<string, unknown>;
   for (const [key, value] of Object.entries(obj)) {
-    const isObject = typeof value === 'object' && value !== null;
+    const isObject = typeof value === "object" && value !== null;
     clone[key] = isObject ? proxyToPlainObject(value as LooseObject) : value;
   }
   return clone as LooseObject;

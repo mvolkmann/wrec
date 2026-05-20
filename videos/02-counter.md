@@ -12,11 +12,11 @@ To create this project from scratch ...
 - Create the `my-counter.ts` file shown here:
 
   ```ts
-  import {css, html, Wrec} from 'wrec';
+  import { css, html, Wrec } from "wrec";
 
   class MyCounter extends Wrec {
     static properties = {
-      count: {type: Number, dispatch: true}
+      count: { type: Number, dispatch: true },
     };
 
     static css = css`
@@ -29,16 +29,14 @@ To create this project from scratch ...
     `;
 
     static html = html`
-      <button type="button" onClick="this.count--" disabled="this.count === 0">
-        -
-      </button>
+      <button type="button" onClick="this.count--" disabled="this.count === 0">-</button>
       <span>this.count</span>
       <button onClick="this.count++" type="button">+</button>
       <span>this.count < 10 ? "single" : "multi"</span>-digit
     `;
   }
 
-  MyCounter.define('my-counter');
+  MyCounter.define("my-counter");
   ```
 
   Each property described in the `static properties` object

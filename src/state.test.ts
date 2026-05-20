@@ -1,5 +1,5 @@
-import {expect, test} from 'vitest';
-import {WrecState} from './wrec-state.js';
+import { expect, test } from "vitest";
+import { WrecState } from "./wrec-state.js";
 
 type TestState = WrecState & {
   color: string;
@@ -11,57 +11,57 @@ type TestState = WrecState & {
   notUsed: string;
 };
 
-const oldColor = 'red';
-const oldName = 'World';
-const myState = new WrecState('vault', false, {
+const oldColor = "red";
+const oldName = "World";
+const myState = new WrecState("vault", false, {
   color: oldColor,
-  team: {leader: {name: oldName}},
-  notUsed: 'not used'
+  team: { leader: { name: oldName } },
+  notUsed: "not used",
 }) as TestState;
 
-test('constructor defaults persist to false when initial state is 2nd argument', () => {
-  const state = new WrecState('vault-default-persist', {
+test("constructor defaults persist to false when initial state is 2nd argument", () => {
+  const state = new WrecState("vault-default-persist", {
     color: oldColor,
-    team: {leader: {name: oldName}},
-    notUsed: 'not used'
+    team: { leader: { name: oldName } },
+    notUsed: "not used",
   }) as TestState;
 
   expect(state.color).toBe(oldColor);
   expect(state.team.leader.name).toBe(oldName);
-  expect(state.notUsed).toBe('not used');
+  expect(state.notUsed).toBe("not used");
 });
 
-test('listen top-level', () => {
-  const newColor = 'blue';
+test("listen top-level", () => {
+  const newColor = "blue";
   const unsubscribe = myState.subscribe(
-    ({statePath, newValue, oldValue, state}) => {
-      expect(statePath).toBe('color');
+    ({ statePath, newValue, oldValue, state }) => {
+      expect(statePath).toBe("color");
       expect(newValue).toBe(newColor);
       expect(oldValue).toBe(oldColor);
       expect(state).toBe(myState);
     },
-    ['color', 'team.leader.name']
+    ["color", "team.leader.name"],
   );
   myState.color = newColor;
   unsubscribe();
 });
 
-test('listen nested', () => {
-  const newName = 'Mark';
+test("listen nested", () => {
+  const newName = "Mark";
   const unsubscribe = myState.subscribe(
-    ({statePath, newValue, oldValue, state}) => {
-      expect(statePath).toBe('team.leader.name');
+    ({ statePath, newValue, oldValue, state }) => {
+      expect(statePath).toBe("team.leader.name");
       expect(newValue).toBe(newName);
       expect(oldValue).toBe(oldName);
       expect(state).toBe(myState);
     },
-    ['color', 'team.leader.name']
+    ["color", "team.leader.name"],
   );
   myState.team.leader.name = newName;
   unsubscribe();
 });
 
-test('change callback', () => {
+test("change callback", () => {
   const calls: Array<{
     statePath: string;
     newValue: unknown;
@@ -70,28 +70,28 @@ test('change callback', () => {
   }> = [];
 
   const unsubscribe = myState.subscribe(
-    ({statePath, newValue, oldValue, state}) => {
-      calls.push({statePath, newValue, oldValue, state});
+    ({ statePath, newValue, oldValue, state }) => {
+      calls.push({ statePath, newValue, oldValue, state });
     },
-    ['color']
+    ["color"],
   );
   const oldValue = myState.color;
-  const newValue = 'green';
+  const newValue = "green";
   myState.color = newValue;
-  myState.team.leader.name = 'Someone Else';
+  myState.team.leader.name = "Someone Else";
   unsubscribe();
 
   expect(calls).toEqual([
     {
-      statePath: 'color',
+      statePath: "color",
       newValue,
       oldValue,
-      state: myState
-    }
+      state: myState,
+    },
   ]);
 });
 
-test('listen parent path when nested property changes', () => {
+test("listen parent path when nested property changes", () => {
   const calls: Array<{
     statePath: string;
     newValue: unknown;
@@ -100,22 +100,22 @@ test('listen parent path when nested property changes', () => {
   }> = [];
 
   const unsubscribe = myState.subscribe(
-    ({statePath, newValue, oldValue, state}) => {
-      calls.push({statePath, newValue, oldValue, state});
+    ({ statePath, newValue, oldValue, state }) => {
+      calls.push({ statePath, newValue, oldValue, state });
     },
-    ['team']
+    ["team"],
   );
   const oldValue = myState.team.leader.name;
-  const newValue = 'Pat';
+  const newValue = "Pat";
   myState.team.leader.name = newValue;
   unsubscribe();
 
   expect(calls).toEqual([
     {
-      statePath: 'team.leader.name',
+      statePath: "team.leader.name",
       newValue,
       oldValue,
-      state: myState
-    }
+      state: myState,
+    },
   ]);
 });

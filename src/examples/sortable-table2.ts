@@ -1,6 +1,6 @@
 // This differs from sortable-table.ts in that it
 // uses pure functions and the context property.
-import {css, html, Wrec} from '../wrec';
+import { css, html, Wrec } from "../wrec";
 
 type LooseObject = Record<string, unknown>;
 
@@ -10,13 +10,9 @@ type LooseObject = Record<string, unknown>;
 function getAriaSort(
   property: string,
   sortProperty: string,
-  descending: boolean
+  descending: boolean,
 ): string | undefined {
-  return property === sortProperty
-    ? descending
-      ? 'descending'
-      : 'ascending'
-    : undefined;
+  return property === sortProperty ? (descending ? "descending" : "ascending") : undefined;
 }
 
 function makeTd(value: unknown) {
@@ -26,13 +22,13 @@ function makeTd(value: unknown) {
 function makeTr(obj: LooseObject, propertyArray: string[]) {
   return html`
     <tr>
-      ${propertyArray.map(propName => makeTd(obj[propName])).join('')}
+      ${propertyArray.map((propName) => makeTd(obj[propName])).join("")}
     </tr>
   `;
 }
 
 function makeTrs(sortedData: LooseObject[], propertyArray: string[]) {
-  return sortedData.map(obj => makeTr(obj, propertyArray));
+  return sortedData.map((obj) => makeTr(obj, propertyArray));
 }
 
 function sort(data: LooseObject[], sortProperty: string, descending: boolean) {
@@ -42,46 +38,42 @@ function sort(data: LooseObject[], sortProperty: string, descending: boolean) {
     const aValue = a[sortProperty];
     const bValue = b[sortProperty];
     const compare =
-      typeof aValue === 'string'
+      typeof aValue === "string"
         ? aValue.localeCompare(bValue as string)
-        : typeof aValue === 'number'
+        : typeof aValue === "number"
           ? aValue - (bValue as number)
           : 0;
     return descending ? -compare : compare;
   });
 }
 
-function sortIndicator(
-  sortProperty: string,
-  descending: boolean,
-  property: string
-) {
-  if (property !== sortProperty) return '';
-  return descending ? '▼' : '▲';
+function sortIndicator(sortProperty: string, descending: boolean, property: string) {
+  if (property !== sortProperty) return "";
+  return descending ? "▼" : "▲";
 }
 
 class SortableTable2 extends Wrec {
-  static context = {getAriaSort, makeTd, makeTr, makeTrs, sort, sortIndicator};
+  static context = { getAriaSort, makeTd, makeTr, makeTrs, sort, sortIndicator };
 
   static properties = {
-    data: {type: Array},
-    descending: {type: Boolean, dispatch: true, usedBy: 'makeThs'},
-    headings: {type: String, usedBy: 'makeThs'},
-    properties: {type: String, value: ''},
+    data: { type: Array },
+    descending: { type: Boolean, dispatch: true, usedBy: "makeThs" },
+    headings: { type: String, usedBy: "makeThs" },
+    properties: { type: String, value: "" },
     propertyArray: {
       type: Array,
       computed: "this.properties.split(',')",
-      usedBy: 'makeThs'
+      usedBy: "makeThs",
     },
     sortedData: {
-      computed: 'sort(this.data, this.sortProperty, this.descending)',
-      type: Array
+      computed: "sort(this.data, this.sortProperty, this.descending)",
+      type: Array,
     },
-    sortProperty: {type: String, dispatch: true, usedBy: 'makeThs'},
+    sortProperty: { type: String, dispatch: true, usedBy: "makeThs" },
     ths: {
-      computed: 'this.makeThs()',
-      type: String
-    }
+      computed: "this.makeThs()",
+      type: String,
+    },
   };
   declare data: LooseObject[];
   declare descending: boolean;
@@ -165,22 +157,20 @@ class SortableTable2 extends Wrec {
   }
 
   makeThs() {
-    if (this.propertyArray.length === 0) return '';
+    if (this.propertyArray.length === 0) return "";
     return this.headings
-      .split(',')
-      .map((heading: string, i: number) =>
-        this.makeTh(heading, this.propertyArray[i])
-      )
-      .join('');
+      .split(",")
+      .map((heading: string, i: number) => this.makeTh(heading, this.propertyArray[i]))
+      .join("");
   }
 
   updateSort(property: string) {
     const same = property === this.sortProperty;
     this.batchSet({
       sortProperty: property,
-      descending: same ? !this.descending : false
+      descending: same ? !this.descending : false,
     });
   }
 }
 
-SortableTable2.define('sortable-table2');
+SortableTable2.define("sortable-table2");

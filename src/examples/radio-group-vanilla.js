@@ -16,29 +16,29 @@ const html = String.raw;
  * @slot after - optional content to insert after the radio buttons
  */
 export class RadioGroupVanilla extends HTMLElement {
-  #labels = '';
-  #legend = '';
-  #name = '';
-  #value = '';
-  #values = '';
+  #labels = "";
+  #legend = "";
+  #name = "";
+  #value = "";
+  #values = "";
 
   constructor() {
-    console.log('radio-group-vanilla.js constructor: entered');
+    console.log("radio-group-vanilla.js constructor: entered");
     super();
-    this.attachShadow({mode: 'open'});
+    this.attachShadow({ mode: "open" });
   }
 
   attributeChangedCallback(attrName, _oldValue, newValue) {
-    if (propName === 'labels') {
+    if (propName === "labels") {
       this.#labels = newValue;
-    } else if (propName === 'legend') {
+    } else if (propName === "legend") {
       this.#legend = newValue;
-    } else if (propName === 'name') {
+    } else if (propName === "name") {
       this.#labels = newValue;
-    } else if (attrName === 'value') {
+    } else if (attrName === "value") {
       this.#value = newValue;
       this.#fixValue();
-    } else if (propName === 'values') {
+    } else if (propName === "values") {
       this.#labels = newValue;
       this.#fixValue();
     }
@@ -46,15 +46,12 @@ export class RadioGroupVanilla extends HTMLElement {
   }
 
   connectedCallback() {
-    this.#labels = this.getAttribute('labels');
-    console.log(
-      'radio-group-vanilla.js connectedCallback: this.#labels =',
-      this.#labels
-    );
-    this.#legend = this.getAttribute('legend');
-    this.#name = this.getAttribute('name');
-    this.#value = this.getAttribute('value');
-    this.#values = this.getAttribute('values');
+    this.#labels = this.getAttribute("labels");
+    console.log("radio-group-vanilla.js connectedCallback: this.#labels =", this.#labels);
+    this.#legend = this.getAttribute("legend");
+    this.#name = this.getAttribute("name");
+    this.#value = this.getAttribute("value");
+    this.#values = this.getAttribute("values");
 
     //if (!name) throw new CustomError('name is a required attribute');
 
@@ -74,8 +71,8 @@ export class RadioGroupVanilla extends HTMLElement {
   }
 
   makeButtons(valueArray) {
-    const labelArray = this.#labels.split(',');
-    console.log('radio-group-vanilla.js makeButtons: labelArray =', labelArray);
+    const labelArray = this.#labels.split(",");
+    console.log("radio-group-vanilla.js makeButtons: labelArray =", labelArray);
     return valueArray
       .map(
         (value, index) =>
@@ -86,17 +83,17 @@ export class RadioGroupVanilla extends HTMLElement {
               name="${this.#name}"
               onchange="handleChange"
               value="${this.#value}"
-              ${value === this.#value ? 'checked' : ''}
+              ${value === this.#value ? "checked" : ""}
             />
             <label for="${value}">${labelArray[index]}</label>
-          </div>`
+          </div>`,
       )
-      .join('');
+      .join("");
   }
 
   render() {
     let value = this.#value;
-    const valueArray = this.#values.split(',').map(value => value.trim());
+    const valueArray = this.#values.split(",").map((value) => value.trim());
     if (!value || !valueArray.includes(value)) {
       value = this.#value = valueArray[0];
     }
@@ -111,14 +108,14 @@ export class RadioGroupVanilla extends HTMLElement {
         }
 
         fieldset {
-          border-color: var(--border-color, 'black');
+          border-color: var(--border-color, "black");
           display: inline-flex;
           flex-direction: column;
           align-items: start;
           gap: 0.5rem;
 
           > legend {
-            color: var(--legend-color, 'black');
+            color: var(--legend-color, "black");
           }
 
           > div {
@@ -159,4 +156,4 @@ export class RadioGroupVanilla extends HTMLElement {
   }
 }
 
-customElements.define('radio-group-vanilla', RadioGroupVanilla);
+customElements.define("radio-group-vanilla", RadioGroupVanilla);

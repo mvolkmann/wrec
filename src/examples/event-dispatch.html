@@ -3,9 +3,9 @@
   <head>
     <script type="module" src="toggle-buttons.js"></script>
     <script type="module">
-      const tb = document.querySelector('toggle-buttons');
-      tb.addEventListener('change', e => {
-        const {tagName, property, oldValue, value} = e.detail;
+      const tb = document.querySelector("toggle-buttons");
+      tb.addEventListener("change", (e) => {
+        const { tagName, property, oldValue, value } = e.detail;
         alert(`${tagName} ${property} changed from ${oldValue} to ${value}.`);
       });
     </script>

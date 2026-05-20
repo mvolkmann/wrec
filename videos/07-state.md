@@ -22,14 +22,14 @@ To create this project from scratch ...
 - Create a `labeled-input.ts` file shown here:
 
 ```ts
-import {css, html, Wrec} from 'wrec';
+import { css, html, Wrec } from "wrec";
 
 class LabeledInput extends Wrec {
   static properties = {
-    id: {type: String, required: true},
-    label: {type: String, required: true},
-    name: {type: String},
-    value: {type: String}
+    id: { type: String, required: true },
+    label: { type: String, required: true },
+    name: { type: String },
+    value: { type: String },
   };
 
   static css = css`
@@ -48,7 +48,7 @@ class LabeledInput extends Wrec {
   `;
 }
 
-LabeledInput.define('labeled-input');
+LabeledInput.define("labeled-input");
 ```
 
 This renders `label` and `input` elements.
@@ -65,19 +65,19 @@ Create the `index.html` file shown here:
       }
     </style>
     <script type="module">
-      import {WrecState} from 'wrec';
-      import './hello-world.js';
-      import './labeled-input.js';
+      import { WrecState } from "wrec";
+      import "./hello-world.js";
+      import "./labeled-input.js";
 
-      const state = new WrecState('demo', {name: 'World'});
-      const li = document.querySelector('labeled-input');
-      li.useState(state, {name: 'value'});
-      const hw = document.querySelector('hello-world');
+      const state = new WrecState("demo", { name: "World" });
+      const li = document.querySelector("labeled-input");
+      li.useState(state, { name: "value" });
+      const hw = document.querySelector("hello-world");
       hw.useState(state);
 
-      const button = document.querySelector('button');
-      button.addEventListener('click', () => {
-        state.name = 'World';
+      const button = document.querySelector("button");
+      button.addEventListener("click", () => {
+        state.name = "World";
       });
     </script>
   </head>
@@ -135,9 +135,9 @@ For example, enter the following to view the current state
 and update it, which updates both components.
 
 ```js
-state = WrecState.get('demo');
+state = WrecState.get("demo");
 JSON.stringify(state);
-state.name = 'Earth';
+state.name = "Earth";
 ```
 
 The same code can be used anywhere in an application

@@ -3,9 +3,9 @@
 global.customElements = {
   define: () => {},
   get: (_name: string) => undefined,
-  getName: () => '',
+  getName: () => "",
   upgrade: () => {},
   whenDefined: () => {
     return new Promise((_resolve, reject) => reject());
-  }
+  },
 };

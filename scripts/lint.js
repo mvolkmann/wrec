@@ -37,16 +37,16 @@
 // - checkbox checked bindings that do not reference Boolean properties
 // - radio checked bindings that do not reference String properties
 
-import fs from 'node:fs';
-import path from 'node:path';
-import ts from 'typescript';
-import {parse} from 'node-html-parser';
+import fs from "node:fs";
+import path from "node:path";
+import ts from "typescript";
+import { parse } from "node-html-parser";
 import {
   collectWrecClasses,
   getMemberName,
   getPropertyAssignmentNames,
-  hasStaticModifier
-} from './ast-utils.js';
+  hasStaticModifier,
+} from "./ast-utils.js";
 
 // Regular expressions
 const CSS_PROPERTY_RE = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g;
@@ -56,107 +56,95 @@ const REFS_TEST_RE = /this\.[a-zA-Z_$][\w$]*(\.[a-zA-Z_$][\w$]*)*/;
 const THIS_CALL_RE = /this\.([A-Za-z_$][\w$]*)\s*\(/g;
 const THIS_REF_RE = /this\.([A-Za-z_$][\w$]*)(\.[A-Za-z_$][\w$]*)*/g;
 
-const GETTER_PREFIX = 'get ';
+const GETTER_PREFIX = "get ";
 const HTML_ALLOWED_CHILDREN = new Map([
-  ['select', new Set(['option'])],
-  ['table', new Set(['tbody', 'thead', 'tr'])],
-  ['tbody', new Set(['tr'])],
-  ['thead', new Set(['tr'])],
-  ['tr', new Set(['td', 'th'])],
-  ['ul', new Set(['li'])]
+  ["select", new Set(["option"])],
+  ["table", new Set(["tbody", "thead", "tr"])],
+  ["tbody", new Set(["tr"])],
+  ["thead", new Set(["tr"])],
+  ["tr", new Set(["td", "th"])],
+  ["ul", new Set(["li"])],
 ]);
 const HTML_ALLOWED_PARENTS = new Map([
-  ['legend', new Set(['fieldset'])],
-  ['li', new Set(['ol', 'ul'])],
-  ['option', new Set(['select'])],
-  ['tbody', new Set(['table'])],
-  ['td', new Set(['tr'])],
-  ['th', new Set(['tr'])],
-  ['thead', new Set(['table'])],
-  ['tr', new Set(['table', 'tbody', 'thead'])]
+  ["legend", new Set(["fieldset"])],
+  ["li", new Set(["ol", "ul"])],
+  ["option", new Set(["select"])],
+  ["tbody", new Set(["table"])],
+  ["td", new Set(["tr"])],
+  ["th", new Set(["tr"])],
+  ["thead", new Set(["table"])],
+  ["tr", new Set(["table", "tbody", "thead"])],
 ]);
 const HTML_GLOBAL_ATTRIBUTES = new Set([
-  'aria-label',
-  'class',
-  'disabled',
-  'hidden',
-  'id',
-  'part',
-  'role',
-  'slot',
-  'style',
-  'tabindex',
-  'title'
+  "aria-label",
+  "class",
+  "disabled",
+  "hidden",
+  "id",
+  "part",
+  "role",
+  "slot",
+  "style",
+  "tabindex",
+  "title",
 ]);
 const HTML_TAG_ATTRIBUTES = new Map([
-  ['a', new Set(['href', 'rel', 'target'])],
-  ['button', new Set(['name', 'type', 'value'])],
-  ['div', new Set([])],
-  ['fieldset', new Set(['name'])],
-  ['form', new Set(['action', 'method', 'name'])],
-  ['img', new Set(['alt', 'height', 'src', 'width'])],
-  [
-    'input',
-    new Set([
-      'checked',
-      'max',
-      'min',
-      'name',
-      'placeholder',
-      'step',
-      'type',
-      'value'
-    ])
-  ],
-  ['label', new Set(['for'])],
-  ['legend', new Set([])],
-  ['li', new Set(['value'])],
-  ['option', new Set(['label', 'selected', 'value'])],
-  ['p', new Set([])],
-  ['select', new Set(['multiple', 'name', 'value'])],
-  ['span', new Set([])],
-  ['table', new Set([])],
-  ['tbody', new Set([])],
-  ['td', new Set(['colspan', 'rowspan'])],
-  ['textarea', new Set(['name', 'placeholder', 'rows', 'value'])],
-  ['th', new Set(['colspan', 'rowspan', 'scope'])],
-  ['thead', new Set([])],
-  ['tr', new Set([])],
-  ['ul', new Set([])]
+  ["a", new Set(["href", "rel", "target"])],
+  ["button", new Set(["name", "type", "value"])],
+  ["div", new Set([])],
+  ["fieldset", new Set(["name"])],
+  ["form", new Set(["action", "method", "name"])],
+  ["img", new Set(["alt", "height", "src", "width"])],
+  ["input", new Set(["checked", "max", "min", "name", "placeholder", "step", "type", "value"])],
+  ["label", new Set(["for"])],
+  ["legend", new Set([])],
+  ["li", new Set(["value"])],
+  ["option", new Set(["label", "selected", "value"])],
+  ["p", new Set([])],
+  ["select", new Set(["multiple", "name", "value"])],
+  ["span", new Set([])],
+  ["table", new Set([])],
+  ["tbody", new Set([])],
+  ["td", new Set(["colspan", "rowspan"])],
+  ["textarea", new Set(["name", "placeholder", "rows", "value"])],
+  ["th", new Set(["colspan", "rowspan", "scope"])],
+  ["thead", new Set([])],
+  ["tr", new Set([])],
+  ["ul", new Set([])],
 ]);
-const NATIVE_FORM_CONTROL_TAGS = new Set(['input', 'select', 'textarea']);
-const PLACEHOLDER_PREFIX = '__WREC_PLACEHOLDER__';
-const RESERVED_PROPERTY_NAMES = new Set(['class', 'style']);
+const NATIVE_FORM_CONTROL_TAGS = new Set(["input", "select", "textarea"]);
+const PLACEHOLDER_PREFIX = "__WREC_PLACEHOLDER__";
+const RESERVED_PROPERTY_NAMES = new Set(["class", "style"]);
 const SUPPORTED_EVENT_NAMES = new Set([
-  'blur',
-  'change',
-  'click',
-  'dblclick',
-  'focus',
-  'focusin',
-  'focusout',
-  'input',
-  'keydown',
-  'keypress',
-  'keyup',
-  'mousedown',
-  'mouseenter',
-  'mouseleave',
-  'mousemove',
-  'mouseout',
-  'mouseover',
-  'mouseup',
-  'paste'
+  "blur",
+  "change",
+  "click",
+  "dblclick",
+  "focus",
+  "focusin",
+  "focusout",
+  "input",
+  "keydown",
+  "keypress",
+  "keyup",
+  "mousedown",
+  "mouseenter",
+  "mouseleave",
+  "mousemove",
+  "mouseout",
+  "mouseover",
+  "mouseup",
+  "paste",
 ]);
 const SUPPORTED_PROPERTY_TYPE_NAMES = new Set([
-  'Array',
-  'Boolean',
-  'HTMLElement',
-  'Number',
-  'Object',
-  'String'
+  "Array",
+  "Boolean",
+  "HTMLElement",
+  "Number",
+  "Object",
+  "String",
 ]);
-const WREC_REF_NAME = '__wrec';
+const WREC_REF_NAME = "__wrec";
 
 const componentPropertyCache = new Map();
 
@@ -169,10 +157,10 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
         findings.invalidEventHandlers,
         metadata.location
           ? {
-            location: metadata.location,
-            message: `"${codeNode.text}" is not a defined instance method`
-          }
-          : `"${codeNode.text}" is not a defined instance method`
+              location: metadata.location,
+              message: `"${codeNode.text}" is not a defined instance method`,
+            }
+          : `"${codeNode.text}" is not a defined instance method`,
       );
     }
   }
@@ -187,12 +175,12 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
         if (isCallCallee(node)) {
           uniquePush(
             findings.undefinedMethods,
-            metadata.location ? {location: metadata.location, message: name} : name
+            metadata.location ? { location: metadata.location, message: name } : name,
           );
         } else {
           uniquePush(
             findings.undefinedProperties,
-            metadata.location ? {location: metadata.location, message: name} : name
+            metadata.location ? { location: metadata.location, message: name } : name,
           );
         }
       }
@@ -207,33 +195,27 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
             uniquePush(
               findings.undefinedContextFunctions,
               metadata.location
-                ? {location: metadata.location, message: callee.text}
-                : callee.text
+                ? { location: metadata.location, message: callee.text }
+                : callee.text,
             );
           }
         }
-      } else if (
-        ts.isPropertyAccessExpression(callee) &&
-        isWrecRooted(callee.expression)
-      ) {
+      } else if (ts.isPropertyAccessExpression(callee) && isWrecRooted(callee.expression)) {
         const ownerType = checker.getTypeAtLocation(callee.expression);
         const symbol = ownerType.getProperty(callee.name.text);
         if (!symbol) {
           uniquePush(
             findings.undefinedMethods,
             metadata.location
-              ? {location: metadata.location, message: callee.name.text}
-              : callee.name.text
+              ? { location: metadata.location, message: callee.name.text }
+              : callee.name.text,
           );
         }
       }
 
       const signature =
         checker.getResolvedSignature(node) ??
-        checker.getSignaturesOfType(
-          checker.getTypeAtLocation(callee),
-          ts.SignatureKind.Call
-        )[0];
+        checker.getSignaturesOfType(checker.getTypeAtLocation(callee), ts.SignatureKind.Call)[0];
 
       if (signature) {
         const parameters = signature.getParameters();
@@ -242,10 +224,7 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
           declaration &&
           ts.isFunctionLike(declaration) &&
           declaration.parameters.length > 0 &&
-          Boolean(
-            declaration.parameters[declaration.parameters.length - 1]
-              .dotDotDotToken
-          );
+          Boolean(declaration.parameters[declaration.parameters.length - 1].dotDotDotToken);
 
         if (!isRest && node.arguments.length > parameters.length) {
           node.arguments.slice(parameters.length).forEach((argument, index) => {
@@ -254,7 +233,7 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
               argumentIndex: parameters.length + index + 1,
               location: metadata.location ?? null,
               methodName: toUserFacingExpression(callee.getText()),
-              parameterCount: parameters.length
+              parameterCount: parameters.length,
             });
           });
         }
@@ -262,9 +241,7 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
         node.arguments.forEach((argument, index) => {
           let parameterSymbol = parameters[index];
           let isRestArgument =
-            Boolean(isRest) &&
-            parameters.length > 0 &&
-            index >= parameters.length - 1;
+            Boolean(isRest) && parameters.length > 0 && index >= parameters.length - 1;
           if (!parameterSymbol && isRest && parameters.length > 0) {
             parameterSymbol = parameters[parameters.length - 1];
           }
@@ -275,7 +252,7 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
             checker,
             parameterSymbol,
             declaration ?? classNode,
-            isRestArgument
+            isRestArgument,
           );
           if (!checker.isTypeAssignableTo(argumentType, parameterType)) {
             findings.incompatibleArguments.push({
@@ -284,17 +261,14 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
               location: metadata.location ?? null,
               methodName: toUserFacingExpression(callee.getText()),
               parameterName: parameterSymbol.getName(),
-              parameterType: checker.typeToString(parameterType)
+              parameterType: checker.typeToString(parameterType),
             });
           }
         });
       }
     }
 
-    if (
-      ts.isBinaryExpression(node) &&
-      isArithmeticOperator(node.operatorToken.kind)
-    ) {
+    if (ts.isBinaryExpression(node) && isArithmeticOperator(node.operatorToken.kind)) {
       const leftType = checker.getTypeAtLocation(node.left);
       const rightType = checker.getTypeAtLocation(node.right);
 
@@ -305,7 +279,7 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
           message:
             `left operand "${toUserFacingExpression(node.left.getText())}" ` +
             `has type ${checker.typeToString(leftType)}, ` +
-            'but arithmetic operators require number'
+            "but arithmetic operators require number",
         });
       }
 
@@ -316,7 +290,7 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
           message:
             `right operand "${toUserFacingExpression(node.right.getText())}" ` +
             `has type ${checker.typeToString(rightType)}, ` +
-            'but arithmetic operators require number'
+            "but arithmetic operators require number",
         });
       }
     }
@@ -333,34 +307,27 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
 // can be analyzed as if it were normal code.  This gives TypeScript
 // enough // context to understand available properties, methods, and
 // context functions when the linter validates those expressions.
-function buildAugmentedSource(
-  sourceFile,
-  classNode,
-  supportedProps,
-  contextKeys,
-  codeItems
-) {
+function buildAugmentedSource(sourceFile, classNode, supportedProps, contextKeys, codeItems) {
   const propLines = [];
   for (const [name, info] of supportedProps.entries()) {
     propLines.push(`  ${JSON.stringify(name)}: ${info.typeText};`);
   }
 
   const contextLine = contextKeys.length
-    ? `const {${contextKeys.join(', ')}} = ${classNode.name.text}.context;`
-    : '';
+    ? `const {${contextKeys.join(", ")}} = ${classNode.name.text}.context;`
+    : "";
 
   const helperBlocks = codeItems.map((item, index) => {
     const targetType =
-      item.context === 'static'
+      item.context === "static"
         ? `typeof ${classNode.name.text}`
         : `${classNode.name.text} & __WrecSupportedProps`;
     const rewrittenText = item.text.replace(/\bthis\b/g, WREC_REF_NAME);
-    const helperBody =
-      item.shape === 'block' ? rewrittenText : `return (${rewrittenText});`;
+    const helperBody = item.shape === "block" ? rewrittenText : `return (${rewrittenText});`;
     return `
 function __wrec_expr_${index}() {
   const ${WREC_REF_NAME} = null as unknown as ${targetType};
-  ${item.checkContextCalls ? contextLine : ''}
+  ${item.checkContextCalls ? contextLine : ""}
   ${helperBody}
 }
 `;
@@ -368,11 +335,11 @@ function __wrec_expr_${index}() {
 
   const propInterface = `
 type __WrecSupportedProps = {
-${propLines.join('\n')}
+${propLines.join("\n")}
 };
 `;
 
-  return `${sourceFile.text}\n${propInterface}\n${helperBlocks.join('\n')}`;
+  return `${sourceFile.text}\n${propInterface}\n${helperBlocks.join("\n")}`;
 }
 
 // Collects all instance method and accessor names defined in a component class.
@@ -427,10 +394,7 @@ function collectHelperCodeNodes(augmentedSourceFile) {
   // Finds generated helper functions and
   // stores their bodies by index.
   function visit(node) {
-    if (
-      ts.isFunctionDeclaration(node) &&
-      node.name?.text.startsWith('__wrec_expr_')
-    ) {
+    if (ts.isFunctionDeclaration(node) && node.name?.text.startsWith("__wrec_expr_")) {
       const match = node.name.text.match(/(\d+)$/);
       const index = match ? Number(match[1]) : -1;
       if (index >= 0 && node.body) helpers[index] = node.body;
@@ -455,19 +419,17 @@ function collectMethodCodeItems(classNode) {
       ts.isSetAccessorDeclaration(member)
     ) {
       if (!member.body) continue;
-      if (!member.body.getText().includes('this.')) continue;
+      if (!member.body.getText().includes("this.")) continue;
       codeItems.push({
         checkContextCalls: false,
-        context: 'instance',
+        context: "instance",
         eventHandler: false,
-        kind: 'method',
+        kind: "method",
         location: member
           .getSourceFile()
-          .getLineAndCharacterOfPosition(
-            member.name.getStart(member.getSourceFile())
-          ),
-        shape: 'block',
-        text: member.body.getText()
+          .getLineAndCharacterOfPosition(member.name.getStart(member.getSourceFile())),
+        shape: "block",
+        text: member.body.getText(),
       });
     }
   }
@@ -486,7 +448,7 @@ function collectSupportedPropertyNames(classNode) {
 
     const name = getMemberName(member);
     if (
-      name !== 'properties' ||
+      name !== "properties" ||
       !member.initializer ||
       !ts.isObjectLiteralExpression(member.initializer)
     ) {
@@ -524,7 +486,7 @@ function collectUseStateMapErrors(classNode, supportedProps, findings) {
       ts.isCallExpression(node) &&
       ts.isPropertyAccessExpression(node.expression) &&
       ts.isThis(node.expression.expression) &&
-      node.expression.name.text === 'useState'
+      node.expression.name.text === "useState"
     ) {
       const mapArg = node.arguments[1];
       if (mapArg && ts.isObjectLiteralExpression(mapArg)) {
@@ -541,16 +503,12 @@ function collectUseStateMapErrors(classNode, supportedProps, findings) {
 
           const componentProp = property.initializer.text;
           if (!supportedProps.has(componentProp)) {
-            findings.invalidUseStateMaps.push(
-              {
-                location: node
-                  .getSourceFile()
-                  .getLineAndCharacterOfPosition(property.getStart()),
-                message:
-                  `useState maps state property "${statePath}" to ` +
-                  `missing component property "${componentProp}"`
-              }
-            );
+            findings.invalidUseStateMaps.push({
+              location: node.getSourceFile().getLineAndCharacterOfPosition(property.getStart()),
+              message:
+                `useState maps state property "${statePath}" to ` +
+                `missing component property "${componentProp}"`,
+            });
           }
         }
       }
@@ -576,7 +534,7 @@ function createProgram(filePath, sourceText) {
     skipLibCheck: true,
     strict: true,
     target: ts.ScriptTarget.ESNext,
-    useDefineForClassFields: true
+    useDefineForClassFields: true,
   };
 
   const host = {
@@ -585,35 +543,22 @@ function createProgram(filePath, sourceText) {
       if (path.resolve(fileName) === filePath) return true;
       return defaultHost.fileExists(fileName);
     },
-    getSourceFile(
-      fileName,
-      languageVersion,
-      onError,
-      shouldCreateNewSourceFile
-    ) {
+    getSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile) {
       if (path.resolve(fileName) === filePath) {
-        const kind = fileName.endsWith('.ts')
-          ? ts.ScriptKind.TS
-          : ts.ScriptKind.JS;
-        return ts.createSourceFile(
-          fileName,
-          sourceText,
-          languageVersion,
-          true,
-          kind
-        );
+        const kind = fileName.endsWith(".ts") ? ts.ScriptKind.TS : ts.ScriptKind.JS;
+        return ts.createSourceFile(fileName, sourceText, languageVersion, true, kind);
       }
       return defaultHost.getSourceFile(
         fileName,
         languageVersion,
         onError,
-        shouldCreateNewSourceFile
+        shouldCreateNewSourceFile,
       );
     },
     readFile(fileName) {
       if (path.resolve(fileName) === filePath) return sourceText;
       return defaultHost.readFile(fileName);
-    }
+    },
   };
 
   return ts.createProgram([filePath], compilerOptions, host);
@@ -638,28 +583,19 @@ function extractProperties(sourceFile, checker, classNode) {
     const name = getMemberName(member);
     if (!name || !member.initializer) continue;
 
-    if (
-      name === 'context' &&
-      ts.isObjectLiteralExpression(member.initializer)
-    ) {
+    if (name === "context" && ts.isObjectLiteralExpression(member.initializer)) {
       contextKeys = member.initializer.properties
-        .map(property => getMemberName(property))
+        .map((property) => getMemberName(property))
         .filter(Boolean);
       continue;
     }
 
-    if (
-      name === 'formAssociated' &&
-      member.initializer.kind === ts.SyntaxKind.TrueKeyword
-    ) {
+    if (name === "formAssociated" && member.initializer.kind === ts.SyntaxKind.TrueKeyword) {
       formAssociated = true;
       continue;
     }
 
-    if (
-      name !== 'properties' ||
-      !ts.isObjectLiteralExpression(member.initializer)
-    ) {
+    if (name !== "properties" || !ts.isObjectLiteralExpression(member.initializer)) {
       continue;
     }
 
@@ -670,13 +606,13 @@ function extractProperties(sourceFile, checker, classNode) {
         continue;
       }
       const propertyLocation = sourceFile.getLineAndCharacterOfPosition(
-        property.name.getStart(sourceFile)
+        property.name.getStart(sourceFile),
       );
 
       if (
         supportedProps.has(propName) &&
-        !duplicateProperties.some(
-          finding => getLocatedFindingMessage(finding).startsWith(`"${propName}" `)
+        !duplicateProperties.some((finding) =>
+          getLocatedFindingMessage(finding).startsWith(`"${propName}" `),
         )
       ) {
         duplicateProperties.push({
@@ -684,18 +620,16 @@ function extractProperties(sourceFile, checker, classNode) {
           message:
             `"${propName}" first declared at ` +
             `${formatLocation(propertyLocations.get(propName))}, ` +
-            `duplicated at ${formatLocation(propertyLocation)}`
+            `duplicated at ${formatLocation(propertyLocation)}`,
         });
       }
       if (
         RESERVED_PROPERTY_NAMES.has(propName) &&
-        !reservedProperties.some(
-          finding => getLocatedFindingMessage(finding) === propName
-        )
+        !reservedProperties.some((finding) => getLocatedFindingMessage(finding) === propName)
       ) {
         reservedProperties.push({
           location: propertyLocation,
-          message: propName
+          message: propName,
         });
       }
       if (!propertyLocations.has(propName)) {
@@ -703,22 +637,18 @@ function extractProperties(sourceFile, checker, classNode) {
       }
 
       const config = property.initializer;
-      propertyEntries.push({config, propName, property});
-      const typeProp = getObjectProperty(config, 'type');
-      const computedProp = getObjectProperty(config, 'computed');
+      propertyEntries.push({ config, propName, property });
+      const typeProp = getObjectProperty(config, "type");
+      const computedProp = getObjectProperty(config, "computed");
 
-      let typeText = 'unknown';
+      let typeText = "unknown";
       let typeNode;
       if (typeProp && ts.isPropertyAssignment(typeProp)) {
-        typeText = getPropertyTypeText(
-          checker,
-          sourceFile,
-          typeProp.initializer
-        );
+        typeText = getPropertyTypeText(checker, sourceFile, typeProp.initializer);
         typeNode = typeNodeFromConstructorExpression(typeProp.initializer);
       }
 
-      supportedProps.set(propName, {typeNode, typeText});
+      supportedProps.set(propName, { typeNode, typeText });
 
       if (
         computedProp &&
@@ -727,11 +657,11 @@ function extractProperties(sourceFile, checker, classNode) {
           ts.isNoSubstitutionTemplateLiteral(computedProp.initializer))
       ) {
         computedExprs.push({
-          kind: 'computed',
+          kind: "computed",
           text: computedProp.initializer.text.trim(),
           location: sourceFile.getLineAndCharacterOfPosition(
-            computedProp.initializer.getStart(sourceFile)
-          )
+            computedProp.initializer.getStart(sourceFile),
+          ),
         });
       }
     }
@@ -744,17 +674,12 @@ function extractProperties(sourceFile, checker, classNode) {
     duplicateProperties,
     formAssociated,
     propertyEntries,
-    reservedProperties
+    reservedProperties,
   };
 }
 
 // Extracts analyzable expressions from static html and css templates.
-function extractTemplateExpressions(
-  classNode,
-  findings,
-  componentPropertyMaps,
-  supportedProps
-) {
+function extractTemplateExpressions(classNode, findings, componentPropertyMaps, supportedProps) {
   const expressions = [];
 
   for (const member of classNode.members) {
@@ -762,66 +687,60 @@ function extractTemplateExpressions(
     if (!ts.isPropertyDeclaration(member)) continue;
 
     const name = getMemberName(member);
-    if ((name !== 'html' && name !== 'css') || !member.initializer) continue;
+    if ((name !== "html" && name !== "css") || !member.initializer) continue;
     if (!ts.isTaggedTemplateExpression(member.initializer)) continue;
 
     const tag = member.initializer.tag.getText();
-    if (tag !== 'html' && tag !== 'css') continue;
+    if (tag !== "html" && tag !== "css") continue;
 
-    const {template} = member.initializer;
+    const { template } = member.initializer;
     if (ts.isTemplateExpression(template)) {
       for (const span of template.templateSpans) {
-        const trimmed = getExpressionText(
-          member.getSourceFile(),
-          span.expression
-        );
+        const trimmed = getExpressionText(member.getSourceFile(), span.expression);
         if (trimmed) {
           const location = span.expression
             .getSourceFile()
             .getLineAndCharacterOfPosition(span.expression.getStart());
           expressions.push({
-            context: 'static',
+            context: "static",
             eventHandler: false,
             kind: tag,
             text: trimmed,
-            location
+            location,
           });
         }
       }
     }
 
     const rendered = getTemplateLiteralText(template);
-    const resolveLocation = createTemplateLocationResolver(
-      member.getSourceFile(),
-      template
-    );
+    const resolveLocation = createTemplateLocationResolver(member.getSourceFile(), template);
 
-    if (tag === 'css') {
+    if (tag === "css") {
       CSS_PROPERTY_RE.lastIndex = 0;
       while (true) {
         const match = CSS_PROPERTY_RE.exec(rendered);
         if (!match) break;
-        const rawValue = match[2] ?? '';
+        const rawValue = match[2] ?? "";
         const value = rawValue.trim();
         if (value && REFS_TEST_RE.test(value)) {
           const valueOffsetInMatch = match[0].lastIndexOf(rawValue);
           const leadingWhitespace = rawValue.length - rawValue.trimStart().length;
           const valueLocation = resolveLocation(
-            match.index + valueOffsetInMatch + leadingWhitespace
+            match.index + valueOffsetInMatch + leadingWhitespace,
           );
           expressions.push({
-            context: 'instance',
+            context: "instance",
             eventHandler: false,
-            kind: 'css',
+            kind: "css",
             text: value,
-            location: valueLocation
+            location: valueLocation,
           });
         }
       }
       continue;
     }
 
-    const root = parse(rendered, {comment: true});
+    const root = parse(rendered, { comment: true });
     walkHtmlNode(
       root,
       expressions,
@@ -829,7 +748,7 @@ function extractTemplateExpressions(
       componentPropertyMaps,
       supportedProps,
       new Set(),
-      resolveLocation
+      resolveLocation,
     );
   }
 
@@ -851,7 +770,7 @@ function findDefinedTagNames(sourceFile) {
     if (
       ts.isCallExpression(node) &&
       ts.isPropertyAccessExpression(node.expression) &&
-      node.expression.name.text === 'define' &&
+      node.expression.name.text === "define" &&
       ts.isIdentifier(node.expression.expression) &&
       node.arguments.length > 0 &&
       ts.isStringLiteral(node.arguments[0])
@@ -868,9 +787,9 @@ function findDefinedTagNames(sourceFile) {
 // Recursively finds Wrec component files under a directory
 // and reports each match.
 function findWrecFiles(rootDir, onMatch) {
-  const walk = currentDir => {
+  const walk = (currentDir) => {
     const entries = fs
-      .readdirSync(currentDir, {withFileTypes: true})
+      .readdirSync(currentDir, { withFileTypes: true })
       .sort((a, b) => a.name.localeCompare(b.name));
 
     for (const entry of entries) {
@@ -882,7 +801,7 @@ function findWrecFiles(rootDir, onMatch) {
       }
 
       if (!entry.isFile()) continue;
-      if (!fullPath.endsWith('.js') && !fullPath.endsWith('.ts')) continue;
+      if (!fullPath.endsWith(".js") && !fullPath.endsWith(".ts")) continue;
       if (isWrecComponentFile(fullPath)) onMatch(fullPath);
     }
   };
@@ -898,7 +817,7 @@ function createTemplateLocationResolver(sourceFile, template) {
     segments.push({
       renderedEnd: template.text.length,
       renderedStart: 0,
-      sourceStart: template.getStart(sourceFile) + 1
+      sourceStart: template.getStart(sourceFile) + 1,
     });
   } else {
     let renderedStart = 0;
@@ -906,7 +825,7 @@ function createTemplateLocationResolver(sourceFile, template) {
     segments.push({
       renderedEnd: headText.length,
       renderedStart,
-      sourceStart: template.head.getStart(sourceFile) + 1
+      sourceStart: template.head.getStart(sourceFile) + 1,
     });
     renderedStart += headText.length;
 
@@ -915,29 +834,27 @@ function createTemplateLocationResolver(sourceFile, template) {
       segments.push({
         renderedEnd: renderedStart + span.literal.text.length,
         renderedStart,
-        sourceStart: span.literal.getStart(sourceFile) + 1
+        sourceStart: span.literal.getStart(sourceFile) + 1,
       });
       renderedStart += span.literal.text.length;
     });
   }
 
-  return offset => {
+  return (offset) => {
     const segment =
       segments.find(
-        candidate =>
-          offset >= candidate.renderedStart && offset <= candidate.renderedEnd
+        (candidate) => offset >= candidate.renderedStart && offset <= candidate.renderedEnd,
       ) ?? segments[segments.length - 1];
     if (!segment) return null;
 
-    const sourceOffset =
-      segment.sourceStart + Math.max(0, offset - segment.renderedStart);
+    const sourceOffset = segment.sourceStart + Math.max(0, offset - segment.renderedStart);
     return sourceFile.getLineAndCharacterOfPosition(sourceOffset);
   };
 }
 
 // Formats an optional source location as line and column text.
 function formatLocation(location) {
-  if (!location) return '';
+  if (!location) return "";
   return `:${location.line + 1}:${location.character + 1}`;
 }
 
@@ -961,13 +878,13 @@ function getHtmlAttributeLocation(node, attrName, resolveLocation) {
 
 // Formats a lint finding that may optionally include a source location.
 function formatMaybeLocatedFinding(finding) {
-  if (typeof finding === 'string') return finding;
+  if (typeof finding === "string") return finding;
   return `${formatLocation(finding.location)} ${finding.message}`.trim();
 }
 
 // Gets the message text from a lint finding that may include a location.
 function getLocatedFindingMessage(finding) {
-  return typeof finding === 'string' ? finding : finding.message;
+  return typeof finding === "string" ? finding : finding.message;
 }
 
 // Compares lint findings that may optionally include source locations.
@@ -976,19 +893,13 @@ function compareLocatedFindings(a, b) {
 }
 
 // Formats the collected lint findings into the command-line report output.
-function formatReport(
-  filePath,
-  supportedProps,
-  allExpressions,
-  findings,
-  options = {}
-) {
+function formatReport(filePath, supportedProps, allExpressions, findings, options = {}) {
   const {
     fileLabel = filePath,
     showFileHeader = true,
     showDetailsForCleanFile = true,
     showNoIssuesMessage = true,
-    verbose = false
+    verbose = false,
   } = options;
   const lines = [];
 
@@ -1022,224 +933,216 @@ function formatReport(
   if (showFileHeader) lines.push(`file: ${fileLabel}`);
 
   if (verbose && (hasIssues || showDetailsForCleanFile)) {
-    lines.push('properties:');
+    lines.push("properties:");
     if (supportedProps.size === 0) {
-      lines.push('  none');
+      lines.push("  none");
     } else {
-      for (const [name, info] of [...supportedProps.entries()].sort(
-        ([a], [b]) => a.localeCompare(b)
+      for (const [name, info] of [...supportedProps.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
       )) {
         lines.push(`  ${name}: ${info.typeText}`);
       }
     }
 
-    lines.push('expressions:');
+    lines.push("expressions:");
     if (allExpressions.length === 0) {
-      lines.push('  none');
+      lines.push("  none");
     } else {
-      allExpressions.forEach(expr => {
-        lines.push(
-          `  [${expr.kind}]${formatLocation(expr.location)} ${expr.text}`
-        );
+      allExpressions.forEach((expr) => {
+        lines.push(`  [${expr.kind}]${formatLocation(expr.location)} ${expr.text}`);
       });
     }
   }
 
   if (findings.duplicateProperties.length > 0) {
-    lines.push('duplicate properties:');
-    findings.duplicateProperties.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("duplicate properties:");
+    findings.duplicateProperties.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.extraArguments.length > 0) {
-    lines.push('extra arguments:');
-    findings.extraArguments.forEach(finding => {
-      const locationPrefix = finding.location
-        ? `${formatLocation(finding.location)} `
-        : '';
+    lines.push("extra arguments:");
+    findings.extraArguments.forEach((finding) => {
+      const locationPrefix = finding.location ? `${formatLocation(finding.location)} ` : "";
       lines.push(
         `  ${locationPrefix}${finding.methodName}: argument ${finding.argumentIndex} ` +
           `"${finding.argument}" exceeds the ` +
-          `${finding.parameterCount}-parameter signature`
+          `${finding.parameterCount}-parameter signature`,
       );
     });
   }
 
   if (findings.incompatibleArguments.length > 0) {
-    lines.push('incompatible arguments:');
-    findings.incompatibleArguments.forEach(finding => {
-      const locationPrefix = finding.location
-        ? `${formatLocation(finding.location)} `
-        : '';
+    lines.push("incompatible arguments:");
+    findings.incompatibleArguments.forEach((finding) => {
+      const locationPrefix = finding.location ? `${formatLocation(finding.location)} ` : "";
       lines.push(
         `  ${locationPrefix}${finding.methodName}: argument "${finding.argument}" ` +
           `has type ${finding.argumentType}, but parameter ` +
-          `"${finding.parameterName}" expects ${finding.parameterType}`
+          `"${finding.parameterName}" expects ${finding.parameterType}`,
       );
     });
   }
 
   if (findings.incompatibleDeclareTypes.length > 0) {
-    lines.push('incompatible declare types:');
-    findings.incompatibleDeclareTypes.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("incompatible declare types:");
+    findings.incompatibleDeclareTypes.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.invalidCheckedBindings.length > 0) {
-    lines.push('invalid checked bindings:');
-    findings.invalidCheckedBindings.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("invalid checked bindings:");
+    findings.invalidCheckedBindings.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.invalidComputedProperties.length > 0) {
-    lines.push('invalid computed properties:');
-    findings.invalidComputedProperties.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("invalid computed properties:");
+    findings.invalidComputedProperties.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.invalidDefaultValues.length > 0) {
-    lines.push('invalid default values:');
-    findings.invalidDefaultValues.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("invalid default values:");
+    findings.invalidDefaultValues.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.invalidEventHandlers.length > 0) {
-    lines.push('invalid event handler references:');
-    findings.invalidEventHandlers.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("invalid event handler references:");
+    findings.invalidEventHandlers.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.invalidFormAssocValues.length > 0) {
-    lines.push('invalid form-assoc values:');
-    findings.invalidFormAssocValues.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("invalid form-assoc values:");
+    findings.invalidFormAssocValues.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.invalidHtmlNesting.length > 0) {
-    lines.push('invalid html nesting:');
-    findings.invalidHtmlNesting.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("invalid html nesting:");
+    findings.invalidHtmlNesting.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.invalidRefAttributes.length > 0) {
-    lines.push('invalid ref attributes:');
-    findings.invalidRefAttributes.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("invalid ref attributes:");
+    findings.invalidRefAttributes.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.invalidTypeProperties.length > 0) {
-    lines.push('invalid type properties:');
-    findings.invalidTypeProperties.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("invalid type properties:");
+    findings.invalidTypeProperties.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.invalidUsedByReferences.length > 0) {
-    lines.push('invalid usedBy references:');
-    findings.invalidUsedByReferences.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("invalid usedBy references:");
+    findings.invalidUsedByReferences.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.invalidUseStateMaps.length > 0) {
-    lines.push('invalid useState map entries:');
-    findings.invalidUseStateMaps.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("invalid useState map entries:");
+    findings.invalidUseStateMaps.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.invalidValueBindings.length > 0) {
-    lines.push('invalid value bindings:');
-    findings.invalidValueBindings.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("invalid value bindings:");
+    findings.invalidValueBindings.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.invalidValuesConfigurations.length > 0) {
-    lines.push('invalid values configurations:');
-    findings.invalidValuesConfigurations.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("invalid values configurations:");
+    findings.invalidValuesConfigurations.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.missingRequiredMembers.length > 0) {
-    lines.push('missing required members:');
-    findings.missingRequiredMembers.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("missing required members:");
+    findings.missingRequiredMembers.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.missingTypeProperties.length > 0) {
-    lines.push('missing type properties:');
-    findings.missingTypeProperties.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("missing type properties:");
+    findings.missingTypeProperties.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.reservedProperties.length > 0) {
-    lines.push('reserved property names:');
-    findings.reservedProperties.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("reserved property names:");
+    findings.reservedProperties.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.typeErrors.length > 0) {
-    lines.push('type errors:');
-    findings.typeErrors.forEach(finding => {
-      const locationPrefix = finding.location
-        ? `${formatLocation(finding.location)} `
-        : '';
+    lines.push("type errors:");
+    findings.typeErrors.forEach((finding) => {
+      const locationPrefix = finding.location ? `${formatLocation(finding.location)} ` : "";
       lines.push(`  ${locationPrefix}${finding.expression}: ${finding.message}`);
     });
   }
 
   if (findings.undefinedContextFunctions.length > 0) {
-    lines.push('undefined context functions:');
-    findings.undefinedContextFunctions.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("undefined context functions:");
+    findings.undefinedContextFunctions.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.undefinedMethods.length > 0) {
-    lines.push('undefined methods:');
-    findings.undefinedMethods.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("undefined methods:");
+    findings.undefinedMethods.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.undefinedProperties.length > 0) {
-    lines.push('undefined properties:');
-    findings.undefinedProperties.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("undefined properties:");
+    findings.undefinedProperties.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.unsupportedEventNames.length > 0) {
-    lines.push('unsupported event names:');
-    findings.unsupportedEventNames.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("unsupported event names:");
+    findings.unsupportedEventNames.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
   if (findings.unsupportedHtmlAttributes.length > 0) {
-    lines.push('unsupported html attributes:');
-    findings.unsupportedHtmlAttributes.forEach(finding =>
-      lines.push(`  ${formatMaybeLocatedFinding(finding)}`)
+    lines.push("unsupported html attributes:");
+    findings.unsupportedHtmlAttributes.forEach((finding) =>
+      lines.push(`  ${formatMaybeLocatedFinding(finding)}`),
     );
   }
 
-  if (!hasIssues && showNoIssuesMessage) lines.push('no issues found');
+  if (!hasIssues && showNoIssuesMessage) lines.push("no issues found");
 
-  return `${lines.join('\n')}\n`;
+  return `${lines.join("\n")}\n`;
 }
 
 // Builds a map from tag names to supported properties
@@ -1252,40 +1155,24 @@ function getComponentPropertyMaps(filePath, sourceText, seen = new Set()) {
   if (seen.has(resolved)) return new Map();
   seen.add(resolved);
 
-  const text = sourceText ?? fs.readFileSync(resolved, 'utf8');
-  const scriptKind = resolved.endsWith('.ts')
-    ? ts.ScriptKind.TS
-    : ts.ScriptKind.JS;
-  const sourceFile = ts.createSourceFile(
-    resolved,
-    text,
-    ts.ScriptTarget.ESNext,
-    true,
-    scriptKind
-  );
+  const text = sourceText ?? fs.readFileSync(resolved, "utf8");
+  const scriptKind = resolved.endsWith(".ts") ? ts.ScriptKind.TS : ts.ScriptKind.JS;
+  const sourceFile = ts.createSourceFile(resolved, text, ts.ScriptTarget.ESNext, true, scriptKind);
   const tagNames = findDefinedTagNames(sourceFile);
   const propertyMaps = new Map();
 
   for (const classNode of collectWrecClasses(sourceFile)) {
-    const tagName = classNode.name
-      ? tagNames.get(classNode.name.text)
-      : undefined;
+    const tagName = classNode.name ? tagNames.get(classNode.name.text) : undefined;
     if (!tagName) continue;
     propertyMaps.set(tagName, collectSupportedPropertyNames(classNode));
   }
 
   for (const statement of sourceFile.statements) {
-    if (
-      !ts.isImportDeclaration(statement) ||
-      !ts.isStringLiteral(statement.moduleSpecifier)
-    ) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) {
       continue;
     }
 
-    const importPath = resolveImportPath(
-      path.dirname(resolved),
-      statement.moduleSpecifier.text
-    );
+    const importPath = resolveImportPath(path.dirname(resolved), statement.moduleSpecifier.text);
     if (!importPath) continue;
 
     const importedMaps = getComponentPropertyMaps(importPath, undefined, seen);
@@ -1323,22 +1210,19 @@ function getGetterName(reference) {
 // Returns a lowercased HTML tag name for a parsed HTML node.
 function getHtmlTagName(node) {
   const tagName = node.rawTagName || node.tagName;
-  return typeof tagName === 'string' ? tagName.toLowerCase() : '';
+  return typeof tagName === "string" ? tagName.toLowerCase() : "";
 }
 
 // Returns the literal input type attribute value when one is present.
 function getInputType(node) {
-  const type = node.getAttribute('type');
-  return typeof type === 'string' ? type.toLowerCase() : undefined;
+  const type = node.getAttribute("type");
+  return typeof type === "string" ? type.toLowerCase() : undefined;
 }
 
 // Gets an object-literal property with the given key.
 function getObjectProperty(objectLiteral, key) {
   for (const property of objectLiteral.properties) {
-    if (
-      !ts.isPropertyAssignment(property) &&
-      !ts.isShorthandPropertyAssignment(property)
-    ) {
+    if (!ts.isPropertyAssignment(property) && !ts.isShorthandPropertyAssignment(property)) {
       continue;
     }
     const name = getMemberName(property);
@@ -1349,15 +1233,9 @@ function getObjectProperty(objectLiteral, key) {
 // Resolves the effective parameter type,
 // including element types for rest parameters.
 function getParameterType(checker, parameterSymbol, location, isRestArgument) {
-  const parameterType = checker.getTypeOfSymbolAtLocation(
-    parameterSymbol,
-    location
-  );
+  const parameterType = checker.getTypeOfSymbolAtLocation(parameterSymbol, location);
   if (!isRestArgument) return parameterType;
-  if (
-    !checker.isArrayType(parameterType) &&
-    !checker.isTupleType(parameterType)
-  ) {
+  if (!checker.isArrayType(parameterType) && !checker.isTupleType(parameterType)) {
     return parameterType;
   }
 
@@ -1368,16 +1246,16 @@ function getParameterType(checker, parameterSymbol, location, isRestArgument) {
 // Returns the Wrec property config type name for a normalized type string.
 function getPropertyConfigTypeName(typeName) {
   switch (typeName) {
-    case 'array':
-      return 'Array';
-    case 'boolean':
-      return 'Boolean';
-    case 'number':
-      return 'Number';
-    case 'object':
-      return 'Object';
-    case 'string':
-      return 'String';
+    case "array":
+      return "Array";
+    case "boolean":
+      return "Boolean";
+    case "number":
+      return "Number";
+    case "object":
+      return "Object";
+    case "string":
+      return "String";
     default:
       return typeName;
   }
@@ -1413,10 +1291,7 @@ function getStringArrayLiteral(property) {
 
   const values = [];
   for (const element of property.initializer.elements) {
-    if (
-      !ts.isStringLiteral(element) &&
-      !ts.isNoSubstitutionTemplateLiteral(element)
-    ) {
+    if (!ts.isStringLiteral(element) && !ts.isNoSubstitutionTemplateLiteral(element)) {
       return undefined;
     }
     values.push(element.text);
@@ -1428,22 +1303,19 @@ function getStringArrayLiteral(property) {
 function getValuesConfigurationError(property) {
   if (!property || !ts.isPropertyAssignment(property)) return undefined;
 
-  const {initializer} = property;
+  const { initializer } = property;
   if (!ts.isArrayLiteralExpression(initializer)) {
-    return 'values must be a literal array of strings';
+    return "values must be a literal array of strings";
   }
 
   if (initializer.elements.length === 0) {
-    return 'values must not be empty';
+    return "values must not be empty";
   }
 
   const seenValues = new Set();
   for (const element of initializer.elements) {
-    if (
-      !ts.isStringLiteral(element) &&
-      !ts.isNoSubstitutionTemplateLiteral(element)
-    ) {
-      return 'values must contain only string literals';
+    if (!ts.isStringLiteral(element) && !ts.isNoSubstitutionTemplateLiteral(element)) {
+      return "values must contain only string literals";
     }
 
     if (seenValues.has(element.text)) {
@@ -1494,29 +1366,23 @@ function getTypeSyntaxText(sourceFile, expression) {
 
   if (ts.isIdentifier(expression)) {
     switch (expression.text) {
-      case 'String':
-        return 'string';
-      case 'Number':
-        return 'number';
-      case 'Boolean':
-        return 'boolean';
-      case 'Array':
-        return 'unknown[]';
-      case 'Object':
-        return 'object';
+      case "String":
+        return "string";
+      case "Number":
+        return "number";
+      case "Boolean":
+        return "boolean";
+      case "Array":
+        return "unknown[]";
+      case "Object":
+        return "object";
       default:
         return expression.getText(sourceFile);
     }
   }
 
-  if (
-    ts.isCallExpression(expression) &&
-    ts.isIdentifier(expression.expression)
-  ) {
-    if (
-      expression.expression.text === 'Array' &&
-      expression.typeArguments?.length === 1
-    ) {
+  if (ts.isCallExpression(expression) && ts.isIdentifier(expression.expression)) {
+    if (expression.expression.text === "Array" && expression.typeArguments?.length === 1) {
       return `${expression.typeArguments[0].getText(sourceFile)}[]`;
     }
   }
@@ -1533,7 +1399,7 @@ function hasStaticHtmlDefinition(classNode) {
   for (const member of classNode.members) {
     if (!hasStaticModifier(member)) continue;
     if (!ts.isPropertyDeclaration(member)) continue;
-    if (getMemberName(member) === 'html') return true;
+    if (getMemberName(member) === "html") return true;
   }
   return false;
 }
@@ -1559,9 +1425,7 @@ function isDeclarePropertyDeclaration(member) {
   return (
     ts.isPropertyDeclaration(member) &&
     ts.canHaveModifiers(member) &&
-    ts
-      .getModifiers(member)
-      ?.some(mod => mod.kind === ts.SyntaxKind.DeclareKeyword)
+    ts.getModifiers(member)?.some((mod) => mod.kind === ts.SyntaxKind.DeclareKeyword)
   );
 }
 
@@ -1588,15 +1452,11 @@ function isNativeFormControl(node) {
 // Returns whether a type represents an object-like value other than an array.
 function isNonArrayObjectLikeType(checker, type) {
   if (type.isUnion()) {
-    return type.types.every(member =>
-      isNonArrayObjectLikeType(checker, member)
-    );
+    return type.types.every((member) => isNonArrayObjectLikeType(checker, member));
   }
 
   if (type.isIntersection()) {
-    return type.types.every(member =>
-      isNonArrayObjectLikeType(checker, member)
-    );
+    return type.types.every((member) => isNonArrayObjectLikeType(checker, member));
   }
 
   return (
@@ -1609,7 +1469,7 @@ function isNonArrayObjectLikeType(checker, type) {
 // Returns whether a type is fully numeric or any-like for arithmetic checks.
 function isNumericLikeType(type) {
   const parts = type.isUnion() ? type.types : [type];
-  return parts.every(part => {
+  return parts.every((part) => {
     const flags = part.flags;
     return Boolean(
       flags &
@@ -1617,23 +1477,21 @@ function isNumericLikeType(type) {
         ts.TypeFlags.NumberLiteral |
         ts.TypeFlags.BigInt |
         ts.TypeFlags.BigIntLiteral |
-        ts.TypeFlags.Any)
+        ts.TypeFlags.Any),
     );
   });
 }
 
 // Returns whether a file defines at least one Wrec component class.
 function isWrecComponentFile(filePath) {
-  const sourceText = fs.readFileSync(filePath, 'utf8');
-  const scriptKind = filePath.endsWith('.ts')
-    ? ts.ScriptKind.TS
-    : ts.ScriptKind.JS;
+  const sourceText = fs.readFileSync(filePath, "utf8");
+  const scriptKind = filePath.endsWith(".ts") ? ts.ScriptKind.TS : ts.ScriptKind.JS;
   const sourceFile = ts.createSourceFile(
     filePath,
     sourceText,
     ts.ScriptTarget.ESNext,
     true,
-    scriptKind
+    scriptKind,
   );
   return collectWrecClasses(sourceFile).length > 0;
 }
@@ -1643,10 +1501,7 @@ function isWrecRooted(expression) {
   if (ts.isIdentifier(expression) && expression.text === WREC_REF_NAME) {
     return true;
   }
-  if (
-    ts.isPropertyAccessExpression(expression) ||
-    ts.isElementAccessExpression(expression)
-  ) {
+  if (ts.isPropertyAccessExpression(expression) || ts.isElementAccessExpression(expression)) {
     return isWrecRooted(expression.expression);
   }
   return false;
@@ -1655,7 +1510,7 @@ function isWrecRooted(expression) {
 // Lints a component file by path after resolving and reading it.
 export function lintFile(filePath, options = {}) {
   const resolved = validateFilePath(filePath);
-  return lintSource(resolved, fs.readFileSync(resolved, 'utf8'), options);
+  return lintSource(resolved, fs.readFileSync(resolved, "utf8"), options);
 }
 
 // Lints provided component source text and returns a formatted report.
@@ -1666,7 +1521,7 @@ export function lintSource(filePath, sourceText, options = {}) {
 
   const checker = baseProgram.getTypeChecker();
   const classNode = collectWrecClasses(sourceFile)[0];
-  if (!classNode) throw new Error('file must define a subclass of Wrec');
+  if (!classNode) throw new Error("file must define a subclass of Wrec");
   const componentPropertyMaps = getComponentPropertyMaps(filePath, sourceText);
 
   const {
@@ -1676,7 +1531,7 @@ export function lintSource(filePath, sourceText, options = {}) {
     duplicateProperties,
     formAssociated,
     propertyEntries,
-    reservedProperties
+    reservedProperties,
   } = extractProperties(sourceFile, checker, classNode);
   const declaredPropertyTypes = collectDeclaredPropertyTypes(classNode);
   const getterNames = collectGetterNames(classNode);
@@ -1706,48 +1561,44 @@ export function lintSource(filePath, sourceText, options = {}) {
     undefinedMethods: [],
     undefinedProperties: [],
     unsupportedEventNames: [],
-    unsupportedHtmlAttributes: []
+    unsupportedHtmlAttributes: [],
   };
   const templateExprs = extractTemplateExpressions(
     classNode,
     findings,
     componentPropertyMaps,
-    supportedProps
+    supportedProps,
   );
   const methodCodeItems = collectMethodCodeItems(classNode);
   const allExpressions = [...templateExprs, ...computedExprs];
-  const allCodeItems = [...allExpressions, ...methodCodeItems].map(item => ({
-    checkContextCalls: item.kind !== 'method',
-    shape: 'shape' in item ? item.shape : 'expression',
-    ...item
+  const allCodeItems = [...allExpressions, ...methodCodeItems].map((item) => ({
+    checkContextCalls: item.kind !== "method",
+    shape: "shape" in item ? item.shape : "expression",
+    ...item,
   }));
 
-  if (allMethods.has('formAssociatedCallback') && !formAssociated) {
+  if (allMethods.has("formAssociatedCallback") && !formAssociated) {
     const callbackMember = classNode.members.find(
-      member =>
-        ts.isMethodDeclaration(member) &&
-        getMemberName(member) === 'formAssociatedCallback'
+      (member) =>
+        ts.isMethodDeclaration(member) && getMemberName(member) === "formAssociatedCallback",
     );
-    findings.missingRequiredMembers.push(
-      {
-        location: callbackMember
-          ? callbackMember
+    findings.missingRequiredMembers.push({
+      location: callbackMember
+        ? callbackMember
             .getSourceFile()
             .getLineAndCharacterOfPosition(
-              callbackMember.name.getStart(callbackMember.getSourceFile())
+              callbackMember.name.getStart(callbackMember.getSourceFile()),
             )
-          : null,
-        message:
-          'formAssociatedCallback is defined, but static formAssociated is not true'
-      }
-    );
+        : null,
+      message: "formAssociatedCallback is defined, but static formAssociated is not true",
+    });
   }
   if (!hasStaticHtmlDefinition(classNode)) {
     findings.missingRequiredMembers.push({
       location: sourceFile.getLineAndCharacterOfPosition(
-        classNode.name?.getStart(sourceFile) ?? classNode.getStart(sourceFile)
+        classNode.name?.getStart(sourceFile) ?? classNode.getStart(sourceFile),
       ),
-      message: 'static html property must be defined'
+      message: "static html property must be defined",
     });
   }
 
@@ -1756,7 +1607,7 @@ export function lintSource(filePath, sourceText, options = {}) {
     classNode,
     supportedProps,
     contextKeys,
-    allCodeItems
+    allCodeItems,
   );
   const augmentedProgram = createProgram(filePath, augmentedSource);
   const augmentedSourceFile = augmentedProgram.getSourceFile(filePath);
@@ -1765,7 +1616,7 @@ export function lintSource(filePath, sourceText, options = {}) {
   const augmentedChecker = augmentedProgram.getTypeChecker();
   const augmentedClassNode = collectWrecClasses(augmentedSourceFile)[0];
   if (!augmentedClassNode) {
-    throw new Error('unable to find Wrec subclass after augmentation');
+    throw new Error("unable to find Wrec subclass after augmentation");
   }
 
   const helperCodeNodes = collectHelperCodeNodes(augmentedSourceFile);
@@ -1778,24 +1629,20 @@ export function lintSource(filePath, sourceText, options = {}) {
     propertyEntries,
     getterNames,
     allMethods,
-    findings
+    findings,
   );
   collectUseStateMapErrors(classNode, supportedProps, findings);
 
-  allExpressions.forEach(expr => {
-    if (
-      expr.eventHandler &&
-      IDENTIFIER_RE.test(expr.text) &&
-      !allMethods.has(expr.text)
-    ) {
+  allExpressions.forEach((expr) => {
+    if (expr.eventHandler && IDENTIFIER_RE.test(expr.text) && !allMethods.has(expr.text)) {
       uniquePush(
         findings.invalidEventHandlers,
         expr.location
           ? {
-            location: expr.location,
-            message: `"${expr.text}" is not a defined instance method`
-          }
-          : `"${expr.text}" is not a defined instance method`
+              location: expr.location,
+              message: `"${expr.text}" is not a defined instance method`,
+            }
+          : `"${expr.text}" is not a defined instance method`,
       );
     }
   });
@@ -1808,20 +1655,17 @@ export function lintSource(filePath, sourceText, options = {}) {
       checkContextCalls: allCodeItems[index]?.checkContextCalls ?? true,
       eventHandler: allCodeItems[index]?.eventHandler ?? false,
       location: allCodeItems[index]?.location ?? null,
-      sourceFile: augmentedSourceFile
+      sourceFile: augmentedSourceFile,
     });
   });
 
   findings.duplicateProperties.sort(compareLocatedFindings);
   findings.extraArguments.sort(
-    (a, b) =>
-      a.methodName.localeCompare(b.methodName) ||
-      a.argumentIndex - b.argumentIndex
+    (a, b) => a.methodName.localeCompare(b.methodName) || a.argumentIndex - b.argumentIndex,
   );
   findings.incompatibleArguments.sort(
     (a, b) =>
-      a.methodName.localeCompare(b.methodName) ||
-      a.parameterName.localeCompare(b.parameterName)
+      a.methodName.localeCompare(b.methodName) || a.parameterName.localeCompare(b.parameterName),
   );
   findings.incompatibleDeclareTypes.sort(compareLocatedFindings);
   findings.invalidCheckedBindings.sort(compareLocatedFindings);
@@ -1846,30 +1690,22 @@ export function lintSource(filePath, sourceText, options = {}) {
   findings.unsupportedEventNames.sort(compareLocatedFindings);
   findings.unsupportedHtmlAttributes.sort(compareLocatedFindings);
 
-  return formatReport(
-    filePath,
-    supportedProps,
-    allExpressions,
-    findings,
-    options
-  );
+  return formatReport(filePath, supportedProps, allExpressions, findings, options);
 }
 
 // Runs the command-line interface for the linter.
 function main() {
   const args = process.argv.slice(2);
-  const unknownFlags = args.filter(
-    arg => arg.startsWith('--') && arg !== '--verbose'
-  );
+  const unknownFlags = args.filter((arg) => arg.startsWith("--") && arg !== "--verbose");
   if (unknownFlags.length > 0) {
     fail(`unknown option: ${unknownFlags[0]}`);
   }
 
-  const verbose = args.includes('--verbose');
-  const positionalArgs = args.filter(arg => arg !== '--verbose');
+  const verbose = args.includes("--verbose");
+  const positionalArgs = args.filter((arg) => arg !== "--verbose");
 
   if (positionalArgs.length > 1) {
-    fail('usage: node scripts/wrec-lint.js [--verbose] {file-path}');
+    fail("usage: node scripts/wrec-lint.js [--verbose] {file-path}");
   }
 
   const [filePath] = positionalArgs;
@@ -1878,24 +1714,23 @@ function main() {
     process.stdout.write(
       lintFile(validateFilePath(filePath), {
         showFileHeader: false,
-        verbose
-      })
+        verbose,
+      }),
     );
     return;
   }
 
   const rootDir = process.cwd();
   let previousHadIssues = false;
-  findWrecFiles(rootDir, matchedFile => {
+  findWrecFiles(rootDir, (matchedFile) => {
     const report = lintFile(matchedFile, {
-      fileLabel:
-        path.relative(rootDir, matchedFile) || path.basename(matchedFile),
+      fileLabel: path.relative(rootDir, matchedFile) || path.basename(matchedFile),
       showDetailsForCleanFile: false,
       showNoIssuesMessage: false,
-      verbose
+      verbose,
     });
-    const currentHasIssues = report.trim().includes('\n');
-    if (previousHadIssues) process.stdout.write('\n');
+    const currentHasIssues = report.trim().includes("\n");
+    if (previousHadIssues) process.stdout.write("\n");
     process.stdout.write(report);
     previousHadIssues = currentHasIssues;
   });
@@ -1904,7 +1739,7 @@ function main() {
 // Determines whether a symbol should be treated as a required context function.
 function requiresContextFunction(symbol, sourceFile) {
   const declarations = symbol.declarations ?? [];
-  return declarations.some(declaration => {
+  return declarations.some((declaration) => {
     if (isImportLikeDeclaration(declaration)) return true;
     return declaration.getSourceFile() === sourceFile;
   });
@@ -1912,66 +1747,58 @@ function requiresContextFunction(symbol, sourceFile) {
 
 // Resolves a relative import path to an existing source file.
 function resolveImportPath(baseDir, importPath) {
-  if (!importPath.startsWith('.')) return undefined;
+  if (!importPath.startsWith(".")) return undefined;
 
   const candidates = [
     path.resolve(baseDir, importPath),
     path.resolve(baseDir, `${importPath}.js`),
     path.resolve(baseDir, `${importPath}.ts`),
-    path.resolve(baseDir, importPath, 'index.js'),
-    path.resolve(baseDir, importPath, 'index.ts')
+    path.resolve(baseDir, importPath, "index.js"),
+    path.resolve(baseDir, importPath, "index.ts"),
   ];
 
-  return candidates.find(candidate => fs.existsSync(candidate));
+  return candidates.find((candidate) => fs.existsSync(candidate));
 }
 
 // Rewrites synthetic receiver references back to this for reporting.
 function toUserFacingExpression(text) {
-  return text.replaceAll(WREC_REF_NAME, 'this');
+  return text.replaceAll(WREC_REF_NAME, "this");
 }
 
 // Returns whether a static property config type is compatible with a declare type.
-function typeExpressionMatchesDeclaredType(
-  checker,
-  typeExpression,
-  declaredTypeNode
-) {
+function typeExpressionMatchesDeclaredType(checker, typeExpression, declaredTypeNode) {
   const typeKind = typeExpressionKind(typeExpression);
   const declaredType = checker.getTypeFromTypeNode(declaredTypeNode);
 
-  if (typeKind === 'Boolean') {
+  if (typeKind === "Boolean") {
     return checker.isTypeAssignableTo(checker.getBooleanType(), declaredType);
   }
 
-  if (typeKind === 'Number') {
+  if (typeKind === "Number") {
     return checker.isTypeAssignableTo(checker.getNumberType(), declaredType);
   }
 
-  if (typeKind === 'String') {
+  if (typeKind === "String") {
     return checker.isTypeAssignableTo(checker.getStringType(), declaredType);
   }
 
-  if (typeKind === 'Object') {
+  if (typeKind === "Object") {
     return isNonArrayObjectLikeType(checker, declaredType);
   }
 
-  if (typeKind === 'Array') {
-    const declaredTypes = declaredType.isUnion()
-      ? declaredType.types
-      : [declaredType];
+  if (typeKind === "Array") {
+    const declaredTypes = declaredType.isUnion() ? declaredType.types : [declaredType];
     return declaredTypes.every(
-      type =>
+      (type) =>
         Boolean(type.flags & (ts.TypeFlags.Any | ts.TypeFlags.Unknown)) ||
         checker.isArrayType(type) ||
-        checker.isTupleType(type)
+        checker.isTupleType(type),
     );
   }
 
-  if (typeKind === 'HTMLElement') {
+  if (typeKind === "HTMLElement") {
     const elementType = getConstructedType(checker, typeExpression);
-    return elementType
-      ? checker.isTypeAssignableTo(declaredType, elementType)
-      : false;
+    return elementType ? checker.isTypeAssignableTo(declaredType, elementType) : false;
   }
 
   const runtimeType = checker.getTypeAtLocation(typeExpression);
@@ -1989,25 +1816,22 @@ function typeExpressionKind(expression) {
 function typeNodeFromConstructorExpression(expression) {
   if (ts.isIdentifier(expression)) {
     switch (expression.text) {
-      case 'String':
+      case "String":
         return ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword);
-      case 'Number':
+      case "Number":
         return ts.factory.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword);
-      case 'Boolean':
+      case "Boolean":
         return ts.factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword);
-      case 'Object':
+      case "Object":
         return ts.factory.createKeywordTypeNode(ts.SyntaxKind.ObjectKeyword);
       default:
         return ts.factory.createTypeReferenceNode(expression.text);
     }
   }
 
-  if (
-    ts.isCallExpression(expression) &&
-    ts.isIdentifier(expression.expression)
-  ) {
+  if (ts.isCallExpression(expression) && ts.isIdentifier(expression.expression)) {
     const name = expression.expression.text;
-    if (name === 'Array' && expression.typeArguments?.length === 1) {
+    if (name === "Array" && expression.typeArguments?.length === 1) {
       return ts.factory.createArrayTypeNode(expression.typeArguments[0]);
     }
   }
@@ -2022,9 +1846,7 @@ function typeNodeFromConstructorExpression(expression) {
 // Pushes a value into an array only if it is not already present.
 function uniquePush(array, value) {
   const valueText = getLocatedFindingMessage(value);
-  if (
-    !array.some(existing => getLocatedFindingMessage(existing) === valueText)
-  ) {
+  if (!array.some((existing) => getLocatedFindingMessage(existing) === valueText)) {
     array.push(value);
   }
 }
@@ -2036,15 +1858,15 @@ function validateCheckedBinding(
   attrValue,
   findings,
   supportedProps,
-  resolveLocation
+  resolveLocation,
 ) {
-  if (getHtmlTagName(node) !== 'input') return;
+  if (getHtmlTagName(node) !== "input") return;
 
-  const [baseAttrName] = attrName.split(':');
-  if (baseAttrName !== 'checked') return;
+  const [baseAttrName] = attrName.split(":");
+  if (baseAttrName !== "checked") return;
 
   const inputType = getInputType(node);
-  if (inputType !== 'checkbox' && inputType !== 'radio') return;
+  if (inputType !== "checkbox" && inputType !== "radio") return;
 
   const propName = getPropertyNameInAttribute(attrValue);
   if (!propName) return;
@@ -2052,19 +1874,17 @@ function validateCheckedBinding(
   const propInfo = supportedProps.get(propName);
   if (!propInfo) return;
 
-  const expectedType = inputType === 'checkbox' ? 'boolean' : 'string';
+  const expectedType = inputType === "checkbox" ? "boolean" : "string";
   if (propInfo.typeText === expectedType) return;
 
   const expectedTypeName = getPropertyConfigTypeName(expectedType);
 
-  findings.invalidCheckedBindings.push(
-    {
-      location: getHtmlAttributeLocation(node, attrName, resolveLocation),
-      message:
-        `input type="${inputType}" attribute "${attrName}" refers to ` +
-        `property "${propName}" whose type is not ${expectedTypeName}`
-    }
-  );
+  findings.invalidCheckedBindings.push({
+    location: getHtmlAttributeLocation(node, attrName, resolveLocation),
+    message:
+      `input type="${inputType}" attribute "${attrName}" refers to ` +
+      `property "${propName}" whose type is not ${expectedTypeName}`,
+  });
 }
 
 // Validates value bindings on native form controls.
@@ -2074,10 +1894,10 @@ function validateValueBinding(
   attrValue,
   findings,
   supportedProps,
-  resolveLocation
+  resolveLocation,
 ) {
-  const [baseAttrName] = attrName.split(':');
-  if (baseAttrName !== 'value') return;
+  const [baseAttrName] = attrName.split(":");
+  if (baseAttrName !== "value") return;
   if (!isNativeFormControl(node)) return;
 
   const propName = getPropertyNameInAttribute(attrValue);
@@ -2086,18 +1906,16 @@ function validateValueBinding(
   const propInfo = supportedProps.get(propName);
   if (!propInfo) return;
 
-  if (propInfo.typeText === 'number' || propInfo.typeText === 'string') {
+  if (propInfo.typeText === "number" || propInfo.typeText === "string") {
     return;
   }
 
-  findings.invalidValueBindings.push(
-    {
-      location: getHtmlAttributeLocation(node, attrName, resolveLocation),
-      message:
-        `${getHtmlTagName(node)} attribute "${attrName}" refers to property ` +
-        `"${propName}" whose type is not String or Number`
-    }
-  );
+  findings.invalidValueBindings.push({
+    location: getHtmlAttributeLocation(node, attrName, resolveLocation),
+    message:
+      `${getHtmlTagName(node)} attribute "${attrName}" refers to property ` +
+      `"${propName}" whose type is not String or Number`,
+  });
 }
 
 // Validates computed property references and method calls.
@@ -2107,46 +1925,33 @@ function validateComputedProperty(
   supportedProps,
   classMethods,
   findings,
-  location
+  location,
 ) {
   for (const match of computedText.matchAll(THIS_REF_RE)) {
     const referencedName = match[1];
-    if (
-      !supportedProps.has(referencedName) &&
-      !classMethods.has(referencedName)
-    ) {
-      findings.invalidComputedProperties.push(
-        {
-          location,
-          message:
-            `property "${propName}" computed references ` +
-            `missing property "${referencedName}"`
-        }
-      );
+    if (!supportedProps.has(referencedName) && !classMethods.has(referencedName)) {
+      findings.invalidComputedProperties.push({
+        location,
+        message:
+          `property "${propName}" computed references ` + `missing property "${referencedName}"`,
+      });
     }
   }
 
   for (const match of computedText.matchAll(THIS_CALL_RE)) {
     const methodName = match[1];
     if (!classMethods.has(methodName)) {
-      findings.invalidComputedProperties.push(
-        {
-          location,
-          message:
-            `property "${propName}" computed calls ` +
-            `non-method instance member "${methodName}"`
-        }
-      );
+      findings.invalidComputedProperties.push({
+        location,
+        message:
+          `property "${propName}" computed calls ` + `non-method instance member "${methodName}"`,
+      });
     }
   }
 }
 
 // Validates that computed properties do not form dependency cycles.
-function validateComputedPropertyCycles(
-  computedDependencies,
-  computedLocations,
-  findings
-) {
+function validateComputedPropertyCycles(computedDependencies, computedLocations, findings) {
   const computedNames = [...computedDependencies.keys()].sort();
   const dependencyCountMap = new Map();
   const dependentsMap = new Map();
@@ -2183,20 +1988,16 @@ function validateComputedPropertyCycles(
   if (orderedNames.length === computedNames.length) return;
 
   const cycleNames = computedNames.filter(
-    computedName => dependencyCountMap.get(computedName) > 0
+    (computedName) => dependencyCountMap.get(computedName) > 0,
   );
   const cycleLocation = cycleNames
-    .map(name => computedLocations.get(name))
+    .map((name) => computedLocations.get(name))
     .filter(Boolean)
-    .sort(
-      (a, b) => a.line - b.line || a.character - b.character
-    )[0];
-  findings.invalidComputedProperties.push(
-    {
-      location: cycleLocation ?? null,
-      message: `computed properties form a cycle: ${cycleNames.join(', ')}`
-    }
-  );
+    .sort((a, b) => a.line - b.line || a.character - b.character)[0];
+  findings.invalidComputedProperties.push({
+    location: cycleLocation ?? null,
+    message: `computed properties form a cycle: ${cycleNames.join(", ")}`,
+  });
 }
 
 // Validates that a default value matches the declared property type.
@@ -2207,50 +2008,44 @@ function validateDefaultValue(checker, typeExpression, valueExpression) {
   const valueType = checker.getTypeAtLocation(valueExpression);
   const valueTypeName = checker.typeToString(valueType);
 
-  if (typeKind === 'String') {
-    if (
-      !(valueType.flags & (ts.TypeFlags.String | ts.TypeFlags.StringLiteral))
-    ) {
-      return {typeName: 'String', valueTypeName};
+  if (typeKind === "String") {
+    if (!(valueType.flags & (ts.TypeFlags.String | ts.TypeFlags.StringLiteral))) {
+      return { typeName: "String", valueTypeName };
     }
     return undefined;
   }
 
-  if (typeKind === 'Number') {
-    if (
-      !(valueType.flags & (ts.TypeFlags.Number | ts.TypeFlags.NumberLiteral))
-    ) {
-      return {typeName: 'Number', valueTypeName};
+  if (typeKind === "Number") {
+    if (!(valueType.flags & (ts.TypeFlags.Number | ts.TypeFlags.NumberLiteral))) {
+      return { typeName: "Number", valueTypeName };
     }
     return undefined;
   }
 
-  if (typeKind === 'Boolean') {
-    if (
-      !(valueType.flags & (ts.TypeFlags.Boolean | ts.TypeFlags.BooleanLiteral))
-    ) {
-      return {typeName: 'Boolean', valueTypeName};
+  if (typeKind === "Boolean") {
+    if (!(valueType.flags & (ts.TypeFlags.Boolean | ts.TypeFlags.BooleanLiteral))) {
+      return { typeName: "Boolean", valueTypeName };
     }
     return undefined;
   }
 
-  if (typeKind === 'Array') {
+  if (typeKind === "Array") {
     if (!checker.isArrayType(valueType) && !checker.isTupleType(valueType)) {
-      return {typeName: 'Array', valueTypeName};
+      return { typeName: "Array", valueTypeName };
     }
     return undefined;
   }
 
-  if (typeKind === 'Object') {
+  if (typeKind === "Object") {
     if (!isNonArrayObjectLikeType(checker, valueType)) {
-      return {typeName: 'Object', valueTypeName};
+      return { typeName: "Object", valueTypeName };
     }
   }
 
-  if (typeKind === 'HTMLElement') {
+  if (typeKind === "HTMLElement") {
     const elementType = getConstructedType(checker, typeExpression);
     if (!elementType || !checker.isTypeAssignableTo(valueType, elementType)) {
-      return {typeName: 'HTMLElement', valueTypeName};
+      return { typeName: "HTMLElement", valueTypeName };
     }
   }
 
@@ -2261,8 +2056,8 @@ function validateDefaultValue(checker, typeExpression, valueExpression) {
 function validateFilePath(filePath) {
   const resolved = path.resolve(filePath);
   const ext = path.extname(resolved);
-  if (ext !== '.js' && ext !== '.ts') {
-    throw new Error('argument must be a path to a .js or .ts file');
+  if (ext !== ".js" && ext !== ".ts") {
+    throw new Error("argument must be a path to a .js or .ts file");
   }
   if (!fs.existsSync(resolved)) {
     throw new Error(`file not found: ${resolved}`);
@@ -2271,30 +2066,20 @@ function validateFilePath(filePath) {
 }
 
 // Validates the syntax of a form-assoc attribute value.
-function validateFormAssocAttribute(
-  node,
-  attrName,
-  attrValue,
-  findings,
-  resolveLocation
-) {
-  if (attrName !== 'form-assoc') return;
+function validateFormAssocAttribute(node, attrName, attrValue, findings, resolveLocation) {
+  if (attrName !== "form-assoc") return;
 
-  const pairs = attrValue.split(',');
+  const pairs = attrValue.split(",");
   for (const pair of pairs) {
     const trimmed = pair.trim();
-    const [propName, fieldName, ...rest] = trimmed
-      .split(':')
-      .map(part => part.trim());
+    const [propName, fieldName, ...rest] = trimmed.split(":").map((part) => part.trim());
     if (!trimmed || rest.length > 0 || !propName || !fieldName) {
-      findings.invalidFormAssocValues.push(
-        {
-          location: getHtmlAttributeLocation(node, attrName, resolveLocation),
-          message:
-            `form-assoc="${attrValue}" is invalid; expected ` +
-            '"property:field" or a comma-separated list of them'
-        }
-      );
+      findings.invalidFormAssocValues.push({
+        location: getHtmlAttributeLocation(node, attrName, resolveLocation),
+        message:
+          `form-assoc="${attrValue}" is invalid; expected ` +
+          '"property:field" or a comma-separated list of them',
+      });
       return;
     }
   }
@@ -2307,79 +2092,66 @@ function validateFormAssocPropertyMappings(
   attrValue,
   findings,
   componentPropertyMaps,
-  resolveLocation
+  resolveLocation,
 ) {
-  if (attrName !== 'form-assoc') return;
-  const tagName = (node.rawTagName || node.tagName || '').toLowerCase();
+  if (attrName !== "form-assoc") return;
+  const tagName = (node.rawTagName || node.tagName || "").toLowerCase();
   const supportedProps = componentPropertyMaps.get(tagName);
   if (!supportedProps) return;
 
-  const pairs = attrValue.split(',');
+  const pairs = attrValue.split(",");
   for (const pair of pairs) {
-    const [propName] = pair.split(':').map(part => part.trim());
+    const [propName] = pair.split(":").map((part) => part.trim());
     if (!propName) continue;
     if (!supportedProps.has(propName)) {
-      findings.invalidFormAssocValues.push(
-        {
-          location: getHtmlAttributeLocation(node, attrName, resolveLocation),
-          message:
-            `form-assoc="${attrValue}" refers to ` +
-            `missing component property "${propName}"`
-        }
-      );
+      findings.invalidFormAssocValues.push({
+        location: getHtmlAttributeLocation(node, attrName, resolveLocation),
+        message:
+          `form-assoc="${attrValue}" refers to ` + `missing component property "${propName}"`,
+      });
     }
   }
 }
 
 // Validates that an HTML attribute is supported for the current element.
 function validateHtmlAttribute(node, attrName, findings, resolveLocation) {
-  if (attrName.startsWith('aria-') || attrName.startsWith('data-')) return;
-  if (attrName.startsWith('on')) return;
-  if (attrName === 'form-assoc') return;
-  if (attrName === 'ref') return;
+  if (attrName.startsWith("aria-") || attrName.startsWith("data-")) return;
+  if (attrName.startsWith("on")) return;
+  if (attrName === "form-assoc") return;
+  if (attrName === "ref") return;
 
-  const [baseAttrName] = attrName.split(':');
+  const [baseAttrName] = attrName.split(":");
   if (HTML_GLOBAL_ATTRIBUTES.has(baseAttrName)) return;
 
-  const tagName = (node.rawTagName || node.tagName || '').toLowerCase();
-  if (!tagName || tagName.includes('-')) return;
+  const tagName = (node.rawTagName || node.tagName || "").toLowerCase();
+  if (!tagName || tagName.includes("-")) return;
 
   const supported = getSupportedHtmlAttributes(tagName);
   if (!supported) return;
   if (supported.has(baseAttrName)) return;
 
-  findings.unsupportedHtmlAttributes.push(
-    {
-      location: getHtmlAttributeLocation(node, attrName, resolveLocation),
-      message: `${tagName} attribute "${attrName}" is not supported`
-    }
-  );
+  findings.unsupportedHtmlAttributes.push({
+    location: getHtmlAttributeLocation(node, attrName, resolveLocation),
+    message: `${tagName} attribute "${attrName}" is not supported`,
+  });
 }
 
 // Validates required parent-child relationships for supported HTML tags.
 function validateHtmlNesting(node, findings, resolveLocation) {
   const tagName = getHtmlTagName(node);
-  if (!tagName || tagName.includes('-')) return;
+  if (!tagName || tagName.includes("-")) return;
 
   const parentNode = node.parentNode?.nodeType === 1 ? node.parentNode : null;
-  const parentTagName = parentNode ? getHtmlTagName(parentNode) : '';
+  const parentTagName = parentNode ? getHtmlTagName(parentNode) : "";
   const allowedParents = HTML_ALLOWED_PARENTS.get(tagName);
-  if (
-    allowedParents &&
-    (!parentTagName || !allowedParents.has(parentTagName))
-  ) {
-    const parentDescription = parentTagName
-      ? `<${parentTagName}>`
-      : 'the document root';
-    findings.invalidHtmlNesting.push(
-      {
-        location: getHtmlNodeLocation(node, resolveLocation),
-        message:
-          `<${tagName}> must be nested inside ${[...allowedParents]
-            .map(name => `<${name}>`)
-            .join(' or ')}, but parent is ${parentDescription}`
-      }
-    );
+  if (allowedParents && (!parentTagName || !allowedParents.has(parentTagName))) {
+    const parentDescription = parentTagName ? `<${parentTagName}>` : "the document root";
+    findings.invalidHtmlNesting.push({
+      location: getHtmlNodeLocation(node, resolveLocation),
+      message: `<${tagName}> must be nested inside ${[...allowedParents]
+        .map((name) => `<${name}>`)
+        .join(" or ")}, but parent is ${parentDescription}`,
+    });
   }
 
   const allowedChildren = HTML_ALLOWED_CHILDREN.get(tagName);
@@ -2388,15 +2160,13 @@ function validateHtmlNesting(node, findings, resolveLocation) {
   for (const child of node.childNodes ?? []) {
     if (child.nodeType !== 1) continue;
     const childTagName = getHtmlTagName(child);
-    if (!childTagName || childTagName.includes('-')) continue;
+    if (!childTagName || childTagName.includes("-")) continue;
     if (allowedChildren.has(childTagName)) continue;
 
-    findings.invalidHtmlNesting.push(
-      {
-        location: getHtmlNodeLocation(child, resolveLocation),
-        message: `<${childTagName}> is not allowed directly inside <${tagName}>`
-      }
-    );
+    findings.invalidHtmlNesting.push({
+      location: getHtmlNodeLocation(child, resolveLocation),
+      message: `<${childTagName}> is not allowed directly inside <${tagName}>`,
+    });
   }
 }
 
@@ -2409,14 +2179,14 @@ function validatePropertyConfigs(
   propertyEntries,
   getterNames,
   classMethods,
-  findings
+  findings,
 ) {
   const computedDependencies = new Map();
   const computedLocations = new Map();
   const computedPropNames = new Set();
 
-  for (const {config, propName} of propertyEntries) {
-    const computedProp = getObjectProperty(config, 'computed');
+  for (const { config, propName } of propertyEntries) {
+    const computedProp = getObjectProperty(config, "computed");
     if (
       computedProp &&
       ts.isPropertyAssignment(computedProp) &&
@@ -2425,81 +2195,59 @@ function validatePropertyConfigs(
     ) {
       computedLocations.set(
         propName,
-        sourceFile.getLineAndCharacterOfPosition(
-          computedProp.initializer.getStart(sourceFile)
-        )
+        sourceFile.getLineAndCharacterOfPosition(computedProp.initializer.getStart(sourceFile)),
       );
       computedPropNames.add(propName);
     }
   }
 
-  for (const {config, propName, property} of propertyEntries) {
-    const computedProp = getObjectProperty(config, 'computed');
+  for (const { config, propName, property } of propertyEntries) {
+    const computedProp = getObjectProperty(config, "computed");
     const declaredTypeNode = declaredPropertyTypes.get(propName);
-    const typeProp = getObjectProperty(config, 'type');
-    const usedByProp = getObjectProperty(config, 'usedBy');
-    const valueProp = getObjectProperty(config, 'value');
-    const valuesProp = getObjectProperty(config, 'values');
+    const typeProp = getObjectProperty(config, "type");
+    const usedByProp = getObjectProperty(config, "usedBy");
+    const valueProp = getObjectProperty(config, "value");
+    const valuesProp = getObjectProperty(config, "values");
     const valuesConfigError = getValuesConfigurationError(valuesProp);
     const propertyLocation = sourceFile.getLineAndCharacterOfPosition(
-      property.name.getStart(sourceFile)
+      property.name.getStart(sourceFile),
     );
 
     const typeExpression =
-      typeProp && ts.isPropertyAssignment(typeProp)
-        ? typeProp.initializer
-        : undefined;
+      typeProp && ts.isPropertyAssignment(typeProp) ? typeProp.initializer : undefined;
 
     if (!typeExpression) {
-      findings.missingTypeProperties.push(
-        {
-          location: propertyLocation,
-          message: `property "${propName}" does not specify a type`
-        }
-      );
+      findings.missingTypeProperties.push({
+        location: propertyLocation,
+        message: `property "${propName}" does not specify a type`,
+      });
     } else if (
-      SUPPORTED_PROPERTY_TYPE_NAMES.has(
-        getPropertyTypeGenericBaseName(sourceFile, typeExpression)
-      )
+      SUPPORTED_PROPERTY_TYPE_NAMES.has(getPropertyTypeGenericBaseName(sourceFile, typeExpression))
     ) {
-      findings.invalidTypeProperties.push(
-        {
-          location: propertyLocation,
-          message:
-            `property "${propName}" type cannot use generic syntax like ` +
-            `"${typeExpression.getText(sourceFile).trim()}"; use ` +
-            `"${getPropertyTypeGenericBaseName(sourceFile, typeExpression)}" instead`
-        }
-      );
-    } else if (
-      !SUPPORTED_PROPERTY_TYPE_NAMES.has(typeExpressionKind(typeExpression))
-    ) {
-      findings.invalidTypeProperties.push(
-        {
-          location: propertyLocation,
-          message:
-            `property "${propName}" type must be one of ` +
-            'Boolean, Number, String, Object, Array, or HTMLElement'
-        }
-      );
+      findings.invalidTypeProperties.push({
+        location: propertyLocation,
+        message:
+          `property "${propName}" type cannot use generic syntax like ` +
+          `"${typeExpression.getText(sourceFile).trim()}"; use ` +
+          `"${getPropertyTypeGenericBaseName(sourceFile, typeExpression)}" instead`,
+      });
+    } else if (!SUPPORTED_PROPERTY_TYPE_NAMES.has(typeExpressionKind(typeExpression))) {
+      findings.invalidTypeProperties.push({
+        location: propertyLocation,
+        message:
+          `property "${propName}" type must be one of ` +
+          "Boolean, Number, String, Object, Array, or HTMLElement",
+      });
     } else if (declaredTypeNode) {
-      if (
-        !typeExpressionMatchesDeclaredType(
-          checker,
-          typeExpression,
-          declaredTypeNode
-        )
-      ) {
-        findings.incompatibleDeclareTypes.push(
-          {
-            location: propertyLocation,
-            message:
-              `property "${propName}" declare type ` +
-              `"${getPropertyTypeTextFromNode(sourceFile, declaredTypeNode)}" ` +
-              `is not compatible with static properties type ` +
-              `"${getPropertyConfigTypeName(typeExpressionKind(typeExpression))}"`
-          }
-        );
+      if (!typeExpressionMatchesDeclaredType(checker, typeExpression, declaredTypeNode)) {
+        findings.incompatibleDeclareTypes.push({
+          location: propertyLocation,
+          message:
+            `property "${propName}" declare type ` +
+            `"${getPropertyTypeTextFromNode(sourceFile, declaredTypeNode)}" ` +
+            `is not compatible with static properties type ` +
+            `"${getPropertyConfigTypeName(typeExpressionKind(typeExpression))}"`,
+        });
       }
     }
 
@@ -2511,26 +2259,20 @@ function validatePropertyConfigs(
           if (isGetterReference(methodName)) {
             const getterName = getGetterName(methodName);
             if (getterNames.has(getterName)) continue;
-            findings.invalidUsedByReferences.push(
-              {
-                location: propertyLocation,
-                message:
-                  `property "${propName}" usedBy references ` +
-                  `missing getter "${getterName}"`
-              }
-            );
+            findings.invalidUsedByReferences.push({
+              location: propertyLocation,
+              message:
+                `property "${propName}" usedBy references ` + `missing getter "${getterName}"`,
+            });
             continue;
           }
 
           if (!classMethods.has(methodName)) {
-            findings.invalidUsedByReferences.push(
-              {
-                location: propertyLocation,
-                message:
-                  `property "${propName}" usedBy references ` +
-                  `missing method "${methodName}"`
-              }
-            );
+            findings.invalidUsedByReferences.push({
+              location: propertyLocation,
+              message:
+                `property "${propName}" usedBy references ` + `missing method "${methodName}"`,
+            });
           }
         }
       }
@@ -2544,10 +2286,7 @@ function validatePropertyConfigs(
     ) {
       computedDependencies.set(
         propName,
-        collectComputedDependencies(
-          computedProp.initializer.text,
-          computedPropNames
-        )
+        collectComputedDependencies(computedProp.initializer.text, computedPropNames),
       );
       validateComputedProperty(
         propName,
@@ -2555,28 +2294,24 @@ function validatePropertyConfigs(
         supportedProps,
         classMethods,
         findings,
-        computedLocations.get(propName) ?? propertyLocation
+        computedLocations.get(propName) ?? propertyLocation,
       );
     }
 
     if (valuesConfigError) {
-      findings.invalidValuesConfigurations.push(
-        {
-          location: propertyLocation,
-          message: `property "${propName}" ${valuesConfigError}`
-        }
-      );
+      findings.invalidValuesConfigurations.push({
+        location: propertyLocation,
+        message: `property "${propName}" ${valuesConfigError}`,
+      });
     }
 
     const values = getStringArrayLiteral(valuesProp);
     if (values) {
-      if (typeExpressionKind(typeExpression) !== 'String') {
-        findings.invalidValuesConfigurations.push(
-          {
-            location: propertyLocation,
-            message: `property "${propName}" uses values, but its type is not String`
-          }
-        );
+      if (typeExpressionKind(typeExpression) !== "String") {
+        findings.invalidValuesConfigurations.push({
+          location: propertyLocation,
+          message: `property "${propName}" uses values, but its type is not String`,
+        });
       }
 
       if (
@@ -2586,52 +2321,34 @@ function validatePropertyConfigs(
           ts.isNoSubstitutionTemplateLiteral(valueProp.initializer)) &&
         !values.includes(valueProp.initializer.text)
       ) {
-        findings.invalidDefaultValues.push(
-          {
-            location: propertyLocation,
-            message:
-              `property "${propName}" default value ` +
-              `"${valueProp.initializer.text}" is not in values`
-          }
-        );
+        findings.invalidDefaultValues.push({
+          location: propertyLocation,
+          message:
+            `property "${propName}" default value ` +
+            `"${valueProp.initializer.text}" is not in values`,
+        });
       }
     }
 
     if (valueProp && ts.isPropertyAssignment(valueProp)) {
-      const mismatch = validateDefaultValue(
-        checker,
-        typeExpression,
-        valueProp.initializer
-      );
+      const mismatch = validateDefaultValue(checker, typeExpression, valueProp.initializer);
       if (mismatch) {
-        findings.invalidDefaultValues.push(
-          {
-            location: propertyLocation,
-            message:
-              `property "${propName}" default value ` +
-              `has type ${mismatch.valueTypeName}, ` +
-              `but declared type is ${mismatch.typeName}`
-          }
-        );
+        findings.invalidDefaultValues.push({
+          location: propertyLocation,
+          message:
+            `property "${propName}" default value ` +
+            `has type ${mismatch.valueTypeName}, ` +
+            `but declared type is ${mismatch.typeName}`,
+        });
       }
     }
   }
 
-  validateComputedPropertyCycles(
-    computedDependencies,
-    computedLocations,
-    findings
-  );
+  validateComputedPropertyCycles(computedDependencies, computedLocations, findings);
 }
 
 // Validates that a ref attribute targets a unique HTMLElement property.
-function validateRefAttribute(
-  attrValue,
-  supportedProps,
-  findings,
-  seenRefProps,
-  location
-) {
+function validateRefAttribute(attrValue, supportedProps, findings, seenRefProps, location) {
   if (!attrValue) return;
 
   const propName = attrValue.trim();
@@ -2639,36 +2356,27 @@ function validateRefAttribute(
 
   const propInfo = supportedProps.get(propName);
   if (!propInfo) {
-    findings.invalidRefAttributes.push(
-      {
-        location,
-        message: `ref="${attrValue}" refers to missing property "${propName}"`
-      }
-    );
+    findings.invalidRefAttributes.push({
+      location,
+      message: `ref="${attrValue}" refers to missing property "${propName}"`,
+    });
     return;
   }
 
-  if (propInfo.typeText !== 'HTMLElement') {
-    findings.invalidRefAttributes.push(
-      {
-        location,
-        message:
-          `ref="${attrValue}" refers to property "${propName}" ` +
-          'whose type is not HTMLElement'
-      }
-    );
+  if (propInfo.typeText !== "HTMLElement") {
+    findings.invalidRefAttributes.push({
+      location,
+      message:
+        `ref="${attrValue}" refers to property "${propName}" ` + "whose type is not HTMLElement",
+    });
     return;
   }
 
   if (seenRefProps.has(propName)) {
-    findings.invalidRefAttributes.push(
-      {
-        location,
-        message:
-          `ref="${attrValue}" is a duplicate reference ` +
-          `to the property "${propName}"`
-      }
-    );
+    findings.invalidRefAttributes.push({
+      location,
+      message: `ref="${attrValue}" is a duplicate reference ` + `to the property "${propName}"`,
+    });
     return;
   }
 
@@ -2677,19 +2385,16 @@ function validateRefAttribute(
 
 // Validates event names used in value-binding attributes.
 function validateValueBindingEvent(node, attrName, findings, resolveLocation) {
-  const [realAttrName, eventName] = attrName.split(':');
-  if (realAttrName !== 'value' || !eventName) return;
+  const [realAttrName, eventName] = attrName.split(":");
+  if (realAttrName !== "value" || !eventName) return;
   if (SUPPORTED_EVENT_NAMES.has(eventName)) return;
 
-  const tagName = node.rawTagName || node.tagName || 'element';
-  findings.unsupportedEventNames.push(
-    {
-      location: getHtmlAttributeLocation(node, attrName, resolveLocation),
-      message:
-        `${tagName} attribute "${attrName}" refers to ` +
-        `an unsupported event name "${eventName}"`
-    }
-  );
+  const tagName = node.rawTagName || node.tagName || "element";
+  findings.unsupportedEventNames.push({
+    location: getHtmlAttributeLocation(node, attrName, resolveLocation),
+    message:
+      `${tagName} attribute "${attrName}" refers to ` + `an unsupported event name "${eventName}"`,
+  });
 }
 
 // Walks parsed HTML nodes to extract expressions and apply HTML validations.
@@ -2700,82 +2405,59 @@ function walkHtmlNode(
   componentPropertyMaps,
   supportedProps,
   seenRefProps,
-  resolveLocation
+  resolveLocation,
 ) {
   if (node.nodeType === 1) {
     validateHtmlNesting(node, findings, resolveLocation);
 
     for (const [attrName, attrValue] of Object.entries(node.attributes)) {
       if (!attrValue) continue;
-      validateFormAssocAttribute(
-        node,
-        attrName,
-        attrValue,
-        findings,
-        resolveLocation
-      );
+      validateFormAssocAttribute(node, attrName, attrValue, findings, resolveLocation);
       validateFormAssocPropertyMappings(
         node,
         attrName,
         attrValue,
         findings,
         componentPropertyMaps,
-        resolveLocation
+        resolveLocation,
       );
-      validateCheckedBinding(
-        node,
-        attrName,
-        attrValue,
-        findings,
-        supportedProps,
-        resolveLocation
-      );
+      validateCheckedBinding(node, attrName, attrValue, findings, supportedProps, resolveLocation);
       validateHtmlAttribute(node, attrName, findings, resolveLocation);
-      validateValueBinding(
-        node,
-        attrName,
-        attrValue,
-        findings,
-        supportedProps,
-        resolveLocation
-      );
+      validateValueBinding(node, attrName, attrValue, findings, supportedProps, resolveLocation);
       validateValueBindingEvent(node, attrName, findings, resolveLocation);
-      if (attrName === 'ref') {
+      if (attrName === "ref") {
         validateRefAttribute(
           attrValue,
           supportedProps,
           findings,
           seenRefProps,
-          getHtmlAttributeLocation(node, attrName, resolveLocation)
+          getHtmlAttributeLocation(node, attrName, resolveLocation),
         );
       }
       if (
         REFS_TEST_RE.test(attrValue) ||
-        (attrName.startsWith('on') && IDENTIFIER_RE.test(attrValue))
+        (attrName.startsWith("on") && IDENTIFIER_RE.test(attrValue))
       ) {
         expressions.push({
-          context: 'instance',
-          eventHandler: attrName.startsWith('on'),
-          kind: 'html',
+          context: "instance",
+          eventHandler: attrName.startsWith("on"),
+          kind: "html",
           text: attrValue.trim(),
-          location: getHtmlAttributeLocation(node, attrName, resolveLocation)
+          location: getHtmlAttributeLocation(node, attrName, resolveLocation),
         });
       }
     }
   }
 
-  if (
-    (node.nodeType === 3 || node.nodeType === 8) &&
-    typeof node.rawText === 'string'
-  ) {
+  if ((node.nodeType === 3 || node.nodeType === 8) && typeof node.rawText === "string") {
     const text = node.rawText.trim();
     if (text && REFS_TEST_RE.test(text)) {
       expressions.push({
-        context: 'instance',
+        context: "instance",
         eventHandler: false,
-        kind: 'html',
+        kind: "html",
         text,
-        location: getHtmlNodeLocation(node, resolveLocation)
+        location: getHtmlNodeLocation(node, resolveLocation),
       });
     }
   }
@@ -2788,7 +2470,7 @@ function walkHtmlNode(
       componentPropertyMaps,
       supportedProps,
       seenRefProps,
-      resolveLocation
+      resolveLocation,
     );
   }
 }

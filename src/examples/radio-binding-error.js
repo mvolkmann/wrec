@@ -1,13 +1,11 @@
-import {html, Wrec} from '../wrec';
+import { html, Wrec } from "../wrec";
 
 class RadioBindingError extends Wrec {
   static properties = {
-    enabled: {type: Boolean, value: true}
+    enabled: { type: Boolean, value: true },
   };
 
-  static html = html`
-    <input checked="this.enabled" type="radio" value="yes" />
-  `;
+  static html = html` <input checked="this.enabled" type="radio" value="yes" /> `;
 }
 
-RadioBindingError.define('radio-binding-error');
+RadioBindingError.define("radio-binding-error");

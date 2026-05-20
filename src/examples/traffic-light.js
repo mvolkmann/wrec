@@ -1,4 +1,4 @@
-import {css, html, Wrec} from '../wrec';
+import { css, html, Wrec } from "../wrec";
 
 /**
  * This web component emulates a U.S. traffic light
@@ -14,11 +14,11 @@ class TrafficLight extends Wrec {
   static properties = {
     state: {
       type: String,
-      value: 'stop',
-      values: ['stop', 'yield', 'go'],
+      value: "stop",
+      values: ["stop", "yield", "go"],
       dispatch: true,
-      usedBy: 'classes'
-    }
+      usedBy: "classes",
+    },
   };
 
   static css = css`
@@ -65,13 +65,13 @@ class TrafficLight extends Wrec {
   `;
 
   classes(state) {
-    return state + (this.state === state ? ' on' : '');
+    return state + (this.state === state ? " on" : "");
   }
 
   next() {
     const s = this.state;
-    this.state = s === 'stop' ? 'go' : s === 'yield' ? 'stop' : 'yield';
+    this.state = s === "stop" ? "go" : s === "yield" ? "stop" : "yield";
   }
 }
 
-TrafficLight.define('traffic-light');
+TrafficLight.define("traffic-light");

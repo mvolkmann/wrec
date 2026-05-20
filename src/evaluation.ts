@@ -12,27 +12,22 @@ type PropertyConfigLike = {
   values?: unknown[];
 };
 
-const FIRST_CHAR = 'a-zA-Z_$';
-const OTHER_CHAR = FIRST_CHAR + '0-9';
+const FIRST_CHAR = "a-zA-Z_$";
+const OTHER_CHAR = FIRST_CHAR + "0-9";
 const IDENTIFIER = `[${FIRST_CHAR}][${OTHER_CHAR}]*`;
 
-export const CALL_RE = new RegExp(`this\\.(${IDENTIFIER})\\s*\\(`, 'g');
+export const CALL_RE = new RegExp(`this\\.(${IDENTIFIER})\\s*\\(`, "g");
 export const HTML_COMMENT_TEXT_RE = /<!--\s*(.*?)\s*-->/;
 export const REF_RE = new RegExp(`^this\\.${IDENTIFIER}$`);
-export const REFS_RE = new RegExp(
-  `this\\.${IDENTIFIER}(\\.${IDENTIFIER})*`,
-  'g'
-);
-export const REFS_TEST_RE = new RegExp(
-  `this\\.${IDENTIFIER}(\\.${IDENTIFIER})*`
-);
-export const SKIP = 'this.'.length;
+export const REFS_RE = new RegExp(`this\\.${IDENTIFIER}(\\.${IDENTIFIER})*`, "g");
+export const REFS_TEST_RE = new RegExp(`this\\.${IDENTIFIER}(\\.${IDENTIFIER})*`);
+export const SKIP = "this.".length;
 
 // Applies configured default values to missing properties
 // in an evaluation scope.
 function applyDefaultPropertyValues(
   scope: Record<string, any>,
-  properties: Record<string, PropertyConfigLike>
+  properties: Record<string, PropertyConfigLike>,
 ) {
   for (const [propName, config] of Object.entries(properties)) {
     if (scope[propName] !== undefined) continue;
@@ -43,7 +38,7 @@ function applyDefaultPropertyValues(
 // Builds dependency metadata for computed properties in an evaluation scope.
 function buildComputedMetadata(
   scope: Record<string, any>,
-  properties: Record<string, PropertyConfigLike>
+  properties: Record<string, PropertyConfigLike>,
 ) {
   const computedNames = Object.entries(properties)
     .filter(([_propName, config]) => Boolean(config.computed))
@@ -69,10 +64,7 @@ function buildComputedMetadata(
         }
       }
 
-      if (
-        !registeredGetterDependency &&
-        typeof scope[referencedProp] !== 'function'
-      ) {
+      if (!registeredGetterDependency && typeof scope[referencedProp] !== "function") {
         dependencies.add(referencedProp);
       }
     }
@@ -88,24 +80,18 @@ function buildComputedMetadata(
 
     dependenciesMap.set(
       computedName,
-      [...dependencies].filter(dependency => computedSet.has(dependency)).sort()
+      [...dependencies].filter((dependency) => computedSet.has(dependency)).sort(),
     );
     expressions.set(computedName, expr);
   }
 
-  return {computedNames, dependenciesMap, expressions};
+  return { computedNames, dependenciesMap, expressions };
 }
 
 // Computes all computed properties in dependency order for an evaluation scope.
-function computeComputedProperties(
-  componentClass: ComponentClassLike,
-  scope: Record<string, any>
-) {
+function computeComputedProperties(componentClass: ComponentClassLike, scope: Record<string, any>) {
   const properties = componentClass.properties ?? {};
-  const {computedNames, dependenciesMap, expressions} = buildComputedMetadata(
-    scope,
-    properties
-  );
+  const { computedNames, dependenciesMap, expressions } = buildComputedMetadata(scope, properties);
   const dependentsMap = new Map<string, string[]>();
   const dependencyCountMap = new Map<string, number>();
   const queue: string[] = [];
@@ -135,11 +121,9 @@ function computeComputedProperties(
 
   if (orderedNames.length !== computedNames.length) {
     const cycleNames = computedNames
-      .filter(computedName => dependencyCountMap.get(computedName)! > 0)
+      .filter((computedName) => dependencyCountMap.get(computedName)! > 0)
       .sort();
-    throw new Error(
-      `computed properties form a cycle: ${cycleNames.join(', ')}`
-    );
+    throw new Error(`computed properties form a cycle: ${cycleNames.join(", ")}`);
   }
 
   const context = componentClass.context ?? {};
@@ -160,7 +144,7 @@ function defaultForConfig(config: PropertyConfigLike) {
 // Returns the default value implied by a declared property type.
 function defaultForType(type: unknown) {
   return type === String
-    ? ''
+    ? ""
     : type === Number
       ? 0
       : type === Boolean
@@ -176,24 +160,24 @@ function defaultForType(type: unknown) {
 export function evaluateInScope(
   expression: string,
   scope: Record<string, any>,
-  context: Record<string, any> = {}
+  context: Record<string, any> = {},
 ) {
   const fn = new Function(
-    'context',
-    `const {${Object.keys(context).join(',')}} = context; return ${expression};`
+    "context",
+    `const {${Object.keys(context).join(",")}} = context; return ${expression};`,
   );
   return fn.call(scope, context);
 }
 
 // Takes a string like "this.foo.bar" and returns "foo".
 export function getExpressionPropName(str: string) {
-  return str.substring(SKIP).split('.')[0];
+  return str.substring(SKIP).split(".")[0];
 }
 
 // Creates a shared evaluation scope for client and SSR expression execution.
 export function initializeEvaluationScope(
   componentClass: ComponentClassLike,
-  inputProperties: Record<string, any> = {}
+  inputProperties: Record<string, any> = {},
 ) {
   const scope = Object.create(componentClass.prototype) as Record<string, any>;
   Object.assign(scope, inputProperties);
@@ -209,5 +193,5 @@ function propertyToGetter(propName: string) {
 
 // Normalizes a `usedBy` declaration to an array.
 function usedByArray(usedBy?: string | string[]) {
-  return typeof usedBy === 'string' ? [usedBy] : usedBy;
+  return typeof usedBy === "string" ? [usedBy] : usedBy;
 }

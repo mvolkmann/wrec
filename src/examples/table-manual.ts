@@ -1,4 +1,4 @@
-import {css, createElement, html, Wrec} from '../wrec';
+import { css, createElement, html, Wrec } from "../wrec";
 
 type LooseObject = Record<string, unknown>;
 
@@ -7,9 +7,9 @@ type LooseObject = Record<string, unknown>;
 // it implements the propertyChangedCallback method which is unique to wrec.
 class TableManual extends Wrec {
   static properties = {
-    headings: {type: Array},
-    propNames: {type: Array},
-    data: {type: Array}
+    headings: { type: Array },
+    propNames: { type: Array },
+    data: { type: Array },
   };
   declare headings: string[];
   declare propNames: string[];
@@ -60,10 +60,10 @@ class TableManual extends Wrec {
   }
 
   buildHeadings() {
-    const tr = this.shadowRoot?.querySelector('table > thead > tr');
+    const tr = this.shadowRoot?.querySelector("table > thead > tr");
     if (!tr) return; // should never happen
 
-    tr.innerHTML = ''; // removes existing children
+    tr.innerHTML = ""; // removes existing children
 
     this.headings.forEach((header: string, index: number) => {
       tr.appendChild(this.buildTh(header, index));
@@ -71,7 +71,7 @@ class TableManual extends Wrec {
   }
 
   buildRows() {
-    const tbody = this.shadowRoot?.querySelector('table > tbody');
+    const tbody = this.shadowRoot?.querySelector("table > tbody");
     if (!tbody) return; // should never happen
 
     // prettier-ignore
@@ -88,19 +88,19 @@ class TableManual extends Wrec {
     const propName = this.propNames[index];
 
     const th = createElement(
-      'th',
+      "th",
       {
-        'aria-label': `sort by ${heading}`,
-        role: 'button',
-        tabindex: '0'
+        "aria-label": `sort by ${heading}`,
+        role: "button",
+        tabindex: "0",
       },
       html`
         <span>${heading}</span>
         <span class="sort-indicator"></span>
-      `
+      `,
     ) as HTMLTableCellElement;
 
-    th.addEventListener('click', () => {
+    th.addEventListener("click", () => {
       const sameProperty = th === this.sortHeader;
       this.sortAscending = sameProperty ? !this.sortAscending : true;
 
@@ -108,9 +108,9 @@ class TableManual extends Wrec {
         const aValue = a[propName];
         const bValue = b[propName];
         let compare =
-          typeof aValue === 'string'
+          typeof aValue === "string"
             ? aValue.localeCompare(bValue as string)
-            : typeof aValue === 'number'
+            : typeof aValue === "number"
               ? aValue - (bValue as number)
               : 0;
         return this.sortAscending ? compare : -compare;
@@ -121,14 +121,14 @@ class TableManual extends Wrec {
 
       // Clear sort indicator from previously selected header.
       if (this.sortHeader) {
-        const sortIndicator = this.sortHeader.querySelector('.sort-indicator');
-        if (sortIndicator) sortIndicator.textContent = '';
+        const sortIndicator = this.sortHeader.querySelector(".sort-indicator");
+        if (sortIndicator) sortIndicator.textContent = "";
       }
 
       // Add sort indicator to currently selected header.
-      const sortIndicator = th.querySelector('.sort-indicator');
+      const sortIndicator = th.querySelector(".sort-indicator");
       if (sortIndicator) {
-        sortIndicator.textContent = this.sortAscending ? '\u25B2' : '\u25BC';
+        sortIndicator.textContent = this.sortAscending ? "\u25B2" : "\u25BC";
       }
 
       this.sortHeader = th;
@@ -138,12 +138,12 @@ class TableManual extends Wrec {
   }
 
   propertyChangedCallback(propName: string) {
-    if (propName === 'headings') {
+    if (propName === "headings") {
       this.buildHeadings();
-    } else if (propName === 'propNames' || propName === 'data') {
+    } else if (propName === "propNames" || propName === "data") {
       this.buildRows();
     }
   }
 }
 
-TableManual.define('table-manual');
+TableManual.define("table-manual");

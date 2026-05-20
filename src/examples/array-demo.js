@@ -1,8 +1,8 @@
-import {html, Wrec} from '../wrec';
+import { html, Wrec } from "../wrec";
 
 class ArrayDemo extends Wrec {
   static properties = {
-    items: {type: Array}
+    items: { type: Array },
   };
 
   static html = html`
@@ -16,4 +16,4 @@ class ArrayDemo extends Wrec {
   }
 }
 
-ArrayDemo.define('array-demo');
+ArrayDemo.define("array-demo");

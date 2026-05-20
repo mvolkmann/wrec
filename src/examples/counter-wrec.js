@@ -1,9 +1,9 @@
-import {css, html, Wrec} from '../wrec';
+import { css, html, Wrec } from "../wrec";
 
 class CounterWrec extends Wrec {
   static properties = {
-    label: {type: String},
-    count: {type: Number, dispatch: true}
+    label: { type: String },
+    count: { type: Number, dispatch: true },
   };
 
   static css = css`
@@ -20,13 +20,11 @@ class CounterWrec extends Wrec {
 
   static html = html`
     <label>this.label</label>
-    <button onClick="this.count--" type="button" disabled="this.count === 0">
-      -
-    </button>
+    <button onClick="this.count--" type="button" disabled="this.count === 0">-</button>
     <span>this.count</span>
     <button onClick="this.count++" type="button">+</button>
     <span>this.count < 10 ? "single" : "multi"</span>-digit
   `;
 }
 
-CounterWrec.define('counter-wrec');
+CounterWrec.define("counter-wrec");

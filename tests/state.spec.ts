@@ -1,20 +1,20 @@
-import {expect, Page, test} from '@playwright/test';
-import {WrecState} from '../src/wrec-state';
+import { expect, Page, test } from "@playwright/test";
+import { WrecState } from "../src/wrec-state";
 //import {showBrowserConsole} from './util';
 
-test.beforeEach(async ({page}: {page: Page}) => {
+test.beforeEach(async ({ page }: { page: Page }) => {
   //showBrowserConsole(page);
-  await page.goto('state-demo.html');
+  await page.goto("state-demo.html");
 });
 
-test('hello-world', async ({page}: {page: Page}) => {
-  const liLocator = page.locator('labeled-input');
-  const input = liLocator.locator('input');
-  const hwLocator = page.locator('hello-world');
+test("hello-world", async ({ page }: { page: Page }) => {
+  const liLocator = page.locator("labeled-input");
+  const input = liLocator.locator("input");
+  const hwLocator = page.locator("hello-world");
 
   async function assertName(name: string) {
     const stateValue = await page.evaluate(() => {
-      const state = WrecState.get('demo');
+      const state = WrecState.get("demo");
       return state?.name;
     });
     await expect(stateValue).toBe(name);
@@ -22,13 +22,13 @@ test('hello-world', async ({page}: {page: Page}) => {
     await expect(hwLocator).toHaveText(`Hello, ${name}!`);
   }
 
-  await assertName('World');
+  await assertName("World");
 
-  await input.fill('Mark');
-  await input.press('Enter');
-  await assertName('Mark');
+  await input.fill("Mark");
+  await input.press("Enter");
+  await assertName("Mark");
 
-  const button = page.locator('button');
+  const button = page.locator("button");
   await button.click();
-  await assertName('World');
+  await assertName("World");
 });

@@ -1,4 +1,4 @@
-import {css, html, Wrec} from '../src/wrec';
+import { css, html, Wrec } from "../src/wrec";
 
 /**
  * A group of radio buttons.
@@ -15,11 +15,11 @@ class RadioGroup extends Wrec {
   static formAssociated = true;
 
   static properties = {
-    labels: {type: String, usedBy: 'makeButtons'},
-    legend: {type: String},
-    name: {type: String, usedBy: 'makeButtons'},
-    value: {type: String, usedBy: 'makeButtons'},
-    values: {type: String, usedBy: 'makeButtons'}
+    labels: { type: String, usedBy: "makeButtons" },
+    legend: { type: String },
+    name: { type: String, usedBy: "makeButtons" },
+    value: { type: String, usedBy: "makeButtons" },
+    values: { type: String, usedBy: "makeButtons" },
   };
 
   static css = css`
@@ -29,14 +29,14 @@ class RadioGroup extends Wrec {
     }
 
     fieldset {
-      border-color: var(--border-color, 'black');
+      border-color: var(--border-color, "black");
       display: inline-flex;
       flex-direction: column;
       align-items: start;
       gap: 0.5rem;
 
       > legend {
-        color: var(--legend-color, 'black');
+        color: var(--legend-color, "black");
       }
 
       > div {
@@ -73,7 +73,7 @@ class RadioGroup extends Wrec {
   // is not in the list of values by selecting the first value.
   #fixValue() {
     requestAnimationFrame(() => {
-      const values = this.values.split(',');
+      const values = this.values.split(",");
       if (!this.value || !values.includes(this.value)) this.value = values[0];
     });
   }
@@ -85,8 +85,8 @@ class RadioGroup extends Wrec {
   }
 
   makeButtons() {
-    const labelArray = this.labels.split(',');
-    const valueArray = this.values.split(',').map(value => value.trim());
+    const labelArray = this.labels.split(",");
+    const valueArray = this.values.split(",").map((value) => value.trim());
     // prettier-ignore
     return valueArray.map((value, index) => html`
       <div>
@@ -104,8 +104,8 @@ class RadioGroup extends Wrec {
   }
 
   propertyChangedCallback(propName) {
-    if (propName === 'values') this.#fixValue();
+    if (propName === "values") this.#fixValue();
   }
 }
 
-RadioGroup.define('radio-group');
+RadioGroup.define("radio-group");
