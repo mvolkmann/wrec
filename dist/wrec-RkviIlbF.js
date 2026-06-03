@@ -514,7 +514,7 @@ var $ = class e extends O {
 		this.#R(t, n);
 	}
 	async connectedCallback() {
-		this.#X(), this.#h(), await this.#p(), this.hasAttribute("disabled") && this.#v(), this.#te(this.shadowRoot), this.#M(this.shadowRoot), this.#Y(), this.#m(), this.ready();
+		this.#X(), this.#h(), await this.#p(), this.hasAttribute("disabled") && this.#v(), this.#ne(this.shadowRoot), this.#M(this.shadowRoot), this.#Y(), this.#m(), this.ready();
 	}
 	#m() {
 		let { properties: e } = this.#n;
@@ -541,8 +541,8 @@ var $ = class e extends O {
 			set(e) {
 				n.computed && !this.#t.has(t) && this.#V(null, t, "is a computed property and cannot be set directly"), s === Number && typeof e == "string" && (e = Y(e));
 				let r = this.#T(u);
-				if (e === r) return;
-				this.#$(t, s, e), e = this.#j(t, s, e), this.#R(u, e);
+				if (e === r || (this.#$(t, s, e), n.validate && !this.#ee(t, n, e))) return;
+				e = this.#j(t, s, e), this.#R(u, e);
 				let a = this.#l.get(t);
 				a && l(a.state, a.stateProp, e), this.#G(t, s, e, i), this.#e || (this.#K(t), this.#P(t)), this.#J(t, e);
 				let o = this.#i[t];
@@ -913,7 +913,7 @@ var $ = class e extends O {
 		else if (n && r === "string" && i.trim().startsWith("<")) {
 			let t = T(i);
 			if (e.innerHTML === t) return;
-			e.innerHTML = t, this.#te(e), this.#M(e);
+			e.innerHTML = t, this.#ne(e), this.#M(e);
 		} else n && e.textContent !== i && (e.textContent = i);
 	}
 	#J(e, t) {
@@ -993,12 +993,12 @@ var $ = class e extends O {
 		let t = new Set(Object.keys(this.#n.properties));
 		for (let n of this.getAttributeNames()) if (!D.has(n) && !n.startsWith("on") && n !== "ref") {
 			if (n === "form-assoc") {
-				this.#ee();
+				this.#te();
 				continue;
 			}
 			if (!t.has(e.getPropName(n))) {
 				if (n === "name") {
-					this.#ee();
+					this.#te();
 					continue;
 				}
 				this.#V(null, n, "is not a supported attribute");
@@ -1032,12 +1032,21 @@ var $ = class e extends O {
 		}
 		i !== t.name.toLowerCase() && this.#V(null, e, `was set to a ${i}, but must be a ${t.name}`);
 	}
-	#ee() {
+	#ee(e, t, n) {
+		let r = t.validate?.(n), i = typeof r != "string";
+		return i || this.dispatch("validation", {
+			object: this,
+			property: e,
+			value: n,
+			message: r
+		}), i;
+	}
+	#te() {
 		if (this.#n.formAssociated || this.closest("form") === null) return;
 		let e = this.#n.name;
 		this.#V(this, void 0, `inside form, class ${e} requires "static formAssociated = true;"`);
 	}
-	#te(e) {
+	#ne(e) {
 		let t = Array.from(e.querySelectorAll("*"));
 		for (let e of t) {
 			let t = [];

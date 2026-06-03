@@ -145,9 +145,7 @@ test("syncs component state from WrecState subscriptions", async () => {
   StateFixture.define(elementName);
 
   const stateName = `runtime-state-${elementName}`;
-  const state = new WrecState(stateName, { name: "World" }) as WrecState & {
-    name: string;
-  };
+  const state = new WrecState(stateName, { name: "World" });
   const element = document.createElement(elementName) as StateFixture;
 
   element.useState(state);
@@ -177,9 +175,7 @@ test("disconnects cleanly and unsubscribes from WrecState updates", async () => 
   DisconnectFixture.define(elementName);
 
   const stateName = `runtime-state-${elementName}`;
-  const state = new WrecState(stateName, { name: "World" }) as WrecState & {
-    name: string;
-  };
+  const state = new WrecState(stateName, { name: "World" });
   const element = document.createElement(elementName) as DisconnectFixture;
 
   element.useState(state);
@@ -230,4 +226,52 @@ test("updates computed content when a property changes", async () => {
 
   expect(count?.textContent).toBe("4");
   expect(doubled?.textContent).toBe("8");
+});
+
+test("dispatches validation events for invalid property values", async () => {
+  class ValidatedFixture extends Wrec {
+    static properties = {
+      count: {
+        type: Number,
+        value: 1,
+        // Validates count assignments.
+        validate(value: number) {
+          if (value < 0) return "must be at least zero";
+        },
+      },
+    };
+    declare count: number;
+
+    static html = html`<p>this.count</p>`;
+  }
+
+  const elementName = getElementName("validated-fixture");
+  ValidatedFixture.define(elementName);
+
+  const element = document.createElement(elementName) as ValidatedFixture;
+  const events: CustomEvent[] = [];
+  element.addEventListener("validation", (event) => {
+    events.push(event as CustomEvent);
+  });
+
+  document.body.appendChild(element);
+  await waitForUpdates();
+
+  element.count = 2;
+  await waitForUpdates();
+
+  expect(element.count).toBe(2);
+  expect(events).toHaveLength(0);
+
+  element.count = -1;
+  await waitForUpdates();
+
+  expect(element.count).toBe(2);
+  expect(events).toHaveLength(1);
+  expect(events[0].detail).toEqual({
+    object: element,
+    property: "count",
+    value: -1,
+    message: "must be at least zero",
+  });
 });

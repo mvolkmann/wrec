@@ -22,6 +22,7 @@ type PropertyConfig<T = any> = {
   required?: boolean;
   type: PropertyType;
   usedBy?: string | string[];
+  validate?: (value: T) => string | void;
   value?: T;
   values?: T extends string ? string[] : never;
 };
@@ -608,6 +609,9 @@ export abstract class Wrec extends HTMLElementBase {
         if (value === oldValue) return;
 
         this.#validateType(propName, type, value);
+        if (config.validate) {
+          if (!this.#validateValue(propName, config, value)) return;
+        }
 
         value = this.#makePropReactive(propName, type, value);
         this.#setDynamic(privateName, value);
@@ -1753,6 +1757,21 @@ export abstract class Wrec extends HTMLElementBase {
     if (t !== type.name.toLowerCase()) {
       this.#throw(null, propName, `was set to a ${t}, but must be a ${type.name}`);
     }
+  }
+
+  // Validates a property value and dispatches an event when invalid.
+  #validateValue(propName: string, config: PropertyConfig, value: any) {
+    const message = config.validate?.(value);
+    const valid = typeof message !== "string";
+    if (!valid) {
+      this.dispatch("validation", {
+        object: this,
+        property: propName,
+        value,
+        message,
+      });
+    }
+    return valid;
   }
 
   // formAssociated is only needed when the component is inside a form.

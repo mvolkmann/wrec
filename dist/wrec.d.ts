@@ -19,6 +19,7 @@ declare type PropertyConfig<T = any> = {
     required?: boolean;
     type: PropertyType;
     usedBy?: string | string[];
+    validate?: (value: T) => string | void;
     value?: T;
     values?: T extends string ? string[] : never;
 };
