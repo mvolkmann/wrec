@@ -738,8 +738,8 @@ export abstract class Wrec extends HTMLElementBase {
       this.dispatch("validation", {
         instance: this,
         property: propName,
-        valid,
         value,
+        valid,
         errors,
       });
     } finally {
