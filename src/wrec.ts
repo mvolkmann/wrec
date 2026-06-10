@@ -72,6 +72,12 @@ class WrecError extends Error {}
 const CSS_PROPERTY_RE = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g;
 const HTML_ELEMENT_TEXT_RE = /<(\w+)(?:\s[^>]*)?>((?:[^<]|<(?!\w))*?)<\/\1>/g;
 
+// Determines whether two arrays contain the same values in the same order.
+function arraysEqual<T>(array1: T[], array2: T[]) {
+  return array1.length === array2.length && array1.every((value, index) => value === array2[index]);
+}
+
+// Determines whether an element supports the disabled property.
 function canDisable(element: Element) {
   return (
     element instanceof HTMLButtonElement ||
@@ -379,6 +385,12 @@ export abstract class Wrec extends HTMLElementBase {
 
   #ctor: typeof Wrec = this.constructor as typeof Wrec;
 
+  // This is true while a validation event is being dispatched.
+  #validating = false;
+
+  // This tracks validation errors reported by the component-level validate method.
+  #validationErrors: string[] = [];
+
   // This is a map from expressions to references to them
   // which can be found in element text content,
   // attribute values, and CSS property values.
@@ -520,16 +532,11 @@ export abstract class Wrec extends HTMLElementBase {
     this.#setDynamic(componentProp, newValue);
   }
 
-  async connectedCallback() {
-    this.#validateAttributes();
-    this.#defineProps();
-    await this.#buildDOM();
-    if (this.hasAttribute("disabled")) this.#disableOrEnable();
-    this.#wireEvents(this.shadowRoot!);
-    this.#makeReactive(this.shadowRoot!);
-    this.#usedBy();
-    this.#computeProps();
-    this.ready();
+  // Validates the component against a proposed property value.
+  #componentValidation(propName: string, value: any): string[] | undefined {
+    if (this.#validating) return;
+    const props: StringToAny = { ...this, [propName]: value };
+    return this.validate(props);
   }
 
   #computeProps() {
@@ -540,6 +547,18 @@ export abstract class Wrec extends HTMLElementBase {
         this.#setComputed(propName, this.#evaluateInContext(computed));
       }
     }
+  }
+
+  async connectedCallback() {
+    this.#validateAttributes();
+    this.#defineProps();
+    await this.#buildDOM();
+    if (this.hasAttribute("disabled")) this.#disableOrEnable();
+    this.#wireEvents(this.shadowRoot!);
+    this.#makeReactive(this.shadowRoot!);
+    this.#usedBy();
+    this.#computeProps();
+    this.ready();
   }
 
   #defineProps() {
@@ -609,8 +628,13 @@ export abstract class Wrec extends HTMLElementBase {
         if (value === oldValue) return;
 
         this.#validateType(propName, type, value);
-        if (config.validate) {
-          if (!this.#validateValue(propName, config, value)) return;
+
+        if (!this.#validateValue(config, propName, value)) return;
+
+        const errors = this.#componentValidation(propName, value);
+        if (errors?.length > 0) {
+          this.#dispatchValidation(propName, value, errors, true);
+          return;
         }
 
         value = this.#makePropReactive(propName, type, value);
@@ -629,6 +653,9 @@ export abstract class Wrec extends HTMLElementBase {
         const formKey = this.#formAssoc[propName];
         if (formKey) this.setFormValue(formKey, String(value));
         this.propertyChangedCallback(propName, oldValue, value);
+
+        if (errors) this.#dispatchValidation(propName, value, errors);
+
         if (config.dispatch) {
           this.dispatch("change", {
             tagName: this.localName,
@@ -688,6 +715,27 @@ export abstract class Wrec extends HTMLElementBase {
         detail,
       }),
     );
+  }
+
+  // Dispatches a validation event when component validation state changes.
+  #dispatchValidation(propName: string, value: any, errors: string[], force = false) {
+    if (!force && arraysEqual(errors, this.#validationErrors)) return;
+
+    this.#validationErrors = errors;
+    const valid = errors.length === 0;
+    this.#validating = true;
+    try {
+      this.dispatch("validation", {
+        errors,
+        message: errors.join(", "),
+        object: this,
+        property: propName,
+        valid,
+        value,
+      });
+    } finally {
+      this.#validating = false;
+    }
   }
 
   displayIfSet(value: any, display = "block") {
@@ -1673,6 +1721,12 @@ export abstract class Wrec extends HTMLElementBase {
     this.#stateSubscriptionMap.set(state, { map: mergedMap, unsubscribe });
   }
 
+  // Subclasses can override this to validate all component properties.
+  // The arguments describe a proposed change to a single property.
+  validate(_props: Record<string, unknown>): string[] {
+    return [];
+  }
+
   #validateAttributes() {
     const propNames = new Set(Object.keys(this.#ctor.properties));
     for (const attrName of this.getAttributeNames()) {
@@ -1760,8 +1814,11 @@ export abstract class Wrec extends HTMLElementBase {
   }
 
   // Validates a property value and dispatches an event when invalid.
-  #validateValue(propName: string, config: PropertyConfig, value: any) {
-    const message = config.validate?.(value);
+  #validateValue(config: PropertyConfig, propName: string, value: any) {
+    const { validate } = config;
+    if (!validate) return true;
+
+    const message = validate(value);
     const valid = typeof message !== "string";
     if (!valid) {
       this.dispatch("validation", {
@@ -1769,6 +1826,7 @@ export abstract class Wrec extends HTMLElementBase {
         property: propName,
         value,
         message,
+        valid: false,
       });
     }
     return valid;

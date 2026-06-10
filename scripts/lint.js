@@ -168,6 +168,20 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
   // Walks the expression tree and records any issues that are found.
   function visit(node) {
     if (ts.isPropertyAccessExpression(node) && isWrecRooted(node.expression)) {
+      if (isPrivateName(node.name)) {
+        const name = getPrivateNameText(node.name);
+        const hasPrivateMember =
+          metadata.privateMethods.has(name) || metadata.privateProperties.has(name);
+        if (!hasPrivateMember) {
+          const finding = metadata.location ? { location: metadata.location, message: name } : name;
+          uniquePush(
+            isCallCallee(node) ? findings.undefinedMethods : findings.undefinedProperties,
+            finding,
+          );
+        }
+        return;
+      }
+
       const ownerType = checker.getTypeAtLocation(node.expression);
       const symbol = ownerType.getProperty(node.name.text);
       if (!symbol) {
@@ -201,6 +215,18 @@ function analyzeCodeNode(codeNode, checker, classNode, findings, metadata) {
           }
         }
       } else if (ts.isPropertyAccessExpression(callee) && isWrecRooted(callee.expression)) {
+        if (isPrivateName(callee.name)) {
+          const name = getPrivateNameText(callee.name);
+          if (!metadata.privateMethods.has(name)) {
+            uniquePush(
+              findings.undefinedMethods,
+              metadata.location ? { location: metadata.location, message: name } : name,
+            );
+          }
+          node.arguments.forEach(visit);
+          return;
+        }
+
         const ownerType = checker.getTypeAtLocation(callee.expression);
         const symbol = ownerType.getProperty(callee.name.text);
         if (!symbol) {
@@ -435,6 +461,29 @@ function collectMethodCodeItems(classNode) {
   }
 
   return codeItems;
+}
+
+// Collects private instance member names defined in a component class.
+function collectPrivateMembers(classNode) {
+  const privateMethods = new Set();
+  const privateProperties = new Set();
+
+  for (const member of classNode.members) {
+    const name = getMemberName(member);
+    if (!name?.startsWith("#")) continue;
+
+    if (ts.isMethodDeclaration(member)) {
+      privateMethods.add(name);
+    } else if (
+      ts.isGetAccessorDeclaration(member) ||
+      ts.isPropertyDeclaration(member) ||
+      ts.isSetAccessorDeclaration(member)
+    ) {
+      privateProperties.add(name);
+    }
+  }
+
+  return { privateMethods, privateProperties };
 }
 
 // Collects the property names declared in
@@ -1243,6 +1292,11 @@ function getParameterType(checker, parameterSymbol, location, isRestArgument) {
   return typeArguments[0] ?? parameterType;
 }
 
+// Returns the text form of a private identifier.
+function getPrivateNameText(name) {
+  return name.text;
+}
+
 // Returns the Wrec property config type name for a normalized type string.
 function getPropertyConfigTypeName(typeName) {
   switch (typeName) {
@@ -1482,6 +1536,11 @@ function isNumericLikeType(type) {
   });
 }
 
+// Returns whether a node is a private identifier.
+function isPrivateName(node) {
+  return ts.isPrivateIdentifier(node);
+}
+
 // Returns whether a file defines at least one Wrec component class.
 function isWrecComponentFile(filePath) {
   const sourceText = fs.readFileSync(filePath, "utf8");
@@ -1535,6 +1594,7 @@ export function lintSource(filePath, sourceText, options = {}) {
   } = extractProperties(sourceFile, checker, classNode);
   const declaredPropertyTypes = collectDeclaredPropertyTypes(classNode);
   const getterNames = collectGetterNames(classNode);
+  const privateMembers = collectPrivateMembers(classNode);
   const allMethods = collectClassMethods(classNode);
   const findings = {
     duplicateProperties,
@@ -1655,6 +1715,8 @@ export function lintSource(filePath, sourceText, options = {}) {
       checkContextCalls: allCodeItems[index]?.checkContextCalls ?? true,
       eventHandler: allCodeItems[index]?.eventHandler ?? false,
       location: allCodeItems[index]?.location ?? null,
+      privateMethods: privateMembers.privateMethods,
+      privateProperties: privateMembers.privateProperties,
       sourceFile: augmentedSourceFile,
     });
   });

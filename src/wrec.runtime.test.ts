@@ -273,5 +273,150 @@ test("dispatches validation events for invalid property values", async () => {
     property: "count",
     value: -1,
     message: "must be at least zero",
+    valid: false,
+  });
+});
+
+test("dispatches validation events when component validation state changes", async () => {
+  class ComponentValidatedFixture extends Wrec {
+    static properties = {
+      max: {
+        type: Number,
+        value: 0,
+      },
+      min: {
+        type: Number,
+        value: 0,
+      },
+    };
+    declare max: number;
+    declare min: number;
+
+    static html = html`<p>this.min</p><p>this.max</p>`;
+
+    // Validates the component property values.
+    validate(props: Record<string, number>) {
+      const errors = [];
+      if (props.min < 0) errors.push("min must be at least zero");
+      if (props.min > props.max) errors.push("min must be less than or equal to max");
+      return errors;
+    }
+  }
+
+  const elementName = getElementName("component-validated-fixture");
+  ComponentValidatedFixture.define(elementName);
+
+  const element = document.createElement(elementName) as ComponentValidatedFixture;
+  const events: CustomEvent[] = [];
+  element.addEventListener("validation", (event) => {
+    events.push(event as CustomEvent);
+  });
+
+  document.body.appendChild(element);
+  await waitForUpdates();
+
+  element.min = 1;
+  await waitForUpdates();
+
+  expect(element.min).toBe(0);
+  expect(events).toHaveLength(1);
+  expect(events[0].detail).toEqual({
+    errors: ["min must be less than or equal to max"],
+    message: "min must be less than or equal to max",
+    object: element,
+    property: "min",
+    valid: false,
+    value: 1,
+  });
+
+  element.max = 2;
+  await waitForUpdates();
+
+  expect(element.max).toBe(2);
+  expect(element.min).toBe(0);
+  expect(events).toHaveLength(2);
+  expect(events[1].detail).toEqual({
+    errors: [],
+    message: "",
+    object: element,
+    property: "max",
+    valid: true,
+    value: 2,
+  });
+});
+
+test("does not redispatch component validation when a handler clears a message", async () => {
+  class ValidationMessageFixture extends Wrec {
+    static properties = {
+      max: {
+        type: Number,
+        value: 0,
+      },
+      message: {
+        type: String,
+        value: "",
+      },
+      min: {
+        type: Number,
+        value: 0,
+      },
+    };
+    declare max: number;
+    declare message: string;
+    declare min: number;
+
+    static html = html`<p>this.message</p>`;
+
+    connectedCallback() {
+      super.connectedCallback();
+      this.addEventListener("validation", this.handleValidation);
+    }
+
+    // Updates the validation message.
+    handleValidation(event: Event) {
+      this.message = (event as CustomEvent).detail.message;
+    }
+
+    // Validates the component property values.
+    validate(props: Record<string, number>) {
+      return props.min > props.max ? ["min must be less than or equal to max"] : [];
+    }
+  }
+
+  const elementName = getElementName("validation-message-fixture");
+  ValidationMessageFixture.define(elementName);
+
+  const element = document.createElement(elementName) as ValidationMessageFixture;
+  const events: CustomEvent[] = [];
+  element.addEventListener("validation", (event) => {
+    events.push(event as CustomEvent);
+  });
+
+  document.body.appendChild(element);
+  await waitForUpdates();
+
+  element.max = 3;
+  await waitForUpdates();
+
+  element.min = 4;
+  await waitForUpdates();
+
+  expect(element.min).toBe(0);
+  expect(element.max).toBe(3);
+  expect(element.message).toBe("min must be less than or equal to max");
+  expect(events).toHaveLength(1);
+
+  element.min = 2;
+  await waitForUpdates();
+
+  expect(element.min).toBe(2);
+  expect(element.message).toBe("");
+  expect(events).toHaveLength(2);
+  expect(events[1].detail).toMatchObject({
+    errors: [],
+    message: "",
+    property: "min",
+    valid: true,
+    value: 2,
   });
 });

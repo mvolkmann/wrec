@@ -656,6 +656,54 @@ describe("lint.js", () => {
     expect(output).not.toContain("2. secondMissing");
   });
 
+  test("does not report defined private members as undefined", () => {
+    const output = runLint(`
+      import {html, Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static properties = {
+          label: {type: String, value: 'ok'}
+        };
+
+        static html = '';
+
+        #suffix = '!';
+
+        #formatLabel(value: string) {
+          return value + this.#suffix;
+        }
+
+        makeLabel() {
+          return this.#formatLabel(this.label);
+        }
+      }
+    `);
+
+    expect(output).toContain("no issues found");
+    expect(output).not.toContain("undefined properties:");
+    expect(output).not.toContain("undefined methods:");
+  });
+
+  test("reports missing private members as undefined", () => {
+    const output = runLint(`
+      import {html, Wrec} from '${wrecImportPath}';
+
+      class Fixture extends Wrec {
+        static html = html\`<div>\${this.readMissing()}</div>\`;
+
+        readMissing() {
+          this.#missingMethod();
+          return this.#missingProp;
+        }
+      }
+    `);
+
+    expect(output).toContain("undefined properties:");
+    expect(output).toMatch(/  :\d+:\d+ #missingProp/);
+    expect(output).toContain("undefined methods:");
+    expect(output).toMatch(/  :\d+:\d+ #missingMethod/);
+  });
+
   test("reports no issues found for a valid component", () => {
     const output = runLint(`
       import {html, Wrec} from '${wrecImportPath}';
