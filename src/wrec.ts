@@ -48,6 +48,10 @@ type StateSubscription = {
   map: StringToString;
   unsubscribe: () => void;
 };
+type ValidatedBatch = {
+  entries: [string, any][];
+  errors: string[];
+};
 type ValidationResult = {
   errors: string[];
   skipped: boolean;
@@ -469,31 +473,51 @@ export abstract class Wrec extends HTMLElementBase {
   // This applies multiple property changes and only updates
   // the affected parts of the DOM after all of them are made.
   batchSet(changes: StringToAny) {
+    const validation = this.#validateBatch(changes);
+    if (validation.entries.length === 0) return;
+
+    const [firstPropName, firstValue] = validation.entries[0];
+    if (validation.errors.length) {
+      this.#dispatchValidation(firstPropName, firstValue, validation.errors);
+      return;
+    }
+
     this.#batching = true;
 
     // Find the expressions that use any of the properties being changed.
     const propToExprsMap = this.#ctor.propToExprsMap;
     const exprSet = new Set<string>();
-    for (const [propName, value] of Object.entries(changes)) {
-      this.#setDynamic(propName, value);
-      const exprs = propToExprsMap.get(propName) ?? [];
-      for (const expr of exprs) {
-        exprSet.add(expr);
+    try {
+      for (const [propName, value] of validation.entries) {
+        this.#setDynamic(propName, value);
+        const exprs = propToExprsMap.get(propName) ?? [];
+        for (const expr of exprs) {
+          exprSet.add(expr);
+        }
       }
+
+      // Compute affected computed properties in dependency order.
+      const computedUpdates = this.#getComputedUpdates(
+        validation.entries.map(([propName]) => propName),
+      );
+      for (const [computedName, expr] of computedUpdates) {
+        this.#setComputed(computedName, this.#evaluateInContext(expr));
+        const exprs = propToExprsMap.get(computedName) ?? [];
+        for (const expr of exprs) {
+          exprSet.add(expr);
+        }
+      }
+
+      this.#evaluateExpressions([...exprSet]);
+    } finally {
+      this.#batching = false;
     }
 
-    // Compute affected computed properties in dependency order.
-    const computedUpdates = this.#getComputedUpdates(Object.keys(changes));
-    for (const [computedName, expr] of computedUpdates) {
-      this.#setComputed(computedName, this.#evaluateInContext(expr));
-      const exprs = propToExprsMap.get(computedName) ?? [];
-      for (const expr of exprs) {
-        exprSet.add(expr);
+    for (const [propName, value] of validation.entries) {
+      if (this.#ctor.properties[propName]) {
+        this.#dispatchValidation(propName, value, []);
       }
     }
-
-    this.#evaluateExpressions([...exprSet]);
-    this.#batching = false;
   }
 
   async #buildDOM() {
@@ -712,12 +736,11 @@ export abstract class Wrec extends HTMLElementBase {
     this.#validating = true;
     try {
       this.dispatch("validation", {
-        errors,
-        message: errors.join("\n"),
-        object: this,
+        instance: this,
         property: propName,
         valid,
         value,
+        errors,
       });
     } finally {
       this.#validating = false;
@@ -1733,6 +1756,48 @@ export abstract class Wrec extends HTMLElementBase {
     }
   }
 
+  // Validates a batch of proposed property values.
+  #validateBatch(changes: StringToAny): ValidatedBatch {
+    const entries: [string, any][] = [];
+    const errors: string[] = [];
+    const props: StringToAny = { ...this };
+
+    for (const [propName, rawValue] of Object.entries(changes)) {
+      const config = this.#ctor.properties[propName];
+      let value = rawValue;
+      if (config) {
+        if (config.computed) {
+          this.#throw(null, propName, "is a computed property and cannot be set directly");
+        }
+        if (config.type === Number && typeof value === "string") value = stringToNumber(value);
+        this.#validateType(propName, config.type, value);
+        const message = config.validate?.(value);
+        if (typeof message === "string") errors.push(message);
+      }
+      entries.push([propName, value]);
+      props[propName] = value;
+    }
+
+    if (!this.#validating) errors.push(...this.validate(props));
+
+    return { entries, errors };
+  }
+
+  // Validates a proposed property value.
+  #validateChange(config: PropertyConfig, propName: string, value: any): ValidationResult {
+    if (this.#batching || this.#validating) return { errors: [], skipped: true };
+
+    const errors = [];
+    const { validate } = config;
+    const message = validate?.(value);
+    if (typeof message === "string") errors.push(message);
+
+    const props: StringToAny = { ...this, [propName]: value };
+    errors.push(...this.validate(props));
+
+    return { errors, skipped: false };
+  }
+
   #validateExpression(
     element: HTMLElement | CSSStyleRule,
     attrName: string | undefined,
@@ -1797,21 +1862,6 @@ export abstract class Wrec extends HTMLElementBase {
     if (t !== type.name.toLowerCase()) {
       this.#throw(null, propName, `was set to a ${t}, but must be a ${type.name}`);
     }
-  }
-
-  // Validates a proposed property value.
-  #validateChange(config: PropertyConfig, propName: string, value: any): ValidationResult {
-    if (this.#validating) return { errors: [], skipped: true };
-
-    const errors = [];
-    const { validate } = config;
-    const message = validate?.(value);
-    if (typeof message === "string") errors.push(message);
-
-    const props: StringToAny = { ...this, [propName]: value };
-    errors.push(...this.validate(props));
-
-    return { errors, skipped: false };
   }
 
   // formAssociated is only needed when the component is inside a form.

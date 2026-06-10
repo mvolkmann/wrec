@@ -90,13 +90,13 @@ class ValidateDemo extends Wrec {
     </form>
   `;
 
-  connectedCallback() {
-    super.connectedCallback();
+  async connectedCallback() {
+    await super.connectedCallback();
     this.addEventListener("validation", this.handleValidation);
   }
 
   handleValidation(event) {
-    this.message = event.detail.message;
+    this.message = event.detail.errors.join("\n");
   }
 
   validate(props) {

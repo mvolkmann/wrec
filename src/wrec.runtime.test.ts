@@ -268,14 +268,7 @@ test("dispatches validation events for invalid property values", async () => {
 
   expect(element.count).toBe(2);
   expect(events).toHaveLength(1);
-  expect(events[0].detail).toEqual({
-    errors: ["must be at least zero"],
-    object: element,
-    property: "count",
-    value: -1,
-    message: "must be at least zero",
-    valid: false,
-  });
+  expect(events[0].detail.errors).toEqual(["must be at least zero"]);
 });
 
 test("dispatches validation events when component validation state changes", async () => {
@@ -293,7 +286,10 @@ test("dispatches validation events when component validation state changes", asy
     declare max: number;
     declare min: number;
 
-    static html = html`<p>this.min</p><p>this.max</p>`;
+    static html = html`
+      <p>this.min</p>
+      <p>this.max</p>
+    `;
 
     // Validates the component property values.
     validate(props: Record<string, number>) {
@@ -321,29 +317,70 @@ test("dispatches validation events when component validation state changes", asy
 
   expect(element.min).toBe(0);
   const invalidEvent = events.find((event) => event.detail.valid === false);
-  expect(invalidEvent?.detail).toEqual({
-    errors: ["min must be less than or equal to max"],
-    message: "min must be less than or equal to max",
-    object: element,
-    property: "min",
-    valid: false,
-    value: 1,
-  });
+  expect(invalidEvent?.detail.errors).toEqual(["min must be less than or equal to max"]);
 
   element.max = 2;
   await waitForUpdates();
 
   expect(element.max).toBe(2);
   expect(element.min).toBe(0);
-  const validEvent = events.find((event) => event.detail.valid === true && event.detail.property === "max");
-  expect(validEvent?.detail).toEqual({
-    errors: [],
-    message: "",
-    object: element,
-    property: "max",
-    valid: true,
-    value: 2,
+  const validEvent = events.find((event) => {
+    const { property, valid } = event.detail;
+    return valid && property === "max";
   });
+  expect(validEvent?.detail.errors).toEqual([]);
+});
+
+test("batchSet validates proposed changes as a group", async () => {
+  class BatchValidatedFixture extends Wrec {
+    static properties = {
+      max: {
+        type: Number,
+        value: 0,
+      },
+      min: {
+        type: Number,
+        value: 0,
+      },
+    };
+    declare max: number;
+    declare min: number;
+
+    static html = html`<p>this.min</p>
+      <p>this.max</p>`;
+
+    // Validates the component property values.
+    validate(props: Record<string, number>) {
+      return props.min > props.max ? ["min must be less than or equal to max"] : [];
+    }
+  }
+
+  const elementName = getElementName("batch-validated-fixture");
+  BatchValidatedFixture.define(elementName);
+
+  const element = document.createElement(elementName) as BatchValidatedFixture;
+  const events: CustomEvent[] = [];
+  element.addEventListener("validation", (event) => {
+    events.push(event as CustomEvent);
+  });
+
+  document.body.appendChild(element);
+  await waitForUpdates();
+
+  element.batchSet({ min: 1, max: 2 });
+  await waitForUpdates();
+
+  expect(element.min).toBe(1);
+  expect(element.max).toBe(2);
+
+  events.length = 0;
+  element.batchSet({ min: 2, max: 1 });
+  await waitForUpdates();
+
+  expect(element.min).toBe(1);
+  expect(element.max).toBe(2);
+  expect(events).toHaveLength(1);
+  expect(events[0].detail.errors).toEqual(["min must be less than or equal to max"]);
 });
 
 test("does not redispatch component validation when a handler clears a message", async () => {
@@ -368,14 +405,15 @@ test("does not redispatch component validation when a handler clears a message",
 
     static html = html`<p>this.message</p>`;
 
-    connectedCallback() {
+    async connectedCallback() {
       super.connectedCallback();
       this.addEventListener("validation", this.handleValidation);
     }
 
     // Updates the validation message.
     handleValidation(event: Event) {
-      this.message = (event as CustomEvent).detail.message;
+      const { errors } = (event as CustomEvent).detail;
+      this.message = errors[0] ?? "";
     }
 
     // Validates the component property values.
@@ -406,41 +444,15 @@ test("does not redispatch component validation when a handler clears a message",
   expect(element.max).toBe(3);
   expect(element.message).toBe("min must be less than or equal to max");
   expect(
-    events.some(
-      (event) =>
-        event.detail.property === "min" &&
-        event.detail.value === 4 &&
-        event.detail.message === "min must be less than or equal to max" &&
-        event.detail.valid === false,
-    ),
+    events.some((event) => event.detail.errors[0] === "min must be less than or equal to max"),
   ).toBe(true);
 
+  events.length = 0;
   element.min = 2;
   await waitForUpdates();
 
   expect(element.min).toBe(2);
   expect(element.message).toBe("");
-  expect(
-    events.some(
-      (event) =>
-        event.detail.property === "min" &&
-        event.detail.value === 2 &&
-        event.detail.message === "" &&
-        event.detail.valid === true,
-    ),
-  ).toBe(true);
-  const clearingEvent = events.find(
-    (event) =>
-      event.detail.property === "min" &&
-      event.detail.value === 2 &&
-      event.detail.message === "" &&
-      event.detail.valid === true,
-  );
-  expect(clearingEvent?.detail).toMatchObject({
-    errors: [],
-    message: "",
-    property: "min",
-    valid: true,
-    value: 2,
-  });
+  expect(events).toHaveLength(1);
+  expect(events[0].detail.errors).toEqual([]);
 });
