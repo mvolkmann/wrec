@@ -1,9 +1,19 @@
 import { css, html, Wrec } from "../wrec";
 
+const hexColorRE = /^(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+
 function nonNegative(value) {
   if (value < 0) {
     return "min must be a non-negative number.";
   }
+}
+
+function pattern(regexp, description) {
+  return function (value) {
+    if (!regexp.test(value)) {
+      return `Value must be a ${description}.`;
+    }
+  };
 }
 
 function range(low, high) {
@@ -26,6 +36,11 @@ class ValidateDemo extends Wrec {
       validate: range(0, 5),
       value: 0,
     },
+    color: {
+      type: String,
+      validate: pattern(hexColorRE, "hex color"),
+      value: "",
+    },
     message: {
       type: String,
       value: "",
@@ -42,7 +57,7 @@ class ValidateDemo extends Wrec {
         label {
           display: inline-block;
           text-align: end;
-          width: 2rem;
+          width: 3rem;
         }
       }
 
@@ -56,6 +71,10 @@ class ValidateDemo extends Wrec {
 
   static html = html`
     <form method="post" action="https://httpbin.org/post">
+      <div>
+        <label for="color">Color</label>
+        <input id=" color" type="string" value="this.color" />
+      </div>
       <div>
         <label for="min">Min</label>
         <input id="min" type="number" value="this.min" />
