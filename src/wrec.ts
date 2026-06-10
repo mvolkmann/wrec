@@ -713,7 +713,7 @@ export abstract class Wrec extends HTMLElementBase {
     try {
       this.dispatch("validation", {
         errors,
-        message: errors.join(", "),
+        message: errors.join("\n"),
         object: this,
         property: propName,
         valid,

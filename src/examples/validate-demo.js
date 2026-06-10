@@ -6,6 +6,14 @@ function nonNegative(value) {
   }
 }
 
+function range(low, high) {
+  return function (value) {
+    if (value < low || value > high) {
+      return `Value must be between ${low} and ${high}.`;
+    }
+  };
+}
+
 class ValidateDemo extends Wrec {
   static properties = {
     min: {
@@ -15,7 +23,7 @@ class ValidateDemo extends Wrec {
     },
     max: {
       type: Number,
-      validate: nonNegative,
+      validate: range(0, 5),
       value: 0,
     },
     message: {
@@ -41,6 +49,7 @@ class ValidateDemo extends Wrec {
       & > p {
         color: red;
         margin: 0;
+        white-space: pre-line;
       }
     }
   `;
