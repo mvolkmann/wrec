@@ -37,16 +37,20 @@ type StringToAny = Record<string, any>;
 type StringToString = Record<string, string>;
 type StringToStrings = Map<string, string[]>;
 const newStringToStrings = (): StringToStrings => new Map();
+type ComputedGraph = {
+  computedToDependenciesMap: StringToStrings;
+  computedToDependentsMap: StringToStrings;
+  computedToExprMap: StringToString;
+};
+type LooseObject = Record<string, unknown>;
 type StateBinding = { state: WrecState; stateProp: string };
 type StateSubscription = {
   map: StringToString;
   unsubscribe: () => void;
 };
-type LooseObject = Record<string, unknown>;
-type ComputedGraph = {
-  computedToDependenciesMap: StringToStrings;
-  computedToDependentsMap: StringToStrings;
-  computedToExprMap: StringToString;
+type ValidationResult = {
+  errors: string[];
+  skipped: boolean;
 };
 
 const globalAttributes = new Set(["class", "disabled", "hidden", "id", "tabindex", "title"]);
@@ -71,11 +75,6 @@ class WrecError extends Error {}
 
 const CSS_PROPERTY_RE = /([a-zA-Z-]+)\s*:\s*([^;}]+)/g;
 const HTML_ELEMENT_TEXT_RE = /<(\w+)(?:\s[^>]*)?>((?:[^<]|<(?!\w))*?)<\/\1>/g;
-
-// Determines whether two arrays contain the same values in the same order.
-function arraysEqual<T>(array1: T[], array2: T[]) {
-  return array1.length === array2.length && array1.every((value, index) => value === array2[index]);
-}
 
 // Determines whether an element supports the disabled property.
 function canDisable(element: Element) {
@@ -388,9 +387,6 @@ export abstract class Wrec extends HTMLElementBase {
   // This is true while a validation event is being dispatched.
   #validating = false;
 
-  // This tracks validation errors reported by the component-level validate method.
-  #validationErrors: string[] = [];
-
   // This is a map from expressions to references to them
   // which can be found in element text content,
   // attribute values, and CSS property values.
@@ -532,13 +528,6 @@ export abstract class Wrec extends HTMLElementBase {
     this.#setDynamic(componentProp, newValue);
   }
 
-  // Validates the component against a proposed property value.
-  #componentValidation(propName: string, value: any): string[] | undefined {
-    if (this.#validating) return;
-    const props: StringToAny = { ...this, [propName]: value };
-    return this.validate(props);
-  }
-
   #computeProps() {
     const ctor = this.#ctor;
     const { properties } = ctor;
@@ -629,11 +618,9 @@ export abstract class Wrec extends HTMLElementBase {
 
         this.#validateType(propName, type, value);
 
-        if (!this.#validateValue(config, propName, value)) return;
-
-        const errors = this.#componentValidation(propName, value);
-        if (errors?.length > 0) {
-          this.#dispatchValidation(propName, value, errors, true);
+        const validation = this.#validateChange(config, propName, value);
+        if (!validation.skipped && validation.errors.length) {
+          this.#dispatchValidation(propName, value, validation.errors);
           return;
         }
 
@@ -654,7 +641,9 @@ export abstract class Wrec extends HTMLElementBase {
         if (formKey) this.setFormValue(formKey, String(value));
         this.propertyChangedCallback(propName, oldValue, value);
 
-        if (errors) this.#dispatchValidation(propName, value, errors);
+        if (!validation.skipped) {
+          this.#dispatchValidation(propName, value, validation.errors);
+        }
 
         if (config.dispatch) {
           this.dispatch("change", {
@@ -717,11 +706,8 @@ export abstract class Wrec extends HTMLElementBase {
     );
   }
 
-  // Dispatches a validation event when component validation state changes.
-  #dispatchValidation(propName: string, value: any, errors: string[], force = false) {
-    if (!force && arraysEqual(errors, this.#validationErrors)) return;
-
-    this.#validationErrors = errors;
+  // Dispatches a validation event.
+  #dispatchValidation(propName: string, value: any, errors: string[]) {
     const valid = errors.length === 0;
     this.#validating = true;
     try {
@@ -1813,23 +1799,19 @@ export abstract class Wrec extends HTMLElementBase {
     }
   }
 
-  // Validates a property value and dispatches an event when invalid.
-  #validateValue(config: PropertyConfig, propName: string, value: any) {
-    const { validate } = config;
-    if (!validate) return true;
+  // Validates a proposed property value.
+  #validateChange(config: PropertyConfig, propName: string, value: any): ValidationResult {
+    if (this.#validating) return { errors: [], skipped: true };
 
-    const message = validate(value);
-    const valid = typeof message !== "string";
-    if (!valid) {
-      this.dispatch("validation", {
-        object: this,
-        property: propName,
-        value,
-        message,
-        valid: false,
-      });
-    }
-    return valid;
+    const errors = [];
+    const { validate } = config;
+    const message = validate?.(value);
+    if (typeof message === "string") errors.push(message);
+
+    const props: StringToAny = { ...this, [propName]: value };
+    errors.push(...this.validate(props));
+
+    return { errors, skipped: false };
   }
 
   // formAssociated is only needed when the component is inside a form.

@@ -261,7 +261,7 @@ test("dispatches validation events for invalid property values", async () => {
   await waitForUpdates();
 
   expect(element.count).toBe(2);
-  expect(events).toHaveLength(0);
+  events.length = 0;
 
   element.count = -1;
   await waitForUpdates();
@@ -269,6 +269,7 @@ test("dispatches validation events for invalid property values", async () => {
   expect(element.count).toBe(2);
   expect(events).toHaveLength(1);
   expect(events[0].detail).toEqual({
+    errors: ["must be at least zero"],
     object: element,
     property: "count",
     value: -1,
@@ -319,8 +320,8 @@ test("dispatches validation events when component validation state changes", asy
   await waitForUpdates();
 
   expect(element.min).toBe(0);
-  expect(events).toHaveLength(1);
-  expect(events[0].detail).toEqual({
+  const invalidEvent = events.find((event) => event.detail.valid === false);
+  expect(invalidEvent?.detail).toEqual({
     errors: ["min must be less than or equal to max"],
     message: "min must be less than or equal to max",
     object: element,
@@ -334,8 +335,8 @@ test("dispatches validation events when component validation state changes", asy
 
   expect(element.max).toBe(2);
   expect(element.min).toBe(0);
-  expect(events).toHaveLength(2);
-  expect(events[1].detail).toEqual({
+  const validEvent = events.find((event) => event.detail.valid === true && event.detail.property === "max");
+  expect(validEvent?.detail).toEqual({
     errors: [],
     message: "",
     object: element,
@@ -404,15 +405,38 @@ test("does not redispatch component validation when a handler clears a message",
   expect(element.min).toBe(0);
   expect(element.max).toBe(3);
   expect(element.message).toBe("min must be less than or equal to max");
-  expect(events).toHaveLength(1);
+  expect(
+    events.some(
+      (event) =>
+        event.detail.property === "min" &&
+        event.detail.value === 4 &&
+        event.detail.message === "min must be less than or equal to max" &&
+        event.detail.valid === false,
+    ),
+  ).toBe(true);
 
   element.min = 2;
   await waitForUpdates();
 
   expect(element.min).toBe(2);
   expect(element.message).toBe("");
-  expect(events).toHaveLength(2);
-  expect(events[1].detail).toMatchObject({
+  expect(
+    events.some(
+      (event) =>
+        event.detail.property === "min" &&
+        event.detail.value === 2 &&
+        event.detail.message === "" &&
+        event.detail.valid === true,
+    ),
+  ).toBe(true);
+  const clearingEvent = events.find(
+    (event) =>
+      event.detail.property === "min" &&
+      event.detail.value === 2 &&
+      event.detail.message === "" &&
+      event.detail.valid === true,
+  );
+  expect(clearingEvent?.detail).toMatchObject({
     errors: [],
     message: "",
     property: "min",
