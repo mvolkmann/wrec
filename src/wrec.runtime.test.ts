@@ -316,7 +316,7 @@ test("dispatches validation events when component validation state changes", asy
   await waitForUpdates();
 
   expect(element.min).toBe(0);
-  const invalidEvent = events.find((event) => event.detail.valid === false);
+  const invalidEvent = events.find((event) => event.detail.errors.length);
   expect(invalidEvent?.detail.errors).toEqual(["min must be less than or equal to max"]);
 
   element.max = 2;
@@ -325,8 +325,8 @@ test("dispatches validation events when component validation state changes", asy
   expect(element.max).toBe(2);
   expect(element.min).toBe(0);
   const validEvent = events.find((event) => {
-    const { property, valid } = event.detail;
-    return valid && property === "max";
+    const { errors, property } = event.detail;
+    return errors.length === 0 && property === "max";
   });
   expect(validEvent?.detail.errors).toEqual([]);
 });

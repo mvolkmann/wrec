@@ -732,14 +732,12 @@ export abstract class Wrec extends HTMLElementBase {
 
   // Dispatches a validation event.
   #dispatchValidation(propName: string, value: any, errors: string[]) {
-    const valid = errors.length === 0;
     this.#validating = true;
     try {
       this.dispatch("validation", {
         instance: this,
         property: propName,
         value,
-        valid,
         errors,
       });
     } finally {

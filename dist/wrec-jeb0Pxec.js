@@ -593,13 +593,11 @@ var $ = class e extends O {
 		}));
 	}
 	#b(e, t, n) {
-		let r = n.length === 0;
 		this.#r = !0;
 		try {
 			this.dispatch("validation", {
 				instance: this,
 				property: e,
-				valid: r,
 				value: t,
 				errors: n
 			});
