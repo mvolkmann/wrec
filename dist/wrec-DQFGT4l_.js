@@ -568,7 +568,7 @@ var $ = class e extends O {
 				}
 				e = this.#P(t, s, e), this.#V(u, e);
 				let o = this.#d.get(t);
-				o && l(o.state, o.stateProp, e), this.#Y(t, s, e, i), this.#e || (this.#X(t), this.#L(t)), this.#Q(t, e);
+				o && l(o.state, o.stateProp, e), this.#Y(t, s, e, i, n.reflect), this.#e || (this.#X(t), this.#L(t)), this.#Q(t, e);
 				let c = this.#o[t];
 				c && this.setFormValue(c, String(e)), this.propertyChangedCallback(t, r, e), a.skipped || this.#x(t, e, a.errors), n.dispatch && this.dispatch("change", {
 					tagName: this.localName,
@@ -942,8 +942,8 @@ var $ = class e extends O {
 			return n && n !== r && this.#G(null, t, "is a Boolean attribute, so its value must match attribute name or be missing"), n === "" || n === r;
 		}
 	}
-	#Y(e, t, n, r) {
-		U(n) && !this.#N(e) && n !== (t === Boolean ? this.hasAttribute(r) : this.#q(e, r)) && X(this, r || e, n);
+	#Y(e, t, n, r, i = !0) {
+		i && U(n) && !this.#N(e) && n !== (t === Boolean ? this.hasAttribute(r) : this.#q(e, r)) && X(this, r || e, n);
 	}
 	#X(e) {
 		for (let [t, n] of this.#D([e])) this.#B(t, this.#w(n));

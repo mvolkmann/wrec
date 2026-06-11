@@ -1,16 +1,28 @@
-type ComponentClassLike = {
+type ComponentClass = {
   context?: Record<string, any>;
-  properties?: Record<string, PropertyConfigLike>;
+  properties?: Record<string, PropertyConfig>;
   prototype: object;
 };
 
-type PropertyConfigLike = {
+export type PropertyConfig<T = any> = {
   computed?: string;
-  type?: unknown;
+  dispatch?: boolean;
+  reflect?: boolean;
+  required?: boolean;
+  type: PropertyType;
   usedBy?: string | string[];
-  value?: unknown;
-  values?: unknown[];
+  validate?: (value: T) => string | void;
+  value?: T;
+  values?: T extends string ? string[] : never;
 };
+
+export type PropertyType =
+  | typeof Array
+  | typeof Boolean
+  | typeof HTMLElement
+  | typeof Number
+  | typeof Object
+  | typeof String;
 
 const FIRST_CHAR = "a-zA-Z_$";
 const OTHER_CHAR = FIRST_CHAR + "0-9";
@@ -27,7 +39,7 @@ export const SKIP = "this.".length;
 // in an evaluation scope.
 function applyDefaultPropertyValues(
   scope: Record<string, any>,
-  properties: Record<string, PropertyConfigLike>,
+  properties: Record<string, PropertyConfig>,
 ) {
   for (const [propName, config] of Object.entries(properties)) {
     if (scope[propName] !== undefined) continue;
@@ -38,7 +50,7 @@ function applyDefaultPropertyValues(
 // Builds dependency metadata for computed properties in an evaluation scope.
 function buildComputedMetadata(
   scope: Record<string, any>,
-  properties: Record<string, PropertyConfigLike>,
+  properties: Record<string, PropertyConfig>,
 ) {
   const computedNames = Object.entries(properties)
     .filter(([_propName, config]) => Boolean(config.computed))
@@ -89,7 +101,7 @@ function buildComputedMetadata(
 }
 
 // Computes all computed properties in dependency order for an evaluation scope.
-function computeComputedProperties(componentClass: ComponentClassLike, scope: Record<string, any>) {
+function computeComputedProperties(componentClass: ComponentClass, scope: Record<string, any>) {
   const properties = componentClass.properties ?? {};
   const { computedNames, dependenciesMap, expressions } = buildComputedMetadata(scope, properties);
   const dependentsMap = new Map<string, string[]>();
@@ -134,7 +146,7 @@ function computeComputedProperties(componentClass: ComponentClassLike, scope: Re
 }
 
 // Returns the default value implied by a property configuration.
-function defaultForConfig(config: PropertyConfigLike) {
+function defaultForConfig(config: PropertyConfig) {
   if (config.value !== undefined) return config.value;
   return Array.isArray(config.values) && config.values.length > 0
     ? config.values[0]
@@ -176,7 +188,7 @@ export function getExpressionPropName(str: string) {
 
 // Creates a shared evaluation scope for client and SSR expression execution.
 export function initializeEvaluationScope(
-  componentClass: ComponentClassLike,
+  componentClass: ComponentClass,
   inputProperties: Record<string, any> = {},
 ) {
   const scope = Object.create(componentClass.prototype) as Record<string, any>;

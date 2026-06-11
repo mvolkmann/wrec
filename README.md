@@ -123,6 +123,21 @@ class TrafficLight extends Wrec {
 With that configuration, the `color` attribute and property can only be set
 to one of those strings.
 
+Property definitions can set `reflect` to `false` to prevent property changes
+from being copied to matching attributes:
+
+```js
+class MessageDisplay extends Wrec {
+  static properties = {
+    message: {
+      type: String,
+      value: "",
+      reflect: false,
+    },
+  };
+}
+```
+
 1. Create the file `index.html` containing the following.
 
    ```html

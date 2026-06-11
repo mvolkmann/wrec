@@ -228,6 +228,35 @@ test("updates computed content when a property changes", async () => {
   expect(doubled?.textContent).toBe("8");
 });
 
+test("does not reflect property changes when reflect is false", async () => {
+  class NonReflectedFixture extends Wrec {
+    static properties = {
+      message: {
+        reflect: false,
+        type: String,
+        value: "",
+      },
+    };
+    declare message: string;
+
+    static html = html`<p>this.message</p>`;
+  }
+
+  const elementName = getElementName("non-reflected-fixture");
+  NonReflectedFixture.define(elementName);
+
+  const element = document.createElement(elementName) as NonReflectedFixture;
+  document.body.appendChild(element);
+  await waitForUpdates();
+
+  element.message = "Saved";
+  await waitForUpdates();
+
+  expect(element.message).toBe("Saved");
+  expect(element.getAttribute("message")).toBeNull();
+  expect(element.shadowRoot?.querySelector("p")?.textContent).toBe("Saved");
+});
+
 test("dispatches validation events for invalid property values", async () => {
   class ValidatedFixture extends Wrec {
     static properties = {

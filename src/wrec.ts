@@ -9,6 +9,8 @@ import {
   REFS_TEST_RE,
   evaluateInScope,
   getExpressionPropName,
+  type PropertyConfig,
+  type PropertyType,
 } from "./evaluation";
 import sanitize from "./sanitize-xss";
 
@@ -16,23 +18,6 @@ import sanitize from "./sanitize-xss";
 // the bundle exports everything exported by this file.
 export { WrecState };
 
-type PropertyConfig<T = any> = {
-  computed?: string;
-  dispatch?: boolean;
-  required?: boolean;
-  type: PropertyType;
-  usedBy?: string | string[];
-  validate?: (value: T) => string | void;
-  value?: T;
-  values?: T extends string ? string[] : never;
-};
-type PropertyType =
-  | typeof Array
-  | typeof Boolean
-  | typeof HTMLElementBase
-  | typeof Number
-  | typeof Object
-  | typeof String;
 type StringToAny = Record<string, any>;
 type StringToString = Record<string, string>;
 type StringToStrings = Map<string, string[]>;
@@ -666,7 +651,8 @@ export abstract class Wrec extends HTMLElementBase {
           setPathValue(stateBinding.state, stateBinding.stateProp, value);
         }
 
-        this.#updateAttribute(propName, type, value, attrName);
+        this.#updateAttribute(propName, type, value, attrName, config.reflect);
+
         if (!this.#batching) {
           this.#updateComputedProperties(propName);
           this.#react(propName);
@@ -1570,7 +1556,14 @@ export abstract class Wrec extends HTMLElementBase {
 
   // Updates the matching attribute for a property.
   // VS Code thinks this is never called, but it is called by #defineProp.
-  #updateAttribute(propName: string, type: any, value: any, attrName: string) {
+  #updateAttribute(
+    propName: string,
+    type: any,
+    value: any,
+    attrName: string,
+    reflect: boolean = true,
+  ) {
+    if (!reflect) return;
     if (isPrimitive(value) && !this.#isComputedProp(propName)) {
       const oldValue =
         type === Boolean ? this.hasAttribute(attrName) : this.#typedAttribute(propName, attrName);

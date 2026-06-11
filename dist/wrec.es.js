@@ -1,2 +1,2 @@
-import { i as e, n as t, r as n, t as r, u as i } from "./wrec-R2k4z4qF.js";
+import { i as e, n as t, r as n, t as r, u as i } from "./wrec-DQFGT4l_.js";
 export { r as Wrec, i as WrecState, t as createElement, n as css, e as html };

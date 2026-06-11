@@ -2,13 +2,16 @@ import { css, html, Wrec } from "../wrec";
 
 const hexColorRE = /^(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 
+// Validates that a number is not negative.
 function nonNegative(value) {
   if (value < 0) {
     return "min must be a non-negative number.";
   }
 }
 
+// Returns a validator that checks a string against a regular expression.
 function pattern(regexp, description) {
+  // Validates that a string matches the configured pattern.
   return function (value) {
     if (!regexp.test(value)) {
       return `Value must be a ${description}.`;
@@ -16,7 +19,9 @@ function pattern(regexp, description) {
   };
 }
 
+// Returns a validator that checks a number is within a range.
 function range(low, high) {
+  // Validates that a number falls within the configured range.
   return function (value) {
     if (value < low || value > high) {
       return `Value must be between ${low} and ${high}.`;
@@ -43,6 +48,7 @@ class ValidateDemo extends Wrec {
     },
     message: {
       type: String,
+      reflect: false,
       value: "",
     },
   };
@@ -90,15 +96,18 @@ class ValidateDemo extends Wrec {
     </form>
   `;
 
+  // Wires the validation event handler.
   async connectedCallback() {
     await super.connectedCallback();
     this.addEventListener("validation", this.handleValidation);
   }
 
+  // Updates the validation message.
   handleValidation(event) {
     this.message = event.detail.errors.join("\n");
   }
 
+  // Validates the component property values.
   validate(props) {
     const errors = [];
     if (props.min > props.max) {
