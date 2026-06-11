@@ -391,6 +391,9 @@ export abstract class Wrec extends HTMLElementBase {
   // This is true while a validation event is being dispatched.
   #validating = false;
 
+  // This tracks attributes currently being reset after failed validation.
+  #resettingAttributes = new Set<string>();
+
   // This is a map from expressions to references to them
   // which can be found in element text content,
   // attribute values, and CSS property values.
@@ -457,14 +460,22 @@ export abstract class Wrec extends HTMLElementBase {
     }
   }
 
-  attributeChangedCallback(attrName: string, _oldValue: string | null, newValue: string | null) {
+  // Updates a matching property when an observed attribute changes.
+  attributeChangedCallback(attrName: string, oldValue: string | null, newValue: string | null) {
+    if (this.#resettingAttributes.has(attrName)) return;
+
     if (attrName === "disabled") this.#disableOrEnable();
 
     const propName = Wrec.getPropName(attrName);
     if (!this.#isComputedProp(propName) && this.#hasProperty(propName)) {
       // Update the corresponding property.
       const value = this.#typedValue(propName, newValue);
+      const previousValue = this.#getDynamic(propName);
       this.#setDynamic(propName, value);
+      if (value !== previousValue && this.#getDynamic(propName) === previousValue) {
+        this.#resetAttribute(attrName, oldValue);
+        return;
+      }
       const formKey = this.#formAssoc[propName];
       if (formKey) this.setFormValue(formKey, String(value));
     }
@@ -1448,6 +1459,21 @@ export abstract class Wrec extends HTMLElementBase {
     } else {
       this.#updateElementContent(element, value);
     }
+  }
+
+  // Resets an attribute to its previous value.
+  #resetAttribute(attrName: string, value: string | null) {
+    this.#resettingAttributes.add(attrName);
+    try {
+      if (value === null) {
+        this.removeAttribute(attrName);
+      } else {
+        this.setAttribute(attrName, value);
+      }
+    } finally {
+      this.#resettingAttributes.delete(attrName);
+    }
+    if (attrName === "disabled") this.#disableOrEnable();
   }
 
   #setElementRef(element: HTMLElement, text: string | null) {

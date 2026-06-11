@@ -271,6 +271,60 @@ test("dispatches validation events for invalid property values", async () => {
   expect(events[0].detail.errors).toEqual(["must be at least zero"]);
 });
 
+test("resets attributes when validation rejects the matching property update", async () => {
+  class AttributeValidatedFixture extends Wrec {
+    static properties = {
+      count: {
+        type: Number,
+        value: 1,
+        // Validates count assignments.
+        validate(value: number) {
+          if (value < 0) return "must be at least zero";
+        },
+      },
+    };
+    declare count: number;
+
+    static html = html`<p>this.count</p>`;
+  }
+
+  const elementName = getElementName("attribute-validated-fixture");
+  AttributeValidatedFixture.define(elementName);
+
+  const element = document.createElement(elementName) as AttributeValidatedFixture;
+  const events: CustomEvent[] = [];
+  element.addEventListener("validation", (event) => {
+    events.push(event as CustomEvent);
+  });
+
+  document.body.appendChild(element);
+  await waitForUpdates();
+
+  element.setAttribute("count", "-1");
+  await waitForUpdates();
+
+  expect(element.count).toBe(1);
+  expect(element.getAttribute("count")).toBeNull();
+  expect(events).toHaveLength(1);
+  expect(events[0].detail.errors).toEqual(["must be at least zero"]);
+  events.length = 0;
+
+  element.setAttribute("count", "2");
+  await waitForUpdates();
+
+  expect(element.count).toBe(2);
+  expect(element.getAttribute("count")).toBe("2");
+  events.length = 0;
+
+  element.setAttribute("count", "-1");
+  await waitForUpdates();
+
+  expect(element.count).toBe(2);
+  expect(element.getAttribute("count")).toBe("2");
+  expect(events).toHaveLength(1);
+  expect(events[0].detail.errors).toEqual(["must be at least zero"]);
+});
+
 test("dispatches validation events when component validation state changes", async () => {
   class ComponentValidatedFixture extends Wrec {
     static properties = {
