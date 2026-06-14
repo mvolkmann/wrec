@@ -99,7 +99,7 @@ class ValidateDemo extends Wrec {
   // Wires the validation event handler.
   async connectedCallback() {
     await super.connectedCallback();
-    this.addEventListener("validation", this.handleValidation);
+    this.addEventListener("validation", (event) => this.handleValidation(event));
   }
 
   // Updates the validation message.
