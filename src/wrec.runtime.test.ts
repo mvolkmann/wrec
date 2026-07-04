@@ -4,6 +4,8 @@ import { afterAll, afterEach, beforeAll, expect, test, vi } from "vitest";
 let dom: JSDOM;
 let elementIndex = 0;
 type WrecModule = typeof import("./wrec.js");
+let createElement: WrecModule["createElement"];
+let css: WrecModule["css"];
 let html: WrecModule["html"];
 let Wrec: WrecModule["Wrec"];
 let WrecState: WrecModule["WrecState"];
@@ -37,7 +39,7 @@ beforeAll(async () => {
     url: "http://localhost",
   });
   assignDomGlobals(dom.window);
-  ({ html, Wrec, WrecState } = await import("./wrec.js"));
+  ({ createElement, css, html, Wrec, WrecState } = await import("./wrec.js"));
 });
 
 afterAll(() => {
@@ -538,4 +540,56 @@ test("does not redispatch component validation when a handler clears a message",
   expect(element.message).toBe("");
   expect(events).toHaveLength(1);
   expect(events[0].detail.errors).toEqual([]);
+});
+
+test("creates elements with attributes and content", () => {
+  const element = createElement("button", { id: "save", type: "button" }, "Save");
+
+  expect(element.localName).toBe("button");
+  expect(element.getAttribute("id")).toBe("save");
+  expect(element.getAttribute("type")).toBe("button");
+  expect(element.innerHTML).toBe("Save");
+});
+
+test("exposes public component convenience APIs", () => {
+  class PublicApiFixture extends Wrec {
+    static html = "<span></span>";
+  }
+
+  const elementName = getElementName("public-api-fixture");
+  PublicApiFixture.define(elementName);
+  const element = document.createElement(elementName) as PublicApiFixture;
+  const listener = vi.fn();
+  document.body.addEventListener("saved", listener);
+  document.body.appendChild(element);
+
+  element.dispatch("saved", { id: 7 });
+  element.setAttributeSafe("title", "default title");
+  element.setAttributeSafe("title", "replacement title");
+
+  expect(listener).toHaveBeenCalledOnce();
+  expect(listener.mock.calls[0][0]).toMatchObject({
+    bubbles: true,
+    composed: true,
+    detail: { id: 7 },
+  });
+  expect(element.displayIfSet(null)).toBe("display: none");
+  expect(element.displayIfSet("shown", "flex")).toBe("display: flex");
+  expect(element.getAttribute("title")).toBe("default title");
+  expect(PublicApiFixture.getPropName("item-count")).toBe("itemCount");
+});
+
+test("rewrites reactive CSS declarations and HTML text", () => {
+  const styles = css`
+    p {
+      color: this.color;
+      margin: 0;
+    }
+  `;
+  const markup = html`<p>Hello, this.name!</p>`;
+
+  expect(styles).toContain("--color: this.color;");
+  expect(styles).toContain("color: var(--color)");
+  expect(styles).toContain("margin: 0");
+  expect(markup).toBe("<p><!-- Hello, this.name! --></p>");
 });

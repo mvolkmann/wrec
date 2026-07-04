@@ -1,6 +1,6 @@
 {
   "name": "wrec",
-  "version": "0.43.0",
+  "version": "0.43.1",
   "description": "a library that greatly simplifies building web components",
   "keywords": [
     "component",
@@ -52,7 +52,7 @@
     "preview": "vite preview",
     "test": "node port-check.js && playwright test",
     "testui": "playwright test --ui",
-    "unittest": "vitest run"
+    "unittest": "vitest run --maxWorkers=1"
   },
   "dependencies": {
     "node-html-parser": "^7.1.0",

@@ -386,6 +386,7 @@ export abstract class Wrec extends HTMLElementBase {
   #exprToRefsMap = new Map<string, Ref[]>();
 
   #formAssoc: StringToString = {};
+  #formAssociationRequested = false;
   #formData: FormData | undefined;
 
   // For components that set `formAssociated` to true,
@@ -409,6 +410,8 @@ export abstract class Wrec extends HTMLElementBase {
   // It must be instance-specific because each component instance
   // can bind the same property to a different WrecState/path.
   #propToStateMap = new Map<string, StateBinding>();
+
+  #propertiesDefined = false;
 
   #objectProxyMap = new WeakMap<object, object>();
   #proxiedObjects = new WeakSet<object>();
@@ -561,6 +564,8 @@ export abstract class Wrec extends HTMLElementBase {
   async connectedCallback() {
     this.#validateAttributes();
     this.#defineProps();
+    this.#propertiesDefined = true;
+    if (this.#formAssociationRequested) this.#initializeFormAssociation();
     await this.#buildDOM();
     if (this.hasAttribute("disabled")) this.#disableOrEnable();
     this.#wireEvents(this.shadowRoot!);
@@ -937,6 +942,12 @@ export abstract class Wrec extends HTMLElementBase {
   // the static property formAssociated is true.
   // It does things that are only necessary in that situation.
   formAssociatedCallback() {
+    this.#formAssociationRequested = true;
+    if (this.#propertiesDefined) this.#initializeFormAssociation();
+  }
+
+  // Initializes form mappings after configured component properties exist.
+  #initializeFormAssociation() {
     let fa = this.getAttribute("form-assoc");
 
     // If the form-assoc attribute is not set,
@@ -973,7 +984,8 @@ export abstract class Wrec extends HTMLElementBase {
 
     // Prepare for form submissions.
     this.#formData = new FormData();
-    this.#internals = this.attachInternals();
+    // This assigns a new value only if it doesn't already have one.
+    this.#internals ??= this.attachInternals();
     this.#internals.setFormValue(this.#formData);
 
     // Seed the initial associated property values so submitting

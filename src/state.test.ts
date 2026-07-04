@@ -1,4 +1,4 @@
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { WrecState } from "./wrec-state.js";
 
 type TestState = WrecState & {
@@ -118,4 +118,53 @@ test("listen parent path when nested property changes", () => {
       state: myState,
     },
   ]);
+});
+
+test("adds properties after construction and retrieves named state", () => {
+  const state = new WrecState("dynamic-state");
+  expect(state.id).toBeTypeOf("symbol");
+
+  state.addProperty("score", 1);
+  expect(state.score).toBe(1);
+
+  state.score = 2;
+  expect(state.score).toBe(2);
+
+  expect(WrecState.get("dynamic-state")).toBe(state);
+});
+
+test("rejects empty and duplicate state names", () => {
+  expect(() => new WrecState("")).toThrow("name cannot be empty");
+
+  new WrecState("duplicate-state");
+  expect(() => new WrecState("duplicate-state")).toThrow(
+    'WrecState with name "duplicate-state" already exists',
+  );
+});
+
+test("rejects subscribing the same callback twice", () => {
+  const state = new WrecState("duplicate-callback-state", { value: 1 });
+
+  const callback = () => undefined;
+  const unsubscribe = state.subscribe(callback);
+
+  expect(() => state.subscribe(callback)).toThrow(
+    "WrecState subscribe was passed a callback that was already added",
+  );
+
+  unsubscribe();
+});
+
+test("subscribes to all changes and stops after unsubscribe", () => {
+  const state = new WrecState("all-changes-state", { first: 1, second: 2 });
+  const callback = vi.fn();
+  const unsubscribe = state.subscribe(callback);
+
+  state.first = 3;
+  state.second = 4;
+  unsubscribe();
+  state.first = 5;
+
+  expect(callback).toHaveBeenCalledTimes(2);
+  expect(callback.mock.calls.map(([change]) => change.statePath)).toEqual(["first", "second"]);
 });
