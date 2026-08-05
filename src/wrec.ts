@@ -9,6 +9,7 @@ import {
   REFS_TEST_RE,
   evaluateInScope,
   getExpressionPropName,
+  unescapePropertyReferences,
   type PropertyConfig,
   type PropertyType,
 } from "./evaluation";
@@ -940,6 +941,8 @@ export abstract class Wrec extends HTMLElementBase {
         } else {
           this.#registerPlaceholders(commentText, element);
         }
+      } else if (element.textContent?.includes("this..")) {
+        this.#registerPlaceholders(element.textContent, element);
       }
     }
   }
@@ -1407,7 +1410,7 @@ export abstract class Wrec extends HTMLElementBase {
     const matches = this.#validateExpression(element, attrName, text);
     if (!matches) {
       // Handle escaped periods in expressions.
-      const value = text.replaceAll("this..", "this.");
+      const value = unescapePropertyReferences(text);
       if (attrName) {
         updateValue(element, attrName, value);
       } else if ("textContent" in element) {

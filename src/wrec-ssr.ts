@@ -10,6 +10,7 @@ import {
   evaluateInScope,
   getExpressionPropName,
   initializeEvaluationScope,
+  unescapePropertyReferences,
 } from "./evaluation";
 import { Wrec, WrecState, createElement, css, html } from "./wrec";
 
@@ -57,6 +58,8 @@ Wrec.ssr = function ssr(properties: Record<string, any> = {}): string {
           }
         }
         element.setAttribute(attrName, escapeAttributeValue(newValue));
+      } else if (value.includes("this..")) {
+        element.setAttribute(attrName, unescapePropertyReferences(value));
       }
     }
 
@@ -72,6 +75,8 @@ Wrec.ssr = function ssr(properties: Record<string, any> = {}): string {
           // components can emit SSR markup when needed.
           childNodes[index] = new NHPTextNode(String(newValue));
         }
+      } else if (node.nodeType === NHPNodeType.TEXT_NODE && node.textContent.includes("this..")) {
+        childNodes[index] = new NHPTextNode(unescapePropertyReferences(node.textContent));
       }
     });
   }

@@ -132,6 +132,27 @@ test("renders dynamic HTML and wires events inside injected markup", async () =>
   expect(count?.textContent).toBe("1");
 });
 
+test("renders escaped property references with one period", async () => {
+  class EscapedReferenceFixture extends Wrec {
+    static html = html`
+      <p id="text">this..foo</p>
+      <div id="attribute" title="this..foo"></div>
+      <textarea id="textarea">this..foo</textarea>
+    `;
+  }
+
+  const elementName = getElementName("escaped-reference-fixture");
+  EscapedReferenceFixture.define(elementName);
+
+  const element = document.createElement(elementName) as EscapedReferenceFixture;
+  document.body.appendChild(element);
+  await waitForUpdates();
+
+  expect(element.shadowRoot?.querySelector("#text")?.textContent).toBe("this.foo");
+  expect(element.shadowRoot?.querySelector("#attribute")?.getAttribute("title")).toBe("this.foo");
+  expect(element.shadowRoot?.querySelector("#textarea")?.textContent).toBe("this.foo");
+});
+
 test("syncs component state from WrecState subscriptions", async () => {
   class StateFixture extends Wrec {
     static properties = {

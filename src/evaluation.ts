@@ -207,3 +207,8 @@ function propertyToGetter(propName: string) {
 function usedByArray(usedBy?: string | string[]) {
   return typeof usedBy === "string" ? [usedBy] : usedBy;
 }
+
+// Converts escaped property-reference prefixes to literal text.
+export function unescapePropertyReferences(value: string) {
+  return value.replaceAll("this..", "this.");
+}

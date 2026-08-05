@@ -35,6 +35,19 @@ test("renders evaluated attribute and text expressions in SSR output", () => {
   expect(output).toContain("<span>MARK</span>");
 });
 
+test("renders escaped property references with one period in SSR output", () => {
+  class EscapedReferenceSsrFixture extends Wrec {
+    static html = html`<p title="this..foo">this..foo</p>`;
+  }
+
+  EscapedReferenceSsrFixture.define("escaped-reference-ssr-fixture");
+
+  const output = EscapedReferenceSsrFixture.ssr();
+
+  expect(output).toContain('<p title="this.foo">this.foo</p>');
+  expect(output).not.toContain("this..foo");
+});
+
 test("escapes outer and evaluated attribute values in SSR output", () => {
   class EscapingSsrFixture extends Wrec {
     static properties = {
