@@ -633,7 +633,7 @@ var $ = class e extends O {
 					V(t) && e !== Boolean && this.#J(t, r, `refers to property "${a}" whose type is not Boolean`), W(t) && e !== String && this.#J(t, r, `refers to property "${a}" whose type is not String`);
 				}
 				let l = this.#I(a);
-				n && t.#I(c) || (o === "checked" && W(t) ? t.checked = t.value === i : t[c] = i), o === "value" && (s ? (t["on" + s] === void 0 && this.#J(t, r, "refers to an unsupported event name"), t.setAttribute(o, this.#j(a))) : s = "change"), n && !l && t.#d.set(e.getPropName(o), a);
+				n && t.#I(c) || (o === "checked" && W(t) ? t.checked = t.value === i : t[c] = i, n && Object.hasOwn(t.#l, c) && (t.#l[c] = i)), o === "value" && (s ? (t["on" + s] === void 0 && this.#J(t, r, "refers to an unsupported event name"), t.setAttribute(o, this.#j(a))) : s = "change"), n && !l && t.#d.set(e.getPropName(o), a);
 			}
 			this.#G(i, t, r);
 		}
@@ -710,8 +710,8 @@ var $ = class e extends O {
 			let t = this.#j(e);
 			U(t) && this.setFormValue(n, String(t));
 		}
-		let r = Object.keys(this.#n.properties), i = this.#l;
-		for (let e of r) i[e] = this.#j(e);
+		let r = this.#l;
+		for (let [e, t] of Object.entries(this.#n.properties)) t.computed || (r[e] = this.#j(e));
 	}
 	formResetCallback() {
 		let e = this.#l;

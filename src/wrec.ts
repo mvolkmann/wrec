@@ -390,7 +390,7 @@ export abstract class Wrec extends HTMLElementBase {
   #formData: FormData | undefined;
 
   // For components that set `formAssociated` to true,
-  // this stores in the initial value of each property
+  // this stores the initial value of each non-computed property
   // in the formAssociatedCallback method
   // so they can be restored in the formResetCallback method.
   #initialValuesMap: StringToAny = {};
@@ -802,6 +802,13 @@ export abstract class Wrec extends HTMLElementBase {
           } else {
             (element as any)[childPropName] = value;
           }
+
+          // Form association is initialized when the child connects,
+          // before this parent resolves bindings such as value="this.size".
+          // Replace the saved expression with the resolved initial value.
+          if (isWC && Object.hasOwn((element as Wrec).#initialValuesMap, childPropName)) {
+            (element as Wrec).#initialValuesMap[childPropName] = value;
+          }
         }
 
         if (realAttrName === "value") {
@@ -997,9 +1004,9 @@ export abstract class Wrec extends HTMLElementBase {
 
     // Build mapping from property names to their initial values
     // so the containing form can be reset.
-    const propNames = Object.keys(this.#ctor.properties);
     const map = this.#initialValuesMap;
-    for (const propName of propNames) {
+    for (const [propName, config] of Object.entries(this.#ctor.properties)) {
+      if (config.computed) continue;
       map[propName] = this.#getDynamic(propName);
     }
   }
