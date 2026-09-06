@@ -39,3 +39,6 @@ minimumReleaseAgeExclude:
   - '@oxlint/binding-win32-x64-msvc@1.69.0'
   - oxfmt@0.54.0
   - oxlint@1.69.0
+  - '@playwright/test@1.63.0'
+  - playwright-core@1.63.0
+  - playwright@1.63.0

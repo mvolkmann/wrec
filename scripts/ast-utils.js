@@ -1,4 +1,4 @@
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 
 // Finds all classes in a source file that extend Wrec.
 export function collectWrecClasses(sourceFile) {

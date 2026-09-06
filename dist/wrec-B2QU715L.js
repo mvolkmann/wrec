@@ -43,7 +43,7 @@ var r = typeof window < "u" && window.document !== void 0, i = class extends Err
 	#i;
 	#a;
 	constructor(n, a, o) {
-		let s = typeof a == "boolean" ? a : !1;
+		let s = typeof a == "boolean" && a;
 		if (o = typeof a == "boolean" ? o : a, !n) throw new i("name cannot be empty");
 		if (e.#e.has(n)) throw new i(`WrecState with name "${n}" already exists`);
 		if (this.#r = n, this.#i = s, this.#a = t({}, this.#s.bind(this)), s && r) {
@@ -219,7 +219,7 @@ function S(e) {
 }
 //#endregion
 //#region src/sanitize-xss.ts
-var ie = "__WREC", ae = "__", oe = "[A-Za-z_$][A-Za-z0-9_$]*", C = new Set([
+var ie = "__WREC", ae = "__", oe = "[A-Za-z_$][A-Za-z0-9_$]*", C = /* @__PURE__ */ new Set([
 	"checked",
 	"colspan",
 	"disabled",
@@ -313,7 +313,7 @@ function E(t) {
 }
 //#endregion
 //#region src/wrec.ts
-var D = () => /* @__PURE__ */ new Map(), O = new Set([
+var D = () => /* @__PURE__ */ new Map(), O = /* @__PURE__ */ new Set([
 	"class",
 	"disabled",
 	"hidden",
@@ -395,15 +395,16 @@ function X(e, t, n) {
 		t ? e.setAttribute(r, r) : e.removeAttribute(r), e.checked = t;
 		return;
 	}
-	if (U(n)) if (typeof n == "boolean") {
-		n ? e.setAttribute(r, r) : e.removeAttribute(r);
-		let t = $.getPropName(r);
-		e[t] = n;
+	if (U(n)) {
+		if (typeof n == "boolean") {
+			n ? e.setAttribute(r, r) : e.removeAttribute(r);
+			let t = $.getPropName(r);
+			e[t] = n;
+		} else {
+			let i = e.getAttribute(t), a = String(n);
+			i !== a && (e.setAttribute(r, a), r === "value" && K(e) && (e.value = a));
+		}
 	} else {
-		let i = e.getAttribute(t), a = String(n);
-		i !== a && (e.setAttribute(r, a), r === "value" && K(e) && (e.value = a));
-	}
-	else {
 		let r = $.getPropName(t);
 		e[r] = n;
 	}
@@ -699,9 +700,10 @@ var $ = class e extends k {
 		let e = this.getAttribute("form-assoc");
 		if (!e) {
 			let t = this.getAttribute("name");
-			if (t) if (this.#F("value")) e = `value:${t}`;
-			else return;
-			else return;
+			if (t) {
+				if (this.#F("value")) e = `value:${t}`;
+				else return;
+			} else return;
 		}
 		let t = {}, n = e.split(",");
 		for (let e of n) {
@@ -916,7 +918,7 @@ var $ = class e extends k {
 		this.hasAttribute(e) || this.setAttribute(e, t);
 	}
 	setFormValue(e, t) {
-		!this.#c || !U(t) || (this.#c.set(e, t), this.#u?.setFormValue(this.#c));
+		this.#c && U(t) && (this.#c.set(e, t), this.#u?.setFormValue(this.#c));
 	}
 	static ssr(e = {}) {
 		throw new j("SSR is not available in the browser build.");
@@ -934,7 +936,7 @@ var $ = class e extends k {
 	#Z(t, n) {
 		if (n?.match(m)) return n;
 		let r = this.#n.properties[t], { type: i, values: a } = r;
-		if (i || this.#J(null, t, "does not specify its type"), n === null) return i === Boolean ? !1 : F(r);
+		if (i || this.#J(null, t, "does not specify its type"), n === null) return i !== Boolean && F(r);
 		if (i === String) {
 			if (a && !a.includes(n)) {
 				let e = a.map((e) => `"${e}"`).join(", ");
@@ -990,7 +992,10 @@ var $ = class e extends k {
 			let r = Array.from(this.#a.keys());
 			for (let e of r) {
 				for (let r of e.matchAll(d)) t(n, r[1], e);
-				for (let r of e.matchAll(m)) t(n, q(b(r[0])), e);
+				for (let r of e.matchAll(m)) {
+					let i = b(r[0]);
+					t(n, q(i), e);
+				}
 			}
 		}, { properties: r, propToExprsMap: i } = e;
 		for (let [t, a] of Object.entries(r)) {
