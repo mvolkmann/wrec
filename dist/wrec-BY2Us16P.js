@@ -267,6 +267,7 @@ function E(t) {
 				"id",
 				"type"
 			],
+			div: ["class", "id"],
 			input: [
 				"checked",
 				"class",

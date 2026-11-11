@@ -70,6 +70,7 @@ function sanitize(html: string): string {
     whiteList: {
       ...(xss as any).getDefaultWhiteList(),
       button: ["class", "id", "type"],
+      div: ["class", "id"],
       input: ["checked", "class", "disabled", "id", "max", "min", "name", "type", "value"],
       label: ["class", "for", "id"],
       option: ["class", "id", "selected", "value"],
