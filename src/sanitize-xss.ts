@@ -1,4 +1,4 @@
-import xss from "xss";
+import xss, { escapeAttrValue } from "xss";
 
 const COMMENT_PREFIX = "__WREC";
 const COMMENT_SUFFIX = "__";
@@ -48,13 +48,23 @@ function isWrecEventHandler(value: string): boolean {
 function sanitize(html: string): string {
   const options = {
     allowCommentTag: true,
+    // Preserves global attributes and Wrec handlers while filtering unsafe links.
     onTagAttr(tag: string, name: string, value: string) {
+      if (
+        name === "class" ||
+        name === "id" ||
+        name === "tabindex" ||
+        name === "title" ||
+        name.startsWith("aria-") ||
+        name.startsWith("data-")
+      ) {
+        return `${name}="${escapeAttributeValue(value)}"`;
+      }
+
       if (name.startsWith("on")) {
         return isWrecEventHandler(value) ? `${name}="${escapeAttributeValue(value)}"` : "";
       }
-      if (name === "title" || name.startsWith("aria-") || name.startsWith("data-")) {
-        return `${name}="${escapeAttributeValue(value)}"`;
-      }
+
       if (tag === "a" && name === "href" && value.startsWith("javascript")) {
         return "";
       }
@@ -69,13 +79,11 @@ function sanitize(html: string): string {
     stripIgnoreTagBody: ["script", "style", "iframe"],
     whiteList: {
       ...(xss as any).getDefaultWhiteList(),
-      button: ["class", "id", "type"],
-      div: ["class", "id"],
-      input: ["checked", "class", "disabled", "id", "max", "min", "name", "type", "value"],
-      label: ["class", "for", "id"],
-      option: ["class", "id", "selected", "value"],
-      span: ["class", "id"],
-      th: ["class", "colspan", "id", "rowspan", "scope"],
+      button: ["type"],
+      input: ["checked", "disabled", "max", "min", "name", "type", "value"],
+      label: ["for"],
+      option: ["selected", "value"],
+      th: ["colspan", "rowspan", "scope"],
     },
   };
 

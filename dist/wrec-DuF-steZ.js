@@ -248,8 +248,8 @@ function E(t) {
 	let n = {
 		allowCommentTag: !0,
 		onTagAttr(e, t, n) {
+			if (t === "class" || t === "id" || t === "tabindex" || t === "title" || t.startsWith("aria-") || t.startsWith("data-")) return `${t}="${T(n)}"`;
 			if (t.startsWith("on")) return se(n) ? `${t}="${T(n)}"` : "";
-			if (t === "title" || t.startsWith("aria-") || t.startsWith("data-")) return `${t}="${T(n)}"`;
 			if (e === "a" && t === "href" && n.startsWith("javascript")) return "";
 		},
 		safeAttrValue(e, t, n) {
@@ -262,39 +262,20 @@ function E(t) {
 		],
 		whiteList: {
 			...e.getDefaultWhiteList(),
-			button: [
-				"class",
-				"id",
-				"type"
-			],
-			div: ["class", "id"],
+			button: ["type"],
 			input: [
 				"checked",
-				"class",
 				"disabled",
-				"id",
 				"max",
 				"min",
 				"name",
 				"type",
 				"value"
 			],
-			label: [
-				"class",
-				"for",
-				"id"
-			],
-			option: [
-				"class",
-				"id",
-				"selected",
-				"value"
-			],
-			span: ["class", "id"],
+			label: ["for"],
+			option: ["selected", "value"],
 			th: [
-				"class",
 				"colspan",
-				"id",
 				"rowspan",
 				"scope"
 			]

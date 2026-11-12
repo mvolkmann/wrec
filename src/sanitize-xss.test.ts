@@ -1,6 +1,17 @@
 import { expect, test } from "vitest";
 import sanitize from "./sanitize-xss.js";
 
+// Verifies global attributes preserve entities while escaping literal delimiters.
+test("sanitize preserves entities in global attribute values", () => {
+  const value = sanitize(
+    `<div class="a&amp;b" id="a&#38;b" tabindex="&#48;" title='a"b<c>d' aria-label="a&quot;b" data-value="&lt;tag&gt;">text</div>`,
+  );
+
+  expect(value).toBe(
+    '<div class="a&amp;b" id="a&#38;b" tabindex="&#48;" title="a&quot;b&lt;c&gt;d" aria-label="a&quot;b" data-value="&lt;tag&gt;">text</div>',
+  );
+});
+
 test("sanitize preserves comments alongside Wrec-style event handlers", () => {
   const value = sanitize('<!-- this.count --><button onclick="increment" class="ok">Save</button>');
 
