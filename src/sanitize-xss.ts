@@ -1,4 +1,4 @@
-import xss, { escapeAttrValue } from "xss";
+import xss from "xss";
 
 const COMMENT_PREFIX = "__WREC";
 const COMMENT_SUFFIX = "__";
@@ -58,7 +58,7 @@ function sanitize(html: string): string {
         name.startsWith("aria-") ||
         name.startsWith("data-")
       ) {
-        return `${name}="${escapeAttributeValue(value)}"`;
+        return `${name}="${(xss as any).escapeAttrValue(value)}"`;
       }
 
       if (name.startsWith("on")) {
@@ -69,6 +69,7 @@ function sanitize(html: string): string {
         return "";
       }
     },
+    // Preserves supported attribute values on allowed tags.
     safeAttrValue(tag: string, name: string, value: string): string {
       if (name === "class") return value;
       if (passthroughAttributes.has(name)) return value;

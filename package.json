@@ -1,6 +1,6 @@
 {
   "name": "wrec",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "a library that greatly simplifies building web components",
   "keywords": [
     "component",
